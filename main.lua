@@ -1,5 +1,5 @@
 function love.load(arg)
-  love.window.setTitle("Splatter")
+  love.window.setTitle("Gutter")
 
   love.window.setMode(800, 600, {
     highdpi = true,

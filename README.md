@@ -1,4 +1,15 @@
-# Splatter
+# Gutter
+
+> We are all in the gutter, but some of us are looking at the stars.
+>
+> &mdash; Oscar Wilde
+
+> Do not mistake me for a star
+> Though I'll shine like them at night
+> But behold instead the darkness in between them
+> The Devil's light
+>
+> &mdash; Watain
 
 ![Spinning triangle splat of death](screenshot-2020-07-02-11-42-09.png)
 
