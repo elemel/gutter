@@ -40,3 +40,14 @@ function love.draw()
   love.graphics.draw(mesh)
   love.graphics.setShader(nil)
 end
+
+function love.keypressed(key, scancode, isrepeat)
+  if key == "1" then
+    local timestamp = os.date('%Y-%m-%d-%H-%M-%S')
+    local filename = "screenshot-" .. timestamp .. ".png"
+    love.graphics.captureScreenshot(filename)
+
+    local directory = love.filesystem.getSaveDirectory()
+    print("Captured screenshot: " .. directory .. "/" .. filename)
+  end
+end
