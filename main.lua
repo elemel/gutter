@@ -2,7 +2,7 @@ function love.load(arg)
   love.window.setTitle("Gutter")
 
   love.window.setMode(800, 600, {
-    highdpi = true,
+    -- highdpi = true,
     resizable = true,
   })
 
