@@ -106,12 +106,11 @@ function love.draw()
 
   love.graphics.rotate(0.25 * love.timer.getTime())
 
-  -- love.graphics.setColor(1, 1, 1, 0.5)
-  -- love.graphics.draw(mesh)
-
   love.graphics.setColor(1, 1, 1, 1)
   love.graphics.setShader(shader)
+  love.graphics.setMeshCullMode("back")
   love.graphics.draw(mesh)
+  love.graphics.setMeshCullMode("none")
   love.graphics.setShader(nil)
 
   local vectorScale = 0.25
