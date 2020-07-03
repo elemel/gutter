@@ -106,11 +106,11 @@ function love.draw()
 
     if z < 0 then
       local nx, ny, nz = normalize3(x, y, z)
-      love.graphics.setColor(0, 0, 1, 1)
+      love.graphics.setColor(0, 0.5, 1, 1)
       love.graphics.line(x, y, x + vectorScale * nx, y + vectorScale * ny)
 
       local tx, ty, tz = perp3(nx, ny, nz)
-      love.graphics.setColor(1, 0, 0, 1)
+      love.graphics.setColor(1, 0.25, 0, 1)
       love.graphics.line(x, y, x + vectorScale * tx, y + vectorScale * ty)
 
       local bx, by, bz = cross3(nx, ny, nz, tx, ty, tz)
