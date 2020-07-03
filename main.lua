@@ -50,16 +50,6 @@ function love.load(arg)
     resizable = true,
   })
 
-  local vertices = {
-    {-1, -1, -1, -1, 1, 0.25, 0, 1},
-    {1, -1, 1, -1, 1, 1, 0, 1},
-    {1, 1, 1, 1, 0, 1, 0, 1},
-    {-1, 1, -1, 1, 0, 0.5, 1, 1},
-  }
-
-  mesh = love.graphics.newMesh(vertices, "triangles")
-  mesh:setVertexMap(1, 2, 3, 1, 3, 4)
-
   shader = love.graphics.newShader([[
     vec4 effect(vec4 color, Image tex, vec2 texture_coords, vec2 screen_coords)
     {
@@ -72,27 +62,52 @@ function love.load(arg)
   ]])
 
   points = {}
+  vertices = {}
+  vertexMap = {}
 
   for _ = 1, 256 do
     local x, y, z = randomPointOnUnitSphere()
-    table.insert(points, 2 * x)
-    table.insert(points, 2 * y)
-    table.insert(points, 2 * z)
+
+    table.insert(points, x)
+    table.insert(points, y)
+    table.insert(points, z)
+
+    local nx, ny, nz = normalize3(x, y, z)
+    local tx, ty, tz = perp3(nx, ny, nz)
+    local bx, by, bz = cross3(nx, ny, nz, tx, ty, tz)
+
+    local r = 0.1
+
+    table.insert(vertices, {x - r * tx - r * bx, y - r * ty - r * by, -1, -1, 1, 0.25, 0, 1})
+    table.insert(vertices, {x + r * tx - r * bx, y + r * ty - r * by, 1, -1, 1, 1, 0, 1})
+    table.insert(vertices, {x + r * tx + r * bx, y + r * ty + r * by, 1, 1, 0, 1, 0, 1})
+    table.insert(vertices, {x - r * tx + r * bx, y - r * ty + r * by, -1, 1, 0, 0.5, 1, 1})
+
+    table.insert(vertexMap, #vertices - 3)
+    table.insert(vertexMap, #vertices - 2)
+    table.insert(vertexMap, #vertices - 1)
+
+    table.insert(vertexMap, #vertices - 3)
+    table.insert(vertexMap, #vertices - 1)
+    table.insert(vertexMap, #vertices)
   end
+
+  mesh = love.graphics.newMesh(vertices, "triangles")
+  mesh:setVertexMap(vertexMap)
 end
 
 function love.draw()
   local width, height = love.graphics.getDimensions()
   love.graphics.translate(0.5 * width, 0.5 * height)
 
-  local scale = 0.25 * height
+  local scale = 0.375 * height
   love.graphics.scale(scale)
   love.graphics.setLineWidth(1 / scale)
 
   love.graphics.rotate(0.25 * love.timer.getTime())
 
-  love.graphics.setColor(1, 1, 1, 0.5)
-  love.graphics.draw(mesh)
+  -- love.graphics.setColor(1, 1, 1, 0.5)
+  -- love.graphics.draw(mesh)
 
   love.graphics.setColor(1, 1, 1, 1)
   love.graphics.setShader(shader)

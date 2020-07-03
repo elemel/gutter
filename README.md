@@ -11,7 +11,7 @@
 >
 > &mdash; Watain
 
-![Sphere of missing out](screenshot.png)
+![Random disks on unit sphere](screenshot.png)
 
 Behold my exploration of surface splatting in LÖVE.
 The surface disks are drawn as indexed triangle pairs.
