@@ -51,17 +51,19 @@ function love.load(arg)
   })
 
   local vertices = {
-    {2, 0, 2, 0, 1, 0, 0, 1},
-    {-1, 1.7320508075688774, -1, 1.7320508075688774, 0, 1, 0, 1},
-    {-1, -1.7320508075688774, -1, -1.7320508075688774, 0, 0, 1, 1},
+    {-1, -1, -1, -1, 1, 0.25, 0, 1},
+    {1, -1, 1, -1, 1, 1, 0, 1},
+    {1, 1, 1, 1, 0, 1, 0, 1},
+    {-1, 1, -1, 1, 0, 0.5, 1, 1},
   }
 
-  mesh = love.graphics.newMesh(vertices, triangles)
+  mesh = love.graphics.newMesh(vertices, "triangles")
+  mesh:setVertexMap(1, 2, 3, 1, 3, 4)
 
   shader = love.graphics.newShader([[
     vec4 effect(vec4 color, Image tex, vec2 texture_coords, vec2 screen_coords)
     {
-      if (texture_coords.x * texture_coords.x + texture_coords.y * texture_coords.y > 1 * 1) {
+      if (dot(texture_coords, texture_coords) > 1) {
         discard;
       }
 
@@ -87,7 +89,7 @@ function love.draw()
   love.graphics.scale(scale)
   love.graphics.setLineWidth(1 / scale)
 
-  -- love.graphics.rotate(love.timer.getTime())
+  love.graphics.rotate(0.25 * love.timer.getTime())
 
   love.graphics.setColor(1, 1, 1, 0.5)
   love.graphics.draw(mesh)

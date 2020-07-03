@@ -11,6 +11,8 @@
 >
 > &mdash; Watain
 
-![Spinning triangle of death](screenshot-2020-07-02-15-07-32.png)
+![Sphere of missing out](screenshot.png)
 
-In this demo, I will explore point splatting in LÖVE. Since LÖVE 11.3 doesn't support geometry shaders, splats are represented by equilateral triangles with inscribed unit circles. The texture coordinates of each triangle vertex represent an offset from the centroid. The pixel shader uses the interpolated texture coordinates to discard pixels that are outside of the circle. You can apply an arbitrary transform to the triangle, distorting the circle into an ellipse.
+Behold my exploration of surface splatting in LÖVE.
+The surface disks are drawn as indexed triangle pairs.
+A pixel shader discards any pixel outside of the disk.
