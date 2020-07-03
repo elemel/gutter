@@ -65,6 +65,8 @@ function love.load(arg)
   vertices = {}
   vertexMap = {}
 
+  local r = 0.125
+
   for _ = 1, 256 do
     local x, y, z = randomPointOnUnitSphere()
 
@@ -74,14 +76,43 @@ function love.load(arg)
 
     local nx, ny, nz = normalize3(x, y, z)
     local tx, ty, tz = perp3(nx, ny, nz)
-    local bx, by, bz = cross3(nx, ny, nz, tx, ty, tz)
+    local bx, by, bz = cross3(tx, ty, tz, nx, ny, nz)
 
-    local r = 0.1
+    table.insert(vertices, {
+      x - r * tx - r * bx,
+      y - r * ty - r * by,
+      z - r * tz - r * bz,
 
-    table.insert(vertices, {x - r * tx - r * bx, y - r * ty - r * by, -1, -1, 1, 0.25, 0, 1})
-    table.insert(vertices, {x + r * tx - r * bx, y + r * ty - r * by, 1, -1, 1, 1, 0, 1})
-    table.insert(vertices, {x + r * tx + r * bx, y + r * ty + r * by, 1, 1, 0, 1, 0, 1})
-    table.insert(vertices, {x - r * tx + r * bx, y - r * ty + r * by, -1, 1, 0, 0.5, 1, 1})
+      -1, -1,
+      1, 0.25, 0, 1,
+    })
+
+    table.insert(vertices, {
+      x + r * tx - r * bx,
+      y + r * ty - r * by,
+      z + r * tz - r * bz,
+
+      1, -1,
+      1, 1, 0, 1,
+    })
+
+    table.insert(vertices, {
+      x + r * tx + r * bx,
+      y + r * ty + r * by,
+      z + r * tz + r * bz,
+
+      1, 1,
+      0, 1, 0, 1,
+    })
+
+    table.insert(vertices, {
+      x - r * tx + r * bx,
+      y - r * ty + r * by,
+      z - r * tz + r * bz,
+
+      -1, 1,
+      0, 0.5, 1, 1,
+    })
 
     table.insert(vertexMap, #vertices - 3)
     table.insert(vertexMap, #vertices - 2)
@@ -92,7 +123,13 @@ function love.load(arg)
     table.insert(vertexMap, #vertices)
   end
 
-  mesh = love.graphics.newMesh(vertices, "triangles")
+  local vertexFormat = {
+    {"VertexPosition", "float", 3},
+    {"VertexTexCoord", "float", 2},
+    {"VertexColor", "byte", 4},
+  }
+
+  mesh = love.graphics.newMesh(vertexFormat, vertices, "triangles")
   mesh:setVertexMap(vertexMap)
 end
 
@@ -104,12 +141,14 @@ function love.draw()
   love.graphics.scale(scale)
   love.graphics.setLineWidth(1 / scale)
 
-  love.graphics.rotate(0.25 * love.timer.getTime())
+  -- love.graphics.rotate(0.25 * love.timer.getTime())
 
   love.graphics.setColor(1, 1, 1, 1)
   love.graphics.setShader(shader)
   love.graphics.setMeshCullMode("back")
+  love.graphics.setDepthMode("less", true)
   love.graphics.draw(mesh)
+  love.graphics.setDepthMode()
   love.graphics.setMeshCullMode("none")
   love.graphics.setShader(nil)
 
@@ -129,7 +168,7 @@ function love.draw()
       love.graphics.setColor(1, 0.25, 0, 1)
       love.graphics.line(x, y, x + vectorScale * tx, y + vectorScale * ty)
 
-      local bx, by, bz = cross3(nx, ny, nz, tx, ty, tz)
+      local bx, by, bz = cross3(tx, ty, tz, nx, ny, nz)
       love.graphics.setColor(0, 1, 0, 1)
       love.graphics.line(x, y, x + vectorScale * bx, y + vectorScale * by)
     end
