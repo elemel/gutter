@@ -46,6 +46,10 @@ local function length3(x, y, z)
   return math.sqrt(x * x + y * y + z * z)
 end
 
+local function mix(a, b, t)
+  return (1 - t) * a + t * b
+end
+
 local function mix3(ax, ay, az, bx, by, bz, t)
   local x = (1 - t) * ax + t * bx
   local y = (1 - t) * ay + t * by
@@ -54,8 +58,22 @@ local function mix3(ax, ay, az, bx, by, bz, t)
   return x, y, z
 end
 
-local function unitSphere(x, y, z)
-  return length3(x, y, z) - 1
+local function clamp(x, x1, x2)
+  return math.min(math.max(x, x1), x2)
+end
+
+-- https://www.iquilezles.org/www/articles/smin/smin.htm
+local function smoothUnion(a, b, k)
+  local h = clamp(0.5 + 0.5 * (b - a) / k, 0, 1);
+  return mix(b, a, h) - k * h * (1 - h);
+end
+
+local function sphere(x, y, z, r)
+  return length3(x, y, z) - r
+end
+
+local function scene(x, y, z)
+  return smoothUnion(sphere(x - 0.5, y - 0.25, z - 0.125, 0.75), sphere(x + 0.5, y + 0.25, z + 0.125, 0.5), 0.5)
 end
 
 local function normal(x, y, z, epsilon, distance)
@@ -101,19 +119,19 @@ function love.load(arg)
   vertices = {}
   vertexMap = {}
 
-  local r = 0.25
+  local r = 0.125
 
-  local ax = -1
+  local ax = -2
   local ay = -1
   local az = -1
 
-  local bx = 1
+  local bx = 2
   local by = 1
   local bz = 1
 
-  local nx = 8
-  local ny = 8
-  local nz = 8
+  local nx = 32
+  local ny = 16
+  local nz = 16
 
   for ix = 1, nx do
     local cx = ax + (ix - 1) / nx * (bx - ax)
@@ -136,7 +154,7 @@ function love.load(arg)
         local totalSy = 0
         local totalSz = 0
 
-        local hit, sx, sy, sz = surface(cx, dy, dz, ex, dy, dz, unitSphere)
+        local hit, sx, sy, sz = surface(cx, dy, dz, ex, dy, dz, scene)
 
         if hit then
           hitCount = hitCount + 1
@@ -146,7 +164,7 @@ function love.load(arg)
           totalSz = totalSz + sz
         end
 
-        local hit, sx, sy, sz = surface(dx, cy, dz, dx, ey, dz, unitSphere)
+        local hit, sx, sy, sz = surface(dx, cy, dz, dx, ey, dz, scene)
 
         if hit then
           hitCount = hitCount + 1
@@ -156,7 +174,7 @@ function love.load(arg)
           totalSz = totalSz + sz
         end
 
-        local hit, sx, sy, sz = surface(dx, dy, cz, dx, dy, ez, unitSphere)
+        local hit, sx, sy, sz = surface(dx, dy, cz, dx, dy, ez, scene)
 
         if hit then
           hitCount = hitCount + 1
@@ -180,7 +198,7 @@ function love.load(arg)
   for _, point in ipairs(points) do
     local x, y, z = unpack(point)
 
-    local nx, ny, nz = normal(x, y, z, 0.5 * r, unitSphere)
+    local nx, ny, nz = normal(x, y, z, 0.5 * r, scene)
     local tx, ty, tz = perp3(nx, ny, nz)
     local bx, by, bz = cross3(tx, ty, tz, nx, ny, nz)
 
@@ -264,25 +282,25 @@ function love.draw()
   love.graphics.setShader(nil)
 
   local vectorScale = 0.25
-  local r = 0.25
+  local r = 0.125
 
-  for i, point in ipairs(points) do
-    local x, y, z = unpack(point)
+  -- for i, point in ipairs(points) do
+  --   local x, y, z = unpack(point)
 
-    if z < 0 then
-      local nx, ny, nz = normal(x, y, z, 0.5 * r, unitSphere)
-      love.graphics.setColor(0, 0.5, 1, 1)
-      love.graphics.line(x, y, x + vectorScale * nx, y + vectorScale * ny)
+  --   if z < 0 then
+  --     local nx, ny, nz = normal(x, y, z, 0.5 * r, scene)
+  --     love.graphics.setColor(0, 0.5, 1, 1)
+  --     love.graphics.line(x, y, x + vectorScale * nx, y + vectorScale * ny)
 
-      local tx, ty, tz = perp3(nx, ny, nz)
-      love.graphics.setColor(1, 0.25, 0, 1)
-      love.graphics.line(x, y, x + vectorScale * tx, y + vectorScale * ty)
+  --     local tx, ty, tz = perp3(nx, ny, nz)
+  --     love.graphics.setColor(1, 0.25, 0, 1)
+  --     love.graphics.line(x, y, x + vectorScale * tx, y + vectorScale * ty)
 
-      local bx, by, bz = cross3(tx, ty, tz, nx, ny, nz)
-      love.graphics.setColor(0, 1, 0, 1)
-      love.graphics.line(x, y, x + vectorScale * bx, y + vectorScale * by)
-    end
-  end
+  --     local bx, by, bz = cross3(tx, ty, tz, nx, ny, nz)
+  --     love.graphics.setColor(0, 1, 0, 1)
+  --     love.graphics.line(x, y, x + vectorScale * bx, y + vectorScale * by)
+  --   end
+  -- end
 end
 
 function love.keypressed(key, scancode, isrepeat)
