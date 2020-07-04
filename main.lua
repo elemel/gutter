@@ -58,6 +58,14 @@ local function unitSphere(x, y, z)
   return length3(x, y, z) - 1
 end
 
+local function normal(x, y, z, epsilon, distance)
+  local dx = distance(x + epsilon, y, z) - distance(x - epsilon, y, z)
+  local dy = distance(x, y + epsilon, z) - distance(x, y - epsilon, z)
+  local dz = distance(x, y, z + epsilon) - distance(x, y, z - epsilon)
+
+  return normalize3(dx, dy, dz)
+end
+
 local function surface(ax, ay, az, bx, by, bz, distance)
   local ad = distance(ax, ay, az)
   local bd = distance(bx, by, bz)
@@ -172,7 +180,7 @@ function love.load(arg)
   for _, point in ipairs(points) do
     local x, y, z = unpack(point)
 
-    local nx, ny, nz = normalize3(x, y, z)
+    local nx, ny, nz = normal(x, y, z, 0.5 * r, unitSphere)
     local tx, ty, tz = perp3(nx, ny, nz)
     local bx, by, bz = cross3(tx, ty, tz, nx, ny, nz)
 
@@ -181,6 +189,7 @@ function love.load(arg)
       y - r * ty - r * by,
       z - r * tz - r * bz,
 
+      nx, ny, nz,
       -1, -1,
       1, 0.25, 0, 1,
     })
@@ -190,6 +199,7 @@ function love.load(arg)
       y + r * ty - r * by,
       z + r * tz - r * bz,
 
+      nx, ny, nz,
       1, -1,
       1, 1, 0, 1,
     })
@@ -199,6 +209,7 @@ function love.load(arg)
       y + r * ty + r * by,
       z + r * tz + r * bz,
 
+      nx, ny, nz,
       1, 1,
       0, 1, 0, 1,
     })
@@ -208,6 +219,7 @@ function love.load(arg)
       y - r * ty + r * by,
       z - r * tz + r * bz,
 
+      nx, ny, nz,
       -1, 1,
       0, 0.5, 1, 1,
     })
@@ -223,6 +235,7 @@ function love.load(arg)
 
   local vertexFormat = {
     {"VertexPosition", "float", 3},
+    {"VertexNormal", "float", 3},
     {"VertexTexCoord", "float", 2},
     {"VertexColor", "byte", 4},
   }
@@ -251,12 +264,13 @@ function love.draw()
   love.graphics.setShader(nil)
 
   local vectorScale = 0.25
+  local r = 0.25
 
   for i, point in ipairs(points) do
     local x, y, z = unpack(point)
 
     if z < 0 then
-      local nx, ny, nz = normalize3(x, y, z)
+      local nx, ny, nz = normal(x, y, z, 0.5 * r, unitSphere)
       love.graphics.setColor(0, 0.5, 1, 1)
       love.graphics.line(x, y, x + vectorScale * nx, y + vectorScale * ny)
 
