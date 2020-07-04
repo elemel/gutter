@@ -42,6 +42,34 @@ local function cross3(ax, ay, az, bx, by, bz)
   return ay * bz - az * by, az * bx - ax * bz, ax * by - ay * bx
 end
 
+local function length3(x, y, z)
+  return math.sqrt(x * x + y * y + z * z)
+end
+
+local function mix3(ax, ay, az, bx, by, bz, t)
+  local x = (1 - t) * ax + t * bx
+  local y = (1 - t) * ay + t * by
+  local z = (1 - t) * az + t * bz
+
+  return x, y, z
+end
+
+local function unitSphere(x, y, z)
+  return length3(x, y, z) - 1
+end
+
+local function surface(ax, ay, az, bx, by, bz, distance)
+  local ad = distance(ax, ay, az)
+  local bd = distance(bx, by, bz)
+
+  if ad * bd > 0 then
+    return false
+  end
+
+  local t = math.abs(ad) / (math.abs(ad) + math.abs(bd))
+  return true, mix3(ax, ay, az, bx, by, bz, t)
+end
+
 function love.load(arg)
   love.window.setTitle("Gutter")
 
@@ -65,14 +93,84 @@ function love.load(arg)
   vertices = {}
   vertexMap = {}
 
-  local r = 0.125
+  local r = 0.25
 
-  for _ = 1, 256 do
-    local x, y, z = randomPointOnUnitSphere()
+  local ax = -1
+  local ay = -1
+  local az = -1
 
-    table.insert(points, x)
-    table.insert(points, y)
-    table.insert(points, z)
+  local bx = 1
+  local by = 1
+  local bz = 1
+
+  local nx = 8
+  local ny = 8
+  local nz = 8
+
+  for ix = 1, nx do
+    local cx = ax + (ix - 1) / nx * (bx - ax)
+    local ex = ax + ix / nx * (bx - ax)
+    local dx = 0.5 * (cx + ex)
+
+    for iy = 1, ny do
+      local cy = ay + (iy - 1) / ny * (by - ay)
+      local ey = ay + iy / ny * (by - ay)
+      local dy = 0.5 * (cy + ey)
+
+      for iz = 1, nz do
+        local cz = az + (iz - 1) / nz * (bz - az)
+        local ez = az + iz / nz * (bz - az)
+        local dz = 0.5 * (cz + ez)
+
+        local hitCount = 0
+
+        local totalSx = 0
+        local totalSy = 0
+        local totalSz = 0
+
+        local hit, sx, sy, sz = surface(cx, dy, dz, ex, dy, dz, unitSphere)
+
+        if hit then
+          hitCount = hitCount + 1
+
+          totalSx = totalSx + sx
+          totalSy = totalSy + sy
+          totalSz = totalSz + sz
+        end
+
+        local hit, sx, sy, sz = surface(dx, cy, dz, dx, ey, dz, unitSphere)
+
+        if hit then
+          hitCount = hitCount + 1
+
+          totalSx = totalSx + sx
+          totalSy = totalSy + sy
+          totalSz = totalSz + sz
+        end
+
+        local hit, sx, sy, sz = surface(dx, dy, cz, dx, dy, ez, unitSphere)
+
+        if hit then
+          hitCount = hitCount + 1
+
+          totalSx = totalSx + sx
+          totalSy = totalSy + sy
+          totalSz = totalSz + sz
+        end
+
+        if hitCount >= 1 then
+          table.insert(points, {
+            totalSx / hitCount,
+            totalSy / hitCount,
+            totalSz / hitCount,
+          })
+        end
+      end
+    end
+  end
+
+  for _, point in ipairs(points) do
+    local x, y, z = unpack(point)
 
     local nx, ny, nz = normalize3(x, y, z)
     local tx, ty, tz = perp3(nx, ny, nz)
@@ -154,10 +252,8 @@ function love.draw()
 
   local vectorScale = 0.25
 
-  for i = 1, #points, 3 do
-    local x = points[i]
-    local y = points[i + 1]
-    local z = points[i + 2]
+  for i, point in ipairs(points) do
+    local x, y, z = unpack(point)
 
     if z < 0 then
       local nx, ny, nz = normalize3(x, y, z)
