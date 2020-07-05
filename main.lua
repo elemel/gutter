@@ -1,20 +1,11 @@
-local function transform3(t, x, y, z)
-  local t11, t12, t13, t14,
-    t21, t22, t23, t24,
-    t31, t32, t33, t34,
-    t41, t42, t43, t44 = t:getMatrix()
+local math3 = require("math3")
 
-  local tx = t11 * x + t12 * y + t13 * z + t14
-  local ty = t21 * x + t22 * y + t23 * z + t24
-  local tz = t31 * x + t32 * y + t33 * z + t34
-
-  return tx, ty, tz
-end
-
-local function normalize3(x, y, z)
-  local length = math.sqrt(x * x + y * y + z * z)
-  return x / length, y / length, z / length
-end
+local cross = math3.cross
+local length3 = math3.length
+local mix3 = math3.mix
+local normalize3 = math3.normalize
+local perp3 = math3.perp
+local transformPoint3 = math3.transformPoint
 
 -- https://math.stackexchange.com/a/1586011
 local function randomPointOnUnitSphere(random)
@@ -31,44 +22,8 @@ local function randomPointOnUnitSphere(random)
   end
 end
 
-local function perp3(x, y, z)
-  if math.abs(x) < math.abs(y) then
-    if math.abs(y) < math.abs(z) then
-      return 0, -z, y
-    elseif math.abs(x) < math.abs(z) then
-      return 0, z, -y
-    else
-      return -y, x, 0
-    end
-  else
-    if math.abs(z) < math.abs(y) then
-      return y, -x, 0
-    elseif math.abs(z) < math.abs(x) then
-      return z, 0, -x
-    else
-      return -z, 0, x
-    end
-  end
-end
-
-local function cross3(ax, ay, az, bx, by, bz)
-  return ay * bz - az * by, az * bx - ax * bz, ax * by - ay * bx
-end
-
-local function length3(x, y, z)
-  return math.sqrt(x * x + y * y + z * z)
-end
-
 local function mix(a, b, t)
   return (1 - t) * a + t * b
-end
-
-local function mix3(ax, ay, az, bx, by, bz, t)
-  local x = (1 - t) * ax + t * bx
-  local y = (1 - t) * ay + t * by
-  local z = (1 - t) * az + t * bz
-
-  return x, y, z
 end
 
 local function clamp(x, x1, x2)
@@ -102,7 +57,7 @@ local function sculptureDistance(sculpture, x, y, z)
   local distance = 1e9
 
   for i, edit in ipairs(sculpture.edits) do
-    local ex, ey, ez = transform3(edit.inverseTransform, x, y, z)
+    local ex, ey, ez = transformPoint3(edit.inverseTransform, x, y, z)
     local editDistance
 
     if edit.brush == "sphere" then
@@ -267,7 +222,7 @@ function love.load(arg)
 
     local nx, ny, nz = sculptureNormal(sculpture, x, y, z, 0.5 * r)
     local tx, ty, tz = perp3(nx, ny, nz)
-    local bx, by, bz = cross3(tx, ty, tz, nx, ny, nz)
+    local bx, by, bz = cross(tx, ty, tz, nx, ny, nz)
 
     table.insert(point, nx)
     table.insert(point, ny)
@@ -366,7 +321,7 @@ function love.draw()
       love.graphics.setColor(1, 0.25, 0, 1)
       love.graphics.line(x, y, x + vectorScale * tx, y + vectorScale * ty)
 
-      local bx, by, bz = cross3(tx, ty, tz, nx, ny, nz)
+      local bx, by, bz = cross(tx, ty, tz, nx, ny, nz)
       love.graphics.setColor(0, 1, 0, 1)
       love.graphics.line(x, y, x + vectorScale * bx, y + vectorScale * by)
     end
