@@ -7,21 +7,6 @@ local normalize3 = math3.normalize
 local perp3 = math3.perp
 local transformPoint3 = math3.transformPoint
 
--- https://math.stackexchange.com/a/1586011
-local function randomPointOnUnitSphere(random)
-  random = random or love.math.random
-
-  while true do
-    local x = 2 * random() - 1
-    local y = 2 * random() - 1
-    local z = 2 * random() - 1
-
-    if x * x + y * y + z * z < 1 then
-      return normalize3(x, y, z)
-    end
-  end
-end
-
 local function mix(a, b, t)
   return (1 - t) * a + t * b
 end
@@ -43,14 +28,6 @@ end
 
 local function sphere(x, y, z, r)
   return length3(x, y, z) - r
-end
-
-local function normal(x, y, z, epsilon, distance)
-  local dx = distance(x + epsilon, y, z) - distance(x - epsilon, y, z)
-  local dy = distance(x, y + epsilon, z) - distance(x, y - epsilon, z)
-  local dz = distance(x, y, z + epsilon) - distance(x, y, z - epsilon)
-
-  return normalize3(dx, dy, dz)
 end
 
 local function sculptureDistance(sculpture, x, y, z)
