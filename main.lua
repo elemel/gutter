@@ -1,19 +1,14 @@
+local math1 = require("math1")
 local math3 = require("math3")
 
+local clamp = math1.clamp
 local cross = math3.cross
 local length3 = math3.length
+local mix = math1.mix
 local mix3 = math3.mix
 local normalize3 = math3.normalize
 local perp3 = math3.perp
 local transformPoint3 = math3.transformPoint
-
-local function mix(a, b, t)
-  return (1 - t) * a + t * b
-end
-
-local function clamp(x, x1, x2)
-  return math.min(math.max(x, x1), x2)
-end
 
 -- https://www.iquilezles.org/www/articles/smin/smin.htm
 local function smoothUnion(a, b, k)
