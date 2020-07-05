@@ -64,10 +64,10 @@ local function sculptureDistance(sculpture, x, y, z)
     local er, eg, eb, ea = unpack(edit.color)
     local editDistance
 
-    if edit.brush == "sphere" then
+    if edit.primitive == "sphere" then
       editDistance = sphere(ex, ey, ez, edit.scale)
     else
-      assert("Invalid brush")
+      assert("Invalid primitive")
     end
 
     if edit.operation == "union" then
@@ -145,7 +145,7 @@ function love.load(arg)
     edits = {
       {
         operation = "union",
-        brush = "sphere",
+        primitive = "sphere",
         inverseTransform = love.math.newTransform(-0.5, -0.25):inverse(),
         scale = 0.5,
         smoothRadius = 0.25,
@@ -154,7 +154,7 @@ function love.load(arg)
 
       {
         operation = "union",
-        brush = "sphere",
+        primitive = "sphere",
         inverseTransform = love.math.newTransform(0.5, 0.25):inverse(),
         scale = 0.75,
         smoothRadius = 0.55,
@@ -163,7 +163,7 @@ function love.load(arg)
 
       {
         operation = "subtract",
-        brush = "sphere",
+        primitive = "sphere",
         inverseTransform = translate3(love.math.newTransform(), 0, -0.25, 0.5):inverse(),
         scale = 0.5,
         smoothRadius = 0.25,
