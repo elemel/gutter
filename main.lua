@@ -124,10 +124,10 @@ function love.load(arg)
       }
 
       vec3 normal = normalize(VaryingNormal);
-      vec3 sunLighting = dot(normalize(vec3(-2, -8, 4)), normal) * 8 * vec3(1, 0.5, 0.25);
+      vec3 sunLighting = dot(normalize(vec3(-2, -8, 4)), normal) * 3 * vec3(1, 0.5, 0.25);
       vec3 skyLighting = 1 * vec3(0.25, 0.5, 1);
       vec3 lighting = sunLighting + skyLighting;
-      return unGammaCorrectColor(vec4(lighting, 1) * gammaCorrectColor(color));
+      return vec4(lighting, 1) * color;
     }
   ]], [[
     uniform mat3 MyNormalMatrix;
@@ -157,7 +157,7 @@ function love.load(arg)
         brush = "sphere",
         inverseTransform = love.math.newTransform(0.5, 0.25):inverse(),
         scale = 0.75,
-        smoothRadius = 0.5,
+        smoothRadius = 0.55,
         color = {0.125, 0.5, 1, 1},
       },
 
