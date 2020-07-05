@@ -1,3 +1,16 @@
+local function transform3(t, x, y, z)
+  local t11, t12, t13, t14,
+    t21, t22, t23, t24,
+    t31, t32, t33, t34,
+    t41, t42, t43, t44 = t:getMatrix()
+
+  local tx = t11 * x + t12 * y + t13 * z + t14
+  local ty = t21 * x + t22 * y + t23 * z + t24
+  local tz = t31 * x + t32 * y + t33 * z + t34
+
+  return tx, ty, tz
+end
+
 local function normalize3(x, y, z)
   local length = math.sqrt(x * x + y * y + z * z)
   return x / length, y / length, z / length
@@ -64,16 +77,17 @@ end
 
 -- https://www.iquilezles.org/www/articles/smin/smin.htm
 local function smoothUnion(a, b, k)
-  local h = clamp(0.5 + 0.5 * (b - a) / k, 0, 1);
-  return mix(b, a, h) - k * h * (1 - h);
+  local h = clamp(0.5 + 0.5 * (b - a) / k, 0, 1)
+  return mix(b, a, h) - k * h * (1 - h)
+end
+
+local function smoothSubtraction(d1, d2, k)
+  local h = clamp(0.5 - 0.5 * (d2 + d1) / k, 0, 1)
+  return mix(d2, -d1, h) + k * h * (1 - h)
 end
 
 local function sphere(x, y, z, r)
   return length3(x, y, z) - r
-end
-
-local function scene(x, y, z)
-  return smoothUnion(sphere(x - 0.5, y - 0.25, z - 0.125, 0.75), sphere(x + 0.5, y + 0.25, z + 0.125, 0.5), 0.5)
 end
 
 local function normal(x, y, z, epsilon, distance)
@@ -84,9 +98,42 @@ local function normal(x, y, z, epsilon, distance)
   return normalize3(dx, dy, dz)
 end
 
-local function surface(ax, ay, az, bx, by, bz, distance)
-  local ad = distance(ax, ay, az)
-  local bd = distance(bx, by, bz)
+local function sculptureDistance(sculpture, x, y, z)
+  local distance = 1e9
+
+  for i, edit in ipairs(sculpture.edits) do
+    local ex, ey, ez = transform3(edit.inverseTransform, x, y, z)
+    local editDistance
+
+    if edit.brush == "sphere" then
+      editDistance = sphere(ex, ey, ez, edit.scale)
+    else
+      assert("Invalid brush")
+    end
+
+    if edit.operation == "union" then
+      distance = smoothUnion(distance, editDistance, edit.smoothRadius)
+    elseif edit.operation == "subtract" then
+      distance = smoothSubtraction(distance, editDistance, edit.smoothRadius)
+    else
+      assert("Invalid operation")
+    end
+  end
+
+  return distance
+end
+
+local function sculptureNormal(sculpture, x, y, z, epsilon)
+  local dx = sculptureDistance(sculpture, x + epsilon, y, z) - sculptureDistance(sculpture, x - epsilon, y, z)
+  local dy = sculptureDistance(sculpture, x, y + epsilon, z) - sculptureDistance(sculpture, x, y - epsilon, z)
+  local dz = sculptureDistance(sculpture, x, y, z + epsilon) - sculptureDistance(sculpture, x, y, z - epsilon)
+
+  return normalize3(dx, dy, dz)
+end
+
+local function sculptureSurface(sculpture, ax, ay, az, bx, by, bz)
+  local ad = sculptureDistance(sculpture, ax, ay, az)
+  local bd = sculptureDistance(sculpture, bx, by, bz)
 
   if ad * bd > 0 then
     return false
@@ -114,6 +161,26 @@ function love.load(arg)
       return color;
     }
   ]])
+
+  local sculpture = {
+    edits = {
+      {
+        operation = "union",
+        brush = "sphere",
+        inverseTransform = love.math.newTransform(-0.5, -0.25):inverse(),
+        scale = 0.5,
+        smoothRadius = 0,
+      },
+
+      {
+        operation = "union",
+        brush = "sphere",
+        inverseTransform = love.math.newTransform(0.5, 0.25):inverse(),
+        scale = 0.75,
+        smoothRadius = 0.5,
+      },
+    }
+  }
 
   points = {}
   vertices = {}
@@ -154,7 +221,7 @@ function love.load(arg)
         local totalSy = 0
         local totalSz = 0
 
-        local hit, sx, sy, sz = surface(cx, dy, dz, ex, dy, dz, scene)
+        local hit, sx, sy, sz = sculptureSurface(sculpture, cx, dy, dz, ex, dy, dz)
 
         if hit then
           hitCount = hitCount + 1
@@ -164,7 +231,7 @@ function love.load(arg)
           totalSz = totalSz + sz
         end
 
-        local hit, sx, sy, sz = surface(dx, cy, dz, dx, ey, dz, scene)
+        local hit, sx, sy, sz = sculptureSurface(sculpture, dx, cy, dz, dx, ey, dz)
 
         if hit then
           hitCount = hitCount + 1
@@ -174,7 +241,7 @@ function love.load(arg)
           totalSz = totalSz + sz
         end
 
-        local hit, sx, sy, sz = surface(dx, dy, cz, dx, dy, ez, scene)
+        local hit, sx, sy, sz = sculptureSurface(sculpture, dx, dy, cz, dx, dy, ez)
 
         if hit then
           hitCount = hitCount + 1
@@ -198,9 +265,13 @@ function love.load(arg)
   for _, point in ipairs(points) do
     local x, y, z = unpack(point)
 
-    local nx, ny, nz = normal(x, y, z, 0.5 * r, scene)
+    local nx, ny, nz = sculptureNormal(sculpture, x, y, z, 0.5 * r)
     local tx, ty, tz = perp3(nx, ny, nz)
     local bx, by, bz = cross3(tx, ty, tz, nx, ny, nz)
+
+    table.insert(point, nx)
+    table.insert(point, ny)
+    table.insert(point, nz)
 
     table.insert(vertices, {
       x - r * tx - r * bx,
@@ -284,23 +355,22 @@ function love.draw()
   local vectorScale = 0.25
   local r = 0.125
 
-  -- for i, point in ipairs(points) do
-  --   local x, y, z = unpack(point)
+  for i, point in ipairs(points) do
+    local x, y, z, nx, ny, nz = unpack(point)
 
-  --   if z < 0 then
-  --     local nx, ny, nz = normal(x, y, z, 0.5 * r, scene)
-  --     love.graphics.setColor(0, 0.5, 1, 1)
-  --     love.graphics.line(x, y, x + vectorScale * nx, y + vectorScale * ny)
+    if z < 0 then
+      love.graphics.setColor(0, 0.5, 1, 1)
+      love.graphics.line(x, y, x + vectorScale * nx, y + vectorScale * ny)
 
-  --     local tx, ty, tz = perp3(nx, ny, nz)
-  --     love.graphics.setColor(1, 0.25, 0, 1)
-  --     love.graphics.line(x, y, x + vectorScale * tx, y + vectorScale * ty)
+      local tx, ty, tz = perp3(nx, ny, nz)
+      love.graphics.setColor(1, 0.25, 0, 1)
+      love.graphics.line(x, y, x + vectorScale * tx, y + vectorScale * ty)
 
-  --     local bx, by, bz = cross3(tx, ty, tz, nx, ny, nz)
-  --     love.graphics.setColor(0, 1, 0, 1)
-  --     love.graphics.line(x, y, x + vectorScale * bx, y + vectorScale * by)
-  --   end
-  -- end
+      local bx, by, bz = cross3(tx, ty, tz, nx, ny, nz)
+      love.graphics.setColor(0, 1, 0, 1)
+      love.graphics.line(x, y, x + vectorScale * bx, y + vectorScale * by)
+    end
+  end
 end
 
 function love.keypressed(key, scancode, isrepeat)
