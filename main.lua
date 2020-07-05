@@ -8,7 +8,17 @@ local mix = math1.mix
 local mix3 = math3.mix
 local normalize3 = math3.normalize
 local perp3 = math3.perp
+local translate3 = math3.translate
 local transformPoint3 = math3.transformPoint
+
+local function mix4(ax, ay, az, aw, bx, by, bz, bw, t)
+  local x = (1 - t) * ax + t * bx
+  local y = (1 - t) * ay + t * by
+  local z = (1 - t) * az + t * bz
+  local w = (1 - t) * aw + t * bw
+
+  return x, y, z, w
+end
 
 -- https://www.iquilezles.org/www/articles/smin/smin.htm
 local function smoothUnion(a, b, k)
@@ -21,15 +31,37 @@ local function smoothSubtraction(d1, d2, k)
   return mix(d2, -d1, h) + k * h * (1 - h)
 end
 
+local function smoothstep(x1, x2, x)
+    x = clamp((x - x1) / (x2 - x1), 0, 1)
+    return x * x * (3 - 2 * x)
+end
+
+local function smoothUnionColor(ad, ar, ag, ab, aa, bd, br, bg, bb, ba, k)
+  local d = smoothUnion(ad, bd, k)
+  local t = smoothstep(-k, k, ad - bd);
+  return d, mix4(ar, ag, ab, aa, br, bg, bb, ba, t)
+end
+
+local function smoothSubtractionColor(ad, ar, ag, ab, aa, bd, br, bg, bb, ba, k)
+  local d = smoothSubtraction(ad, bd, k)
+  local t = smoothstep(-k, k, bd + ad);
+  return d, mix4(ar, ag, ab, aa, br, bg, bb, ba, t)
+end
+
 local function sphere(x, y, z, r)
   return length3(x, y, z) - r
 end
 
 local function sculptureDistance(sculpture, x, y, z)
   local distance = 1e9
+  local r = 1
+  local g = 1
+  local b = 1
+  local a = 1
 
   for i, edit in ipairs(sculpture.edits) do
     local ex, ey, ez = transformPoint3(edit.inverseTransform, x, y, z)
+    local er, eg, eb, ea = unpack(edit.color)
     local editDistance
 
     if edit.brush == "sphere" then
@@ -39,15 +71,15 @@ local function sculptureDistance(sculpture, x, y, z)
     end
 
     if edit.operation == "union" then
-      distance = smoothUnion(distance, editDistance, edit.smoothRadius)
+      distance, r, g, b, a = smoothUnionColor(distance, r, g, b, a, editDistance, er, eg, eb, ea, edit.smoothRadius)
     elseif edit.operation == "subtract" then
-      distance = smoothSubtraction(distance, editDistance, edit.smoothRadius)
+      distance, r, g, b, a = smoothSubtractionColor(editDistance, er, eg, eb, ea, distance, r, g, b, a, edit.smoothRadius)
     else
       assert("Invalid operation")
     end
   end
 
-  return distance
+  return distance, r, g, b, a
 end
 
 local function sculptureNormal(sculpture, x, y, z, epsilon)
@@ -59,15 +91,19 @@ local function sculptureNormal(sculpture, x, y, z, epsilon)
 end
 
 local function sculptureSurface(sculpture, ax, ay, az, bx, by, bz)
-  local ad = sculptureDistance(sculpture, ax, ay, az)
-  local bd = sculptureDistance(sculpture, bx, by, bz)
+  local ad, ar, ag, ab, aa = sculptureDistance(sculpture, ax, ay, az)
+  local bd, br, bg, bb, ba = sculptureDistance(sculpture, bx, by, bz)
 
   if ad * bd > 0 then
     return false
   end
 
   local t = math.abs(ad) / (math.abs(ad) + math.abs(bd))
-  return true, mix3(ax, ay, az, bx, by, bz, t)
+
+  local x, y, z = mix3(ax, ay, az, bx, by, bz, t)
+  local r, g, b, a = mix4(ar, ag, ab, aa, br, bg, bb, ba, t)
+
+  return true, x, y, z, r, g, b, a
 end
 
 function love.load(arg)
@@ -79,13 +115,29 @@ function love.load(arg)
   })
 
   shader = love.graphics.newShader([[
+    varying vec3 VaryingNormal;
+
     vec4 effect(vec4 color, Image tex, vec2 texture_coords, vec2 screen_coords)
     {
       if (dot(texture_coords, texture_coords) > 1) {
         discard;
       }
 
-      return color;
+      vec3 normal = normalize(VaryingNormal);
+      vec3 sunLighting = dot(normalize(vec3(-2, -8, 4)), normal) * 8 * vec3(1, 0.5, 0.25);
+      vec3 skyLighting = 1 * vec3(0.25, 0.5, 1);
+      vec3 lighting = sunLighting + skyLighting;
+      return unGammaCorrectColor(vec4(lighting, 1) * gammaCorrectColor(color));
+    }
+  ]], [[
+    uniform mat3 MyNormalMatrix;
+    attribute vec3 VertexNormal;
+    varying vec3 VaryingNormal;
+
+    vec4 position( mat4 transform_projection, vec4 vertex_position )
+    {
+      VaryingNormal = MyNormalMatrix * VertexNormal;
+      return transform_projection * vertex_position;
     }
   ]])
 
@@ -96,7 +148,8 @@ function love.load(arg)
         brush = "sphere",
         inverseTransform = love.math.newTransform(-0.5, -0.25):inverse(),
         scale = 0.5,
-        smoothRadius = 0,
+        smoothRadius = 0.25,
+        color = {0.25, 1, 0.125, 1},
       },
 
       {
@@ -105,6 +158,16 @@ function love.load(arg)
         inverseTransform = love.math.newTransform(0.5, 0.25):inverse(),
         scale = 0.75,
         smoothRadius = 0.5,
+        color = {0.125, 0.5, 1, 1},
+      },
+
+      {
+        operation = "subtract",
+        brush = "sphere",
+        inverseTransform = translate3(love.math.newTransform(), 0, -0.25, 0.5):inverse(),
+        scale = 0.5,
+        smoothRadius = 0.25,
+        color = {1, 0.25, 0.125, 1},
       },
     }
   }
@@ -113,7 +176,7 @@ function love.load(arg)
   vertices = {}
   vertexMap = {}
 
-  local r = 0.125
+  local dr = 0.0625
 
   local ax = -2
   local ay = -1
@@ -123,9 +186,9 @@ function love.load(arg)
   local by = 1
   local bz = 1
 
-  local nx = 32
-  local ny = 16
-  local nz = 16
+  local nx = 64
+  local ny = 32
+  local nz = 32
 
   for ix = 1, nx do
     local cx = ax + (ix - 1) / nx * (bx - ax)
@@ -148,7 +211,12 @@ function love.load(arg)
         local totalSy = 0
         local totalSz = 0
 
-        local hit, sx, sy, sz = sculptureSurface(sculpture, cx, dy, dz, ex, dy, dz)
+        local totalR = 0
+        local totalG = 0
+        local totalB = 0
+        local totalA = 0
+
+        local hit, sx, sy, sz, sr, sg, sb, sa = sculptureSurface(sculpture, cx, dy, dz, ex, dy, dz)
 
         if hit then
           hitCount = hitCount + 1
@@ -156,9 +224,14 @@ function love.load(arg)
           totalSx = totalSx + sx
           totalSy = totalSy + sy
           totalSz = totalSz + sz
+
+          totalR = totalR + sr
+          totalG = totalG + sg
+          totalB = totalB + sb
+          totalA = totalA + sa
         end
 
-        local hit, sx, sy, sz = sculptureSurface(sculpture, dx, cy, dz, dx, ey, dz)
+        local hit, sx, sy, sz, sr, sg, sb, sa = sculptureSurface(sculpture, dx, cy, dz, dx, ey, dz)
 
         if hit then
           hitCount = hitCount + 1
@@ -166,9 +239,14 @@ function love.load(arg)
           totalSx = totalSx + sx
           totalSy = totalSy + sy
           totalSz = totalSz + sz
+
+          totalR = totalR + sr
+          totalG = totalG + sg
+          totalB = totalB + sb
+          totalA = totalA + sa
         end
 
-        local hit, sx, sy, sz = sculptureSurface(sculpture, dx, dy, cz, dx, dy, ez)
+        local hit, sx, sy, sz, sr, sg, sb, sa = sculptureSurface(sculpture, dx, dy, cz, dx, dy, ez)
 
         if hit then
           hitCount = hitCount + 1
@@ -176,6 +254,11 @@ function love.load(arg)
           totalSx = totalSx + sx
           totalSy = totalSy + sy
           totalSz = totalSz + sz
+
+          totalR = totalR + sr
+          totalG = totalG + sg
+          totalB = totalB + sb
+          totalA = totalA + sa
         end
 
         if hitCount >= 1 then
@@ -183,6 +266,11 @@ function love.load(arg)
             totalSx / hitCount,
             totalSy / hitCount,
             totalSz / hitCount,
+
+            love.math.linearToGamma(totalR / hitCount,
+            totalG / hitCount,
+            totalB / hitCount,
+            totalA / hitCount),
           })
         end
       end
@@ -190,9 +278,9 @@ function love.load(arg)
   end
 
   for _, point in ipairs(points) do
-    local x, y, z = unpack(point)
+    local x, y, z, r, g, b, a = unpack(point)
 
-    local nx, ny, nz = sculptureNormal(sculpture, x, y, z, 0.5 * r)
+    local nx, ny, nz = sculptureNormal(sculpture, x, y, z, 0.5 * dr)
     local tx, ty, tz = perp3(nx, ny, nz)
     local bx, by, bz = cross(tx, ty, tz, nx, ny, nz)
 
@@ -201,43 +289,43 @@ function love.load(arg)
     table.insert(point, nz)
 
     table.insert(vertices, {
-      x - r * tx - r * bx,
-      y - r * ty - r * by,
-      z - r * tz - r * bz,
+      x - dr * tx - dr * bx,
+      y - dr * ty - dr * by,
+      z - dr * tz - dr * bz,
 
       nx, ny, nz,
       -1, -1,
-      1, 0.25, 0, 1,
+      r, g, b, a,
     })
 
     table.insert(vertices, {
-      x + r * tx - r * bx,
-      y + r * ty - r * by,
-      z + r * tz - r * bz,
+      x + dr * tx - dr * bx,
+      y + dr * ty - dr * by,
+      z + dr * tz - dr * bz,
 
       nx, ny, nz,
       1, -1,
-      1, 1, 0, 1,
+      r, g, b, a,
     })
 
     table.insert(vertices, {
-      x + r * tx + r * bx,
-      y + r * ty + r * by,
-      z + r * tz + r * bz,
+      x + dr * tx + dr * bx,
+      y + dr * ty + dr * by,
+      z + dr * tz + dr * bz,
 
       nx, ny, nz,
       1, 1,
-      0, 1, 0, 1,
+      r, g, b, a,
     })
 
     table.insert(vertices, {
-      x - r * tx + r * bx,
-      y - r * ty + r * by,
-      z - r * tz + r * bz,
+      x - dr * tx + dr * bx,
+      y - dr * ty + dr * by,
+      z - dr * tz + dr * bz,
 
       nx, ny, nz,
       -1, 1,
-      0, 0.5, 1, 1,
+      r, g, b, a,
     })
 
     table.insert(vertexMap, #vertices - 3)
@@ -272,6 +360,7 @@ function love.draw()
 
   love.graphics.setColor(1, 1, 1, 1)
   love.graphics.setShader(shader)
+  shader:send("MyNormalMatrix", {1, 0, 0, 0, 1, 0, 0, 0, 1})
   love.graphics.setMeshCullMode("back")
   love.graphics.setDepthMode("less", true)
   love.graphics.draw(mesh)
@@ -280,24 +369,24 @@ function love.draw()
   love.graphics.setShader(nil)
 
   local vectorScale = 0.25
-  local r = 0.125
+  local dr = 0.0625
 
-  for i, point in ipairs(points) do
-    local x, y, z, nx, ny, nz = unpack(point)
+  -- for i, point in ipairs(points) do
+  --   local x, y, z, nx, ny, nz = unpack(point)
 
-    if z < 0 then
-      love.graphics.setColor(0, 0.5, 1, 1)
-      love.graphics.line(x, y, x + vectorScale * nx, y + vectorScale * ny)
+  --   if z < 0 then
+  --     love.graphics.setColor(0, 0.5, 1, 1)
+  --     love.graphics.line(x, y, x + vectorScale * nx, y + vectorScale * ny)
 
-      local tx, ty, tz = perp3(nx, ny, nz)
-      love.graphics.setColor(1, 0.25, 0, 1)
-      love.graphics.line(x, y, x + vectorScale * tx, y + vectorScale * ty)
+  --     local tx, ty, tz = perp3(nx, ny, nz)
+  --     love.graphics.setColor(1, 0.25, 0, 1)
+  --     love.graphics.line(x, y, x + vectorScale * tx, y + vectorScale * ty)
 
-      local bx, by, bz = cross(tx, ty, tz, nx, ny, nz)
-      love.graphics.setColor(0, 1, 0, 1)
-      love.graphics.line(x, y, x + vectorScale * bx, y + vectorScale * by)
-    end
-  end
+  --     local bx, by, bz = cross(tx, ty, tz, nx, ny, nz)
+  --     love.graphics.setColor(0, 1, 0, 1)
+  --     love.graphics.line(x, y, x + vectorScale * bx, y + vectorScale * by)
+  --   end
+  -- end
 end
 
 function love.keypressed(key, scancode, isrepeat)

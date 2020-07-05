@@ -44,6 +44,10 @@ function M.perp(x, y, z)
   end
 end
 
+function M.translate(t, x, y, z)
+  return t:apply(love.math.newTransform():setMatrix(1, 0, 0, x, 0, 1, 0, y, 0, 0, 1, z, 0, 0, 0, 1))
+end
+
 function M.transformPoint(t, x, y, z)
   local t11, t12, t13, t14,
     t21, t22, t23, t24,
