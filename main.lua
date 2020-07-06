@@ -52,235 +52,225 @@ local function sphere(x, y, z, r)
   return length3(x, y, z) - r
 end
 
-local function sculptureDistance(sculpture, x, y, z)
-  local distance = 1e9
-  local r = 1
-  local g = 1
-  local b = 1
-  local a = 1
+local function newGrid(nx, ny, nz)
+  local grid = {}
 
-  for i, edit in ipairs(sculpture.edits) do
-    local ex, ey, ez = transformPoint3(edit.inverseTransform, x, y, z)
-    local er, eg, eb, ea = unpack(edit.color)
-    local editDistance
+  for z = 1, nz do
+    local layer = {}
 
-    if edit.primitive == "sphere" then
-      editDistance = sphere(ex, ey, ez, edit.scale)
-    else
-      assert("Invalid primitive")
+    for y = 1, ny do
+      local row = {}
+
+      for x = 1, nx do
+        row[x] = {
+          distance = 1e9,
+
+          red = 0,
+          green = 0,
+          blue = 0,
+          alpha = 0,
+        }
+      end
+
+      layer[y] = row
     end
 
-    if edit.operation == "union" then
-      distance, r, g, b, a = smoothUnionColor(distance, r, g, b, a, editDistance, er, eg, eb, ea, edit.smoothRadius)
-    elseif edit.operation == "subtract" then
-      distance, r, g, b, a = smoothSubtractionColor(editDistance, er, eg, eb, ea, distance, r, g, b, a, edit.smoothRadius)
-    else
-      assert("Invalid operation")
+    grid[z] = layer
+  end
+
+  return grid
+end
+
+local function applyEditToGrid(edit, ax, ay, az, bx, by, bz, grid)
+  local er, eg, eb, ea = unpack(edit.color)
+
+  for iz, layer in ipairs(grid) do
+    local z = mix(az, bz, (iz - 1) / (#grid - 1))
+
+    for iy, row in ipairs(layer) do
+      local y = mix(ay, by, (iy - 1) / (#layer - 1))
+
+      for ix, vertex in ipairs(row) do
+        local x = mix(ax, bx, (ix - 1) / (#row - 1))
+
+        local ex, ey, ez = transformPoint3(edit.inverseTransform, x, y, z)
+        local ed
+
+        if edit.primitive == "sphere" then
+          ed = sphere(ex, ey, ez, edit.scale)
+        else
+          assert("Invalid primitive")
+        end
+
+        if edit.operation == "union" then
+          vertex.distance, vertex.red, vertex.green, vertex.blue, vertex.alpha =
+            smoothUnionColor(
+              vertex.distance,
+              vertex.red, vertex.green, vertex.blue, vertex.alpha,
+              ed, er, eg, eb, ea, edit.smoothRadius)
+        elseif edit.operation == "subtract" then
+          vertex.distance, vertex.red, vertex.green, vertex.blue, vertex.alpha =
+            smoothSubtractionColor(
+              ed, er, eg, eb, ea,
+              vertex.distance,
+              vertex.red, vertex.green, vertex.blue, vertex.alpha,
+              edit.smoothRadius)
+        else
+          assert("Invalid operation")
+        end
+      end
     end
   end
-
-  return distance, r, g, b, a
 end
 
-local function sculptureNormal(sculpture, x, y, z, epsilon)
-  local dx = sculptureDistance(sculpture, x + epsilon, y, z) - sculptureDistance(sculpture, x - epsilon, y, z)
-  local dy = sculptureDistance(sculpture, x, y + epsilon, z) - sculptureDistance(sculpture, x, y - epsilon, z)
-  local dz = sculptureDistance(sculpture, x, y, z + epsilon) - sculptureDistance(sculpture, x, y, z - epsilon)
+local function newMeshFromEdits(edits, ax, ay, az, bx, by, bz, nx, ny, nz)
+  local gridTime = love.timer.getTime()
 
-  return normalize3(dx, dy, dz)
-end
+  -- We need an extra vertex after the last cell
+  local grid = newGrid(nx + 1, ny + 1, nz + 1)
 
-local function sculptureSurface(sculpture, ax, ay, az, bx, by, bz)
-  local ad, ar, ag, ab, aa = sculptureDistance(sculpture, ax, ay, az)
-  local bd, br, bg, bb, ba = sculptureDistance(sculpture, bx, by, bz)
+  gridTime = love.timer.getTime() - gridTime
+  print(string.format("Initialized %dx%dx%d grid in %.3f seconds", nx, ny, nz, gridTime))
 
-  if ad * bd > 0 then
-    return false
+  local editTime = love.timer.getTime()
+
+  for _, edit in ipairs(edits) do
+    applyEditToGrid(edit, ax, ay, az, bx, by, bz, grid)
   end
 
-  local t = math.abs(ad) / (math.abs(ad) + math.abs(bd))
+  editTime = love.timer.getTime() - editTime
 
-  local x, y, z = mix3(ax, ay, az, bx, by, bz, t)
-  local r, g, b, a = mix4(ar, ag, ab, aa, br, bg, bb, ba, t)
+  print(string.format("Appled %d edits in %.3f seconds", #edits, editTime))
 
-  return true, x, y, z, r, g, b, a
-end
+  local pointTime = love.timer.getTime()
 
-function love.load(arg)
-  love.window.setTitle("Gutter")
+  local points = {}
 
-  love.window.setMode(800, 600, {
-    -- highdpi = true,
-    resizable = true,
-  })
+  for cz = 1, nz do
+    for cy = 1, ny do
+      for cx = 1, nx do
+        local in_ = 0
+        local id = 0
 
-  shader = love.graphics.newShader([[
-    varying vec3 VaryingNormal;
+        local ix = 0
+        local iy = 0
+        local iz = 0
 
-    vec4 effect(vec4 color, Image tex, vec2 texture_coords, vec2 screen_coords)
-    {
-      if (dot(texture_coords, texture_coords) > 1) {
-        discard;
-      }
+        local ir = 0
+        local ig = 0
+        local ib = 0
+        local ia = 0
 
-      vec3 normal = normalize(VaryingNormal);
-      vec3 sunLighting = dot(normalize(vec3(-2, -8, 4)), normal) * 3 * vec3(1, 0.5, 0.25);
-      vec3 skyLighting = 1 * vec3(0.25, 0.5, 1);
-      vec3 lighting = sunLighting + skyLighting;
-      return vec4(lighting, 1) * color;
-    }
-  ]], [[
-    uniform mat3 MyNormalMatrix;
-    attribute vec3 VertexNormal;
-    varying vec3 VaryingNormal;
+        local on = 0
+        local od = 0
 
-    vec4 position( mat4 transform_projection, vec4 vertex_position )
-    {
-      VaryingNormal = MyNormalMatrix * VertexNormal;
-      return transform_projection * vertex_position;
-    }
-  ]])
+        local ox = 0
+        local oy = 0
+        local oz = 0
 
-  local sculpture = {
-    edits = {
-      {
-        operation = "union",
-        primitive = "sphere",
-        inverseTransform = love.math.newTransform(-0.5, -0.25):inverse(),
-        scale = 0.5,
-        smoothRadius = 0.25,
-        color = {0.25, 1, 0.125, 1},
-      },
+        local or_ = 0
+        local og = 0
+        local ob = 0
+        local oa = 0
 
-      {
-        operation = "union",
-        primitive = "sphere",
-        inverseTransform = love.math.newTransform(0.5, 0.25):inverse(),
-        scale = 0.75,
-        smoothRadius = 0.55,
-        color = {0.125, 0.5, 1, 1},
-      },
+        for vz = 0, 1 do
+          for vy = 0, 1 do
+            for vx = 0, 1 do
+              local vertex = grid[cz + vz][cy + vy][cx + vx]
 
-      {
-        operation = "subtract",
-        primitive = "sphere",
-        inverseTransform = translate3(love.math.newTransform(), 0, -0.25, 0.5):inverse(),
-        scale = 0.5,
-        smoothRadius = 0.25,
-        color = {1, 0.25, 0.125, 1},
-      },
-    }
-  }
+              if vertex.distance < 0 then
+                in_ = in_ + 1
+                id = id + vertex.distance
 
-  points = {}
-  vertices = {}
-  vertexMap = {}
+                ix = ix + vx
+                iy = iy + vy
+                iz = iz + vz
 
-  local dr = 0.0625
+                ir = ir + vertex.red
+                ig = ig + vertex.green
+                ib = ib + vertex.blue
+                ia = ia + vertex.alpha
+              else
+                on = on + 1
+                od = od + vertex.distance
 
-  local ax = -2
-  local ay = -1
-  local az = -1
+                ox = ox + vx
+                oy = oy + vy
+                oz = oz + vz
 
-  local bx = 2
-  local by = 1
-  local bz = 1
-
-  local nx = 64
-  local ny = 32
-  local nz = 32
-
-  for ix = 1, nx do
-    local cx = ax + (ix - 1) / nx * (bx - ax)
-    local ex = ax + ix / nx * (bx - ax)
-    local dx = 0.5 * (cx + ex)
-
-    for iy = 1, ny do
-      local cy = ay + (iy - 1) / ny * (by - ay)
-      local ey = ay + iy / ny * (by - ay)
-      local dy = 0.5 * (cy + ey)
-
-      for iz = 1, nz do
-        local cz = az + (iz - 1) / nz * (bz - az)
-        local ez = az + iz / nz * (bz - az)
-        local dz = 0.5 * (cz + ez)
-
-        local hitCount = 0
-
-        local totalSx = 0
-        local totalSy = 0
-        local totalSz = 0
-
-        local totalR = 0
-        local totalG = 0
-        local totalB = 0
-        local totalA = 0
-
-        local hit, sx, sy, sz, sr, sg, sb, sa = sculptureSurface(sculpture, cx, dy, dz, ex, dy, dz)
-
-        if hit then
-          hitCount = hitCount + 1
-
-          totalSx = totalSx + sx
-          totalSy = totalSy + sy
-          totalSz = totalSz + sz
-
-          totalR = totalR + sr
-          totalG = totalG + sg
-          totalB = totalB + sb
-          totalA = totalA + sa
+                or_ = or_ + vertex.red
+                og = og + vertex.green
+                ob = ob + vertex.blue
+                oa = oa + vertex.alpha
+              end
+            end
+          end
         end
 
-        local hit, sx, sy, sz, sr, sg, sb, sa = sculptureSurface(sculpture, dx, cy, dz, dx, ey, dz)
+        if in_ >= 1 and on >= 1 then
+          id = id / in_
 
-        if hit then
-          hitCount = hitCount + 1
+          ix = ix / in_
+          iy = iy / in_
+          iz = iz / in_
 
-          totalSx = totalSx + sx
-          totalSy = totalSy + sy
-          totalSz = totalSz + sz
+          ir = ir / in_
+          ig = ig / in_
+          ib = ib / in_
+          ia = ia / in_
 
-          totalR = totalR + sr
-          totalG = totalG + sg
-          totalB = totalB + sb
-          totalA = totalA + sa
-        end
+          od = od / on
 
-        local hit, sx, sy, sz, sr, sg, sb, sa = sculptureSurface(sculpture, dx, dy, cz, dx, dy, ez)
+          ox = ox / on
+          oy = oy / on
+          oz = oz / on
 
-        if hit then
-          hitCount = hitCount + 1
+          or_ = or_ / on
+          og = og / on
+          ob = ob / on
+          oa = oa / on
 
-          totalSx = totalSx + sx
-          totalSy = totalSy + sy
-          totalSz = totalSz + sz
+          local fx, fy, fz = mix3(ix, iy, iz, ox, oy, oz, -id / (od - id))
 
-          totalR = totalR + sr
-          totalG = totalG + sg
-          totalB = totalB + sb
-          totalA = totalA + sa
-        end
+          local x = mix(ax, bx, (cx - 1 + fx) / nx)
+          local y = mix(ay, by, (cy - 1 + fy) / ny)
+          local z = mix(az, bz, (cz - 1 + fz) / nz)
 
-        if hitCount >= 1 then
-          table.insert(points, {
-            totalSx / hitCount,
-            totalSy / hitCount,
-            totalSz / hitCount,
+          local d000 = grid[cz + 0][cy + 0][cx + 0].distance
+          local d001 = grid[cz + 0][cy + 0][cx + 1].distance
+          local d010 = grid[cz + 0][cy + 1][cx + 0].distance
+          local d011 = grid[cz + 0][cy + 1][cx + 1].distance
+          local d100 = grid[cz + 1][cy + 0][cx + 0].distance
+          local d101 = grid[cz + 1][cy + 0][cx + 1].distance
+          local d110 = grid[cz + 1][cy + 1][cx + 0].distance
+          local d111 = grid[cz + 1][cy + 1][cx + 1].distance
 
-            love.math.linearToGamma(totalR / hitCount,
-            totalG / hitCount,
-            totalB / hitCount,
-            totalA / hitCount),
-          })
+          local gradX = mix(mix(d001 - d000, d011 - d010, fy), mix(d101 - d100, d111 - d110, fy), fz)
+          local gradY = mix(mix(d010 - d000, d011 - d001, fx), mix(d110 - d100, d111 - d101, fx), fz)
+          local gradZ = mix(mix(d100 - d000, d101 - d001, fx), mix(d110 - d010, d111 - d011, fx), fy)
+
+          local normalX, normalY, normalZ = normalize3(gradX, gradY, gradZ)
+          local r, g, b, a = mix4(ir, ig, ib, ia, or_, og, ob, oa, -id / (od - id))
+
+          local point = {x, y, z, normalX, normalY, normalZ, r, g, b, a}
+          table.insert(points, point)
         end
       end
     end
   end
 
-  for _, point in ipairs(points) do
-    local x, y, z, r, g, b, a = unpack(point)
+  pointTime = love.timer.getTime() - pointTime
+  print(string.format("Generated %d points in %.3f seconds", #points, pointTime))
 
-    local nx, ny, nz = sculptureNormal(sculpture, x, y, z, 0.5 * dr)
+  local meshTime = love.timer.getTime()
+
+  local vertices = {}
+  local vertexMap = {}
+  local dr = (bx - ax) / nx -- TODO: Per-axis radius?
+
+  for _, point in ipairs(points) do
+    local x, y, z, nx, ny, nz, r, g, b, a = unpack(point)
+
     local tx, ty, tz = perp3(nx, ny, nz)
     local bx, by, bz = cross(tx, ty, tz, nx, ny, nz)
 
@@ -346,6 +336,98 @@ function love.load(arg)
 
   mesh = love.graphics.newMesh(vertexFormat, vertices, "triangles")
   mesh:setVertexMap(vertexMap)
+
+  meshTime = love.timer.getTime() - meshTime
+  print(string.format("Created mesh in %.3f seconds", meshTime))
+
+  return mesh
+end
+
+function love.load(arg)
+  love.window.setTitle("Gutter")
+
+  love.window.setMode(800, 600, {
+    -- highdpi = true,
+    resizable = true,
+  })
+
+  shader = love.graphics.newShader([[
+    varying vec3 VaryingNormal;
+
+    vec4 effect(vec4 color, Image tex, vec2 texture_coords, vec2 screen_coords)
+    {
+      if (dot(texture_coords, texture_coords) > 1) {
+        discard;
+      }
+
+      vec3 normal = normalize(VaryingNormal);
+      vec3 sunLighting = dot(normalize(vec3(-2, -8, 4)), normal) * 3 * vec3(1, 0.5, 0.25);
+      vec3 skyLighting = 1 * vec3(0.25, 0.5, 1);
+      vec3 lighting = sunLighting + skyLighting;
+      return vec4(lighting, 1) * color;
+    }
+  ]], [[
+    uniform mat3 MyNormalMatrix;
+    attribute vec3 VertexNormal;
+    varying vec3 VaryingNormal;
+
+    vec4 position( mat4 transform_projection, vec4 vertex_position )
+    {
+      VaryingNormal = MyNormalMatrix * VertexNormal;
+      return transform_projection * vertex_position;
+    }
+  ]])
+
+  local sculpture = {
+    edits = {
+      {
+        operation = "union",
+        primitive = "sphere",
+        inverseTransform = love.math.newTransform(-0.5, -0.25):inverse(),
+        scale = 0.5,
+        smoothRadius = 0,
+        color = {0.25, 1, 0.125, 1},
+      },
+
+      {
+        operation = "union",
+        primitive = "sphere",
+        inverseTransform = love.math.newTransform(0.5, 0.25):inverse(),
+        scale = 0.75,
+        smoothRadius = 0.5,
+        color = {0.125, 0.5, 1, 1},
+      },
+
+      {
+        operation = "subtract",
+        primitive = "sphere",
+        inverseTransform = translate3(love.math.newTransform(), 0, -0.25, 0.5):inverse(),
+        scale = 0.5,
+        smoothRadius = 0.25,
+        color = {1, 0.25, 0.125, 1},
+      },
+    }
+  }
+
+  points = {}
+  vertices = {}
+  vertexMap = {}
+
+  local dr = 0.0625
+
+  local ax = -2
+  local ay = -2
+  local az = -2
+
+  local bx = 2
+  local by = 2
+  local bz = 2
+
+  local nx = 128
+  local ny = 128
+  local nz = 128
+
+  mesh = newMeshFromEdits(sculpture.edits, ax, ay, az, bx, by, bz, nx, ny, nz)
 end
 
 function love.draw()
@@ -369,7 +451,6 @@ function love.draw()
   love.graphics.setShader(nil)
 
   local vectorScale = 0.25
-  local dr = 0.0625
 
   -- for i, point in ipairs(points) do
   --   local x, y, z, nx, ny, nz = unpack(point)
