@@ -409,12 +409,6 @@ function love.load(arg)
     }
   }
 
-  points = {}
-  vertices = {}
-  vertexMap = {}
-
-  local dr = 0.0625
-
   local ax = -2
   local ay = -2
   local az = -2
