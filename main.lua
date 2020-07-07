@@ -277,6 +277,7 @@ local function newMeshFromEdits(edits, minX, minY, minZ, maxX, maxY, maxZ, sizeX
       normalX, normalY, normalZ,
       -1, -1,
       red, green, blue, alpha,
+      x, y, z,
     })
 
     table.insert(vertices, {
@@ -287,6 +288,7 @@ local function newMeshFromEdits(edits, minX, minY, minZ, maxX, maxY, maxZ, sizeX
       normalX, normalY, normalZ,
       1, -1,
       red, green, blue, alpha,
+      x, y, z,
     })
 
     table.insert(vertices, {
@@ -297,6 +299,7 @@ local function newMeshFromEdits(edits, minX, minY, minZ, maxX, maxY, maxZ, sizeX
       normalX, normalY, normalZ,
       1, 1,
       red, green, blue, alpha,
+      x, y, z,
     })
 
     table.insert(vertices, {
@@ -307,6 +310,7 @@ local function newMeshFromEdits(edits, minX, minY, minZ, maxX, maxY, maxZ, sizeX
       normalX, normalY, normalZ,
       -1, 1,
       red, green, blue, alpha,
+      x, y, z,
     })
 
     table.insert(vertexMap, #vertices - 3)
@@ -323,6 +327,7 @@ local function newMeshFromEdits(edits, minX, minY, minZ, maxX, maxY, maxZ, sizeX
     {"VertexNormal", "float", 3},
     {"VertexTexCoord", "float", 2},
     {"VertexColor", "byte", 4},
+    {"DiskCenter", "float", 3},
   }
 
   mesh = love.graphics.newMesh(vertexFormat, vertices, "triangles")
@@ -360,12 +365,15 @@ function love.load(arg)
   ]], [[
     uniform mat3 MyNormalMatrix;
     attribute vec3 VertexNormal;
+    attribute vec3 DiskCenter;
     varying vec3 VaryingNormal;
 
     vec4 position( mat4 transform_projection, vec4 vertex_position )
     {
       VaryingNormal = MyNormalMatrix * VertexNormal;
-      return transform_projection * vertex_position;
+      vec4 result = transform_projection * vertex_position;
+      result.z = (transform_projection * vec4(DiskCenter, 1)).z;
+      return result;
     }
   ]])
 
