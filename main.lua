@@ -1,24 +1,15 @@
-local math1 = require("math1")
-local math3 = require("math3")
+local gutterMath = require("gutter.math")
 
-local clamp = math1.clamp
-local cross = math3.cross
-local length3 = math3.length
-local mix = math1.mix
-local mix3 = math3.mix
-local normalize3 = math3.normalize
-local perp3 = math3.perp
-local translate3 = math3.translate
-local transformPoint3 = math3.transformPoint
-
-local function mix4(ax, ay, az, aw, bx, by, bz, bw, t)
-  local x = (1 - t) * ax + t * bx
-  local y = (1 - t) * ay + t * by
-  local z = (1 - t) * az + t * bz
-  local w = (1 - t) * aw + t * bw
-
-  return x, y, z, w
-end
+local clamp = gutterMath.clamp
+local cross = gutterMath.cross
+local length3 = gutterMath.length3
+local mix = gutterMath.mix
+local mix3 = gutterMath.mix3
+local mix4 = gutterMath.mix4
+local normalize3 = gutterMath.normalize3
+local perp = gutterMath.perp
+local translate3 = gutterMath.translate3
+local transformPoint3 = gutterMath.transformPoint3
 
 -- https://www.iquilezles.org/www/articles/smin/smin.htm
 local function smoothUnion(a, b, k)
@@ -143,7 +134,7 @@ local function newMeshFromEdits(edits, minX, minY, minZ, maxX, maxY, maxZ, sizeX
 
   local pointTime = love.timer.getTime()
 
-  local points = {}
+  points = {}
 
   for cellZ = 1, sizeZ do
     for cellY = 1, sizeY do
@@ -270,7 +261,7 @@ local function newMeshFromEdits(edits, minX, minY, minZ, maxX, maxY, maxZ, sizeX
   for _, point in ipairs(points) do
     local x, y, z, normalX, normalY, normalZ, red, green, blue, alpha = unpack(point)
 
-    local tangentX, tangentY, tangentZ = perp3(normalX, normalY, normalZ)
+    local tangentX, tangentY, tangentZ = perp(normalX, normalY, normalZ)
     local bitangentX, bitangentY, bitangentZ = cross(tangentX, tangentY, tangentZ, normalX, normalY, normalZ)
 
     table.insert(point, normalX)
@@ -416,9 +407,9 @@ function love.load(arg)
   local maxY = 2
   local maxZ = 2
 
-  local sizeX = 128
-  local sizeY = 128
-  local sizeZ = 128
+  local sizeX = 64
+  local sizeY = 64
+  local sizeZ = 64
 
   mesh = newMeshFromEdits(sculpture.edits, minX, minY, minZ, maxX, maxY, maxZ, sizeX, sizeY, sizeZ)
 end
@@ -445,20 +436,20 @@ function love.draw()
 
   local vectorScale = 0.25
 
-  -- for i, point in ipairs(points) do
-  --   local x, y, z, nx, ny, nz = unpack(point)
+  -- for _, point in ipairs(points) do
+  --   local x, y, z, normalX, normalY, normalZ, red, green, blue, alpha = unpack(point)
 
   --   if z < 0 then
   --     love.graphics.setColor(0, 0.5, 1, 1)
-  --     love.graphics.line(x, y, x + vectorScale * nx, y + vectorScale * ny)
+  --     love.graphics.line(x, y, x + vectorScale * normalX, y + vectorScale * normalY)
 
-  --     local tx, ty, tz = perp3(nx, ny, nz)
+  --     local tangentX, tangentY, tangentZ = perp(normalX, normalY, normalZ)
   --     love.graphics.setColor(1, 0.25, 0, 1)
-  --     love.graphics.line(x, y, x + vectorScale * tx, y + vectorScale * ty)
+  --     love.graphics.line(x, y, x + vectorScale * tangentX, y + vectorScale * tangentY)
 
-  --     local maxX, maxY, maxZ = cross(tx, ty, tz, nx, ny, nz)
+  --     local bitangentX, bitangentY, bitangentZ = cross(tangentX, tangentY, tangentZ, normalY, normalY, normalZ)
   --     love.graphics.setColor(0, 1, 0, 1)
-  --     love.graphics.line(x, y, x + vectorScale * maxX, y + vectorScale * maxY)
+  --     love.graphics.line(x, y, x + vectorScale * bitangentX, y + vectorScale * bitangentY)
   --   end
   -- end
 end
