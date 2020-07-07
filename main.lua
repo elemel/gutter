@@ -48,20 +48,20 @@ local function smoothSubtractionColor(ad, ar, ag, ab, aa, bd, br, bg, bb, ba, k)
   return d, mix4(ar, ag, ab, aa, br, bg, bb, ba, t)
 end
 
-local function sphere(x, y, z, r)
-  return length3(x, y, z) - r
+local function sphere(x, y, z, radius)
+  return length3(x, y, z) - radius
 end
 
-local function newGrid(nx, ny, nz)
+local function newGrid(sizeX, sizeY, sizeZ)
   local grid = {}
 
-  for z = 1, nz do
+  for z = 1, sizeZ do
     local layer = {}
 
-    for y = 1, ny do
+    for y = 1, sizeY do
       local row = {}
 
-      for x = 1, nx do
+      for x = 1, sizeX do
         row[x] = {
           distance = 1e9,
 
@@ -81,23 +81,23 @@ local function newGrid(nx, ny, nz)
   return grid
 end
 
-local function applyEditToGrid(edit, ax, ay, az, bx, by, bz, grid)
-  local er, eg, eb, ea = unpack(edit.color)
+local function applyEditToGrid(edit, minX, minY, minZ, maxX, maxY, maxZ, grid)
+  local editRed, editGreen, editBlue, editAlpha = unpack(edit.color)
 
-  for iz, layer in ipairs(grid) do
-    local z = mix(az, bz, (iz - 1) / (#grid - 1))
+  for vertexZ, layer in ipairs(grid) do
+    local z = mix(minZ, maxZ, (vertexZ - 1) / (#grid - 1))
 
-    for iy, row in ipairs(layer) do
-      local y = mix(ay, by, (iy - 1) / (#layer - 1))
+    for vertexY, row in ipairs(layer) do
+      local y = mix(minY, maxY, (vertexY - 1) / (#layer - 1))
 
-      for ix, vertex in ipairs(row) do
-        local x = mix(ax, bx, (ix - 1) / (#row - 1))
+      for vertexX, vertex in ipairs(row) do
+        local x = mix(minX, maxX, (vertexX - 1) / (#row - 1))
 
-        local ex, ey, ez = transformPoint3(edit.inverseTransform, x, y, z)
-        local ed
+        local editX, editY, editZ = transformPoint3(edit.inverseTransform, x, y, z)
+        local editDistance
 
         if edit.primitive == "sphere" then
-          ed = sphere(ex, ey, ez, edit.scale)
+          editDistance = sphere(editX, editY, editZ, edit.scale)
         else
           assert("Invalid primitive")
         end
@@ -107,11 +107,11 @@ local function applyEditToGrid(edit, ax, ay, az, bx, by, bz, grid)
             smoothUnionColor(
               vertex.distance,
               vertex.red, vertex.green, vertex.blue, vertex.alpha,
-              ed, er, eg, eb, ea, edit.smoothRadius)
+              editDistance, editRed, editGreen, editBlue, editAlpha, edit.smoothRadius)
         elseif edit.operation == "subtract" then
           vertex.distance, vertex.red, vertex.green, vertex.blue, vertex.alpha =
             smoothSubtractionColor(
-              ed, er, eg, eb, ea,
+              editDistance, editRed, editGreen, editBlue, editAlpha,
               vertex.distance,
               vertex.red, vertex.green, vertex.blue, vertex.alpha,
               edit.smoothRadius)
@@ -123,136 +123,135 @@ local function applyEditToGrid(edit, ax, ay, az, bx, by, bz, grid)
   end
 end
 
-local function newMeshFromEdits(edits, ax, ay, az, bx, by, bz, nx, ny, nz)
+local function newMeshFromEdits(edits, minX, minY, minZ, maxX, maxY, maxZ, sizeX, sizeY, sizeZ)
   local gridTime = love.timer.getTime()
 
   -- We need an extra vertex after the last cell
-  local grid = newGrid(nx + 1, ny + 1, nz + 1)
+  local grid = newGrid(sizeX + 1, sizeY + 1, sizeZ + 1)
 
   gridTime = love.timer.getTime() - gridTime
-  print(string.format("Initialized %dx%dx%d grid in %.3f seconds", nx, ny, nz, gridTime))
+  print(string.format("Initialized %dx%dx%d grid in %.3f seconds", sizeX, sizeY, sizeZ, gridTime))
 
   local editTime = love.timer.getTime()
 
   for _, edit in ipairs(edits) do
-    applyEditToGrid(edit, ax, ay, az, bx, by, bz, grid)
+    applyEditToGrid(edit, minX, minY, minZ, maxX, maxY, maxZ, grid)
   end
 
   editTime = love.timer.getTime() - editTime
-
   print(string.format("Appled %d edits in %.3f seconds", #edits, editTime))
 
   local pointTime = love.timer.getTime()
 
   local points = {}
 
-  for cz = 1, nz do
-    for cy = 1, ny do
-      for cx = 1, nx do
-        local in_ = 0
-        local id = 0
+  for cellZ = 1, sizeZ do
+    for cellY = 1, sizeY do
+      for cellX = 1, sizeX do
+        local insideCount = 0
+        local insideDistance = 0
 
-        local ix = 0
-        local iy = 0
-        local iz = 0
+        local insideX = 0
+        local insideY = 0
+        local insideZ = 0
 
-        local ir = 0
-        local ig = 0
-        local ib = 0
-        local ia = 0
+        local insideRed = 0
+        local insideGreen = 0
+        local insideBlue = 0
+        local insideAlpha = 0
 
-        local on = 0
-        local od = 0
+        local outsideCount = 0
+        local outsideDistance = 0
 
-        local ox = 0
-        local oy = 0
-        local oz = 0
+        local outsideX = 0
+        local outsideY = 0
+        local outsideZ = 0
 
-        local or_ = 0
-        local og = 0
-        local ob = 0
-        local oa = 0
+        local outsideRed = 0
+        local outsideGreen = 0
+        local outsideBlue = 0
+        local outsideAlpha = 0
 
-        for vz = 0, 1 do
-          for vy = 0, 1 do
-            for vx = 0, 1 do
-              local vertex = grid[cz + vz][cy + vy][cx + vx]
+        for vertexZ = 0, 1 do
+          for vertexY = 0, 1 do
+            for vertexX = 0, 1 do
+              local vertex = grid[cellZ + vertexZ][cellY + vertexY][cellX + vertexX]
 
               if vertex.distance < 0 then
-                in_ = in_ + 1
-                id = id + vertex.distance
+                insideCount = insideCount + 1
+                insideDistance = insideDistance + vertex.distance
 
-                ix = ix + vx
-                iy = iy + vy
-                iz = iz + vz
+                insideX = insideX + vertexX
+                insideY = insideY + vertexY
+                insideZ = insideZ + vertexZ
 
-                ir = ir + vertex.red
-                ig = ig + vertex.green
-                ib = ib + vertex.blue
-                ia = ia + vertex.alpha
+                insideRed = insideRed + vertex.red
+                insideGreen = insideGreen + vertex.green
+                insideBlue = insideBlue + vertex.blue
+                insideAlpha = insideAlpha + vertex.alpha
               else
-                on = on + 1
-                od = od + vertex.distance
+                outsideCount = outsideCount + 1
+                outsideDistance = outsideDistance + vertex.distance
 
-                ox = ox + vx
-                oy = oy + vy
-                oz = oz + vz
+                outsideX = outsideX + vertexX
+                outsideY = outsideY + vertexY
+                outsideZ = outsideZ + vertexZ
 
-                or_ = or_ + vertex.red
-                og = og + vertex.green
-                ob = ob + vertex.blue
-                oa = oa + vertex.alpha
+                outsideRed = outsideRed + vertex.red
+                outsideGreen = outsideGreen + vertex.green
+                outsideBlue = outsideBlue + vertex.blue
+                outsideAlpha = outsideAlpha + vertex.alpha
               end
             end
           end
         end
 
-        if in_ >= 1 and on >= 1 then
-          id = id / in_
+        if insideCount >= 1 and outsideCount >= 1 then
+          insideDistance = insideDistance / insideCount
 
-          ix = ix / in_
-          iy = iy / in_
-          iz = iz / in_
+          insideX = insideX / insideCount
+          insideY = insideY / insideCount
+          insideZ = insideZ / insideCount
 
-          ir = ir / in_
-          ig = ig / in_
-          ib = ib / in_
-          ia = ia / in_
+          insideRed = insideRed / insideCount
+          insideGreen = insideGreen / insideCount
+          insideBlue = insideBlue / insideCount
+          insideAlpha = insideAlpha / insideCount
 
-          od = od / on
+          outsideDistance = outsideDistance / outsideCount
 
-          ox = ox / on
-          oy = oy / on
-          oz = oz / on
+          outsideX = outsideX / outsideCount
+          outsideY = outsideY / outsideCount
+          outsideZ = outsideZ / outsideCount
 
-          or_ = or_ / on
-          og = og / on
-          ob = ob / on
-          oa = oa / on
+          outsideRed = outsideRed / outsideCount
+          outsideGreen = outsideGreen / outsideCount
+          outsideBlue = outsideBlue / outsideCount
+          outsideAlpha = outsideAlpha / outsideCount
 
-          local fx, fy, fz = mix3(ix, iy, iz, ox, oy, oz, -id / (od - id))
+          local fractionX, fractionY, fractionZ = mix3(insideX, insideY, insideZ, outsideX, outsideY, outsideZ, -insideDistance / (outsideDistance - insideDistance))
 
-          local x = mix(ax, bx, (cx - 1 + fx) / nx)
-          local y = mix(ay, by, (cy - 1 + fy) / ny)
-          local z = mix(az, bz, (cz - 1 + fz) / nz)
+          local x = mix(minX, maxX, (cellX - 1 + fractionX) / sizeX)
+          local y = mix(minY, maxY, (cellY - 1 + fractionY) / sizeY)
+          local z = mix(minZ, maxZ, (cellZ - 1 + fractionZ) / sizeZ)
 
-          local d000 = grid[cz + 0][cy + 0][cx + 0].distance
-          local d001 = grid[cz + 0][cy + 0][cx + 1].distance
-          local d010 = grid[cz + 0][cy + 1][cx + 0].distance
-          local d011 = grid[cz + 0][cy + 1][cx + 1].distance
-          local d100 = grid[cz + 1][cy + 0][cx + 0].distance
-          local d101 = grid[cz + 1][cy + 0][cx + 1].distance
-          local d110 = grid[cz + 1][cy + 1][cx + 0].distance
-          local d111 = grid[cz + 1][cy + 1][cx + 1].distance
+          local distance000 = grid[cellZ + 0][cellY + 0][cellX + 0].distance
+          local distance001 = grid[cellZ + 0][cellY + 0][cellX + 1].distance
+          local distance010 = grid[cellZ + 0][cellY + 1][cellX + 0].distance
+          local distance011 = grid[cellZ + 0][cellY + 1][cellX + 1].distance
+          local distance100 = grid[cellZ + 1][cellY + 0][cellX + 0].distance
+          local distance101 = grid[cellZ + 1][cellY + 0][cellX + 1].distance
+          local distance110 = grid[cellZ + 1][cellY + 1][cellX + 0].distance
+          local distance111 = grid[cellZ + 1][cellY + 1][cellX + 1].distance
 
-          local gradX = mix(mix(d001 - d000, d011 - d010, fy), mix(d101 - d100, d111 - d110, fy), fz)
-          local gradY = mix(mix(d010 - d000, d011 - d001, fx), mix(d110 - d100, d111 - d101, fx), fz)
-          local gradZ = mix(mix(d100 - d000, d101 - d001, fx), mix(d110 - d010, d111 - d011, fx), fy)
+          local gradX = mix(mix(distance001 - distance000, distance011 - distance010, fractionY), mix(distance101 - distance100, distance111 - distance110, fractionY), fractionZ)
+          local gradY = mix(mix(distance010 - distance000, distance011 - distance001, fractionX), mix(distance110 - distance100, distance111 - distance101, fractionX), fractionZ)
+          local gradZ = mix(mix(distance100 - distance000, distance101 - distance001, fractionX), mix(distance110 - distance010, distance111 - distance011, fractionX), fractionY)
 
           local normalX, normalY, normalZ = normalize3(gradX, gradY, gradZ)
-          local r, g, b, a = mix4(ir, ig, ib, ia, or_, og, ob, oa, -id / (od - id))
+          local red, green, blue, alpha = mix4(insideRed, insideGreen, insideBlue, insideAlpha, outsideRed, outsideGreen, outsideBlue, outsideAlpha, -insideDistance / (outsideDistance - insideDistance))
 
-          local point = {x, y, z, normalX, normalY, normalZ, r, g, b, a}
+          local point = {x, y, z, normalX, normalY, normalZ, red, green, blue, alpha}
           table.insert(points, point)
         end
       end
@@ -266,56 +265,56 @@ local function newMeshFromEdits(edits, ax, ay, az, bx, by, bz, nx, ny, nz)
 
   local vertices = {}
   local vertexMap = {}
-  local dr = (bx - ax) / nx -- TODO: Per-axis radius?
+  local diskRadius = (maxX - minX) / sizeX -- TODO: Per-axis radius?
 
   for _, point in ipairs(points) do
-    local x, y, z, nx, ny, nz, r, g, b, a = unpack(point)
+    local x, y, z, normalX, normalY, normalZ, red, green, blue, alpha = unpack(point)
 
-    local tx, ty, tz = perp3(nx, ny, nz)
-    local bx, by, bz = cross(tx, ty, tz, nx, ny, nz)
+    local tangentX, tangentY, tangentZ = perp3(normalX, normalY, normalZ)
+    local bitangentX, bitangentY, bitangentZ = cross(tangentX, tangentY, tangentZ, normalX, normalY, normalZ)
 
-    table.insert(point, nx)
-    table.insert(point, ny)
-    table.insert(point, nz)
+    table.insert(point, normalX)
+    table.insert(point, normalY)
+    table.insert(point, normalZ)
 
     table.insert(vertices, {
-      x - dr * tx - dr * bx,
-      y - dr * ty - dr * by,
-      z - dr * tz - dr * bz,
+      x - diskRadius * tangentX - diskRadius * bitangentX,
+      y - diskRadius * tangentY - diskRadius * bitangentY,
+      z - diskRadius * tangentZ - diskRadius * bitangentZ,
 
-      nx, ny, nz,
+      normalX, normalY, normalZ,
       -1, -1,
-      r, g, b, a,
+      red, green, blue, alpha,
     })
 
     table.insert(vertices, {
-      x + dr * tx - dr * bx,
-      y + dr * ty - dr * by,
-      z + dr * tz - dr * bz,
+      x + diskRadius * tangentX - diskRadius * bitangentX,
+      y + diskRadius * tangentY - diskRadius * bitangentY,
+      z + diskRadius * tangentZ - diskRadius * bitangentZ,
 
-      nx, ny, nz,
+      normalX, normalY, normalZ,
       1, -1,
-      r, g, b, a,
+      red, green, blue, alpha,
     })
 
     table.insert(vertices, {
-      x + dr * tx + dr * bx,
-      y + dr * ty + dr * by,
-      z + dr * tz + dr * bz,
+      x + diskRadius * tangentX + diskRadius * bitangentX,
+      y + diskRadius * tangentY + diskRadius * bitangentY,
+      z + diskRadius * tangentZ + diskRadius * bitangentZ,
 
-      nx, ny, nz,
+      normalX, normalY, normalZ,
       1, 1,
-      r, g, b, a,
+      red, green, blue, alpha,
     })
 
     table.insert(vertices, {
-      x - dr * tx + dr * bx,
-      y - dr * ty + dr * by,
-      z - dr * tz + dr * bz,
+      x - diskRadius * tangentX + diskRadius * bitangentX,
+      y - diskRadius * tangentY + diskRadius * bitangentY,
+      z - diskRadius * tangentZ + diskRadius * bitangentZ,
 
-      nx, ny, nz,
+      normalX, normalY, normalZ,
       -1, 1,
-      r, g, b, a,
+      red, green, blue, alpha,
     })
 
     table.insert(vertexMap, #vertices - 3)
@@ -409,19 +408,19 @@ function love.load(arg)
     }
   }
 
-  local ax = -2
-  local ay = -2
-  local az = -2
+  local minX = -2
+  local minY = -2
+  local minZ = -2
 
-  local bx = 2
-  local by = 2
-  local bz = 2
+  local maxX = 2
+  local maxY = 2
+  local maxZ = 2
 
-  local nx = 128
-  local ny = 128
-  local nz = 128
+  local sizeX = 128
+  local sizeY = 128
+  local sizeZ = 128
 
-  mesh = newMeshFromEdits(sculpture.edits, ax, ay, az, bx, by, bz, nx, ny, nz)
+  mesh = newMeshFromEdits(sculpture.edits, minX, minY, minZ, maxX, maxY, maxZ, sizeX, sizeY, sizeZ)
 end
 
 function love.draw()
@@ -457,9 +456,9 @@ function love.draw()
   --     love.graphics.setColor(1, 0.25, 0, 1)
   --     love.graphics.line(x, y, x + vectorScale * tx, y + vectorScale * ty)
 
-  --     local bx, by, bz = cross(tx, ty, tz, nx, ny, nz)
+  --     local maxX, maxY, maxZ = cross(tx, ty, tz, nx, ny, nz)
   --     love.graphics.setColor(0, 1, 0, 1)
-  --     love.graphics.line(x, y, x + vectorScale * bx, y + vectorScale * by)
+  --     love.graphics.line(x, y, x + vectorScale * maxX, y + vectorScale * maxY)
   --   end
   -- end
 end
