@@ -27,7 +27,7 @@ function M.newGrid(sizeX, sizeY, sizeZ)
 
       for x = 1, sizeX do
         row[x] = {
-          distance = 1e9,
+          distance = math.huge,
 
           red = 0,
           green = 0,
