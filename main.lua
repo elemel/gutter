@@ -103,9 +103,7 @@ local function newMeshFromEdits(edits, minX, minY, minZ, maxX, maxY, maxZ, sizeX
   print(string.format("Appled %d edits in %.3f seconds", #edits, editTime))
 
   local pointTime = love.timer.getTime()
-
-  -- TODO: Make local. Currently global for debug drawing.
-  points = {}
+  local points = {}
 
   for cellZ = 1, sizeZ do
     for cellY = 1, sizeY do
@@ -306,7 +304,7 @@ local function newMeshFromEdits(edits, minX, minY, minZ, maxX, maxY, maxZ, sizeX
   meshTime = love.timer.getTime() - meshTime
   print(string.format("Created mesh in %.3f seconds", meshTime))
 
-  return mesh
+  return mesh, points
 end
 
 function love.load(arg)
@@ -391,7 +389,10 @@ function love.load(arg)
   local sizeZ = 128
 
   local time = love.timer.getTime()
-  mesh = newMeshFromEdits(sculpture.edits, minX, minY, minZ, maxX, maxY, maxZ, sizeX, sizeY, sizeZ)
+
+  mesh, points = newMeshFromEdits(
+    sculpture.edits, minX, minY, minZ, maxX, maxY, maxZ, sizeX, sizeY, sizeZ)
+
   time = love.timer.getTime() - time
   print(string.format("Total: Converted model to mesh in %.3f seconds", time))
 end
