@@ -94,7 +94,7 @@ function love.load(arg)
 
   local time = love.timer.getTime()
 
-  mesh, points = surfaceSplatting.newMeshFromEdits(
+  mesh, disks = surfaceSplatting.newMeshFromEdits(
     sculpture.edits, minX, minY, minZ, maxX, maxY, maxZ, sizeX, sizeY, sizeZ)
 
   time = love.timer.getTime() - time
@@ -121,7 +121,7 @@ function love.draw()
   love.graphics.setMeshCullMode("none")
   love.graphics.setShader(nil)
 
-  -- surfaceSplatting.debugDrawPointBases(points)
+  -- surfaceSplatting.debugDrawDiskBases(disks)
 end
 
 function love.keypressed(key, scancode, isrepeat)

@@ -123,8 +123,8 @@ function M.newMeshFromEdits(edits, minX, minY, minZ, maxX, maxY, maxZ, sizeX, si
   editTime = love.timer.getTime() - editTime
   print(string.format("Appled %d edits in %.3f seconds", #edits, editTime))
 
-  local pointTime = love.timer.getTime()
-  local points = {}
+  local diskTime = love.timer.getTime()
+  local disks = {}
 
   for cellZ = 1, sizeZ do
     for cellY = 1, sizeY do
@@ -232,15 +232,15 @@ function M.newMeshFromEdits(edits, minX, minY, minZ, maxX, maxY, maxZ, sizeX, si
           local normalX, normalY, normalZ = normalize3(gradX, gradY, gradZ)
           local red, green, blue, alpha = mix4(insideRed, insideGreen, insideBlue, insideAlpha, outsideRed, outsideGreen, outsideBlue, outsideAlpha, -insideDistance / (outsideDistance - insideDistance))
 
-          local point = {x, y, z, normalX, normalY, normalZ, red, green, blue, alpha}
-          table.insert(points, point)
+          local disk = {x, y, z, normalX, normalY, normalZ, red, green, blue, alpha}
+          table.insert(disks, disk)
         end
       end
     end
   end
 
-  pointTime = love.timer.getTime() - pointTime
-  print(string.format("Generated %d points in %.3f seconds", #points, pointTime))
+  diskTime = love.timer.getTime() - diskTime
+  print(string.format("Generated %d disks in %.3f seconds", #disks, diskTime))
 
   local meshTime = love.timer.getTime()
 
@@ -248,15 +248,11 @@ function M.newMeshFromEdits(edits, minX, minY, minZ, maxX, maxY, maxZ, sizeX, si
   local vertexMap = {}
   local diskRadius = (maxX - minX) / sizeX -- TODO: Per-axis radius?
 
-  for _, point in ipairs(points) do
-    local x, y, z, normalX, normalY, normalZ, red, green, blue, alpha = unpack(point)
+  for _, disk in ipairs(disks) do
+    local x, y, z, normalX, normalY, normalZ, red, green, blue, alpha = unpack(disk)
 
     local tangentX, tangentY, tangentZ = perp(normalX, normalY, normalZ)
     local bitangentX, bitangentY, bitangentZ = cross(tangentX, tangentY, tangentZ, normalX, normalY, normalZ)
-
-    table.insert(point, normalX)
-    table.insert(point, normalY)
-    table.insert(point, normalZ)
 
     table.insert(vertices, {
       x - diskRadius * tangentX - diskRadius * bitangentX,
@@ -325,14 +321,14 @@ function M.newMeshFromEdits(edits, minX, minY, minZ, maxX, maxY, maxZ, sizeX, si
   meshTime = love.timer.getTime() - meshTime
   print(string.format("Created mesh in %.3f seconds", meshTime))
 
-  return mesh, points
+  return mesh, disks
 end
 
-function M.debugDrawPointBases(points)
+function M.debugDrawDiskBases(disks)
   local vectorScale = 0.25
 
-  for _, point in ipairs(points) do
-    local x, y, z, normalX, normalY, normalZ, red, green, blue, alpha = unpack(point)
+  for _, disk in ipairs(disks) do
+    local x, y, z, normalX, normalY, normalZ, red, green, blue, alpha = unpack(disk)
 
     if z < 0 then
       love.graphics.setColor(0, 0.5, 1, 1)
