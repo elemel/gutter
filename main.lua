@@ -416,9 +416,9 @@ function love.load(arg)
   local maxY = 2
   local maxZ = 2
 
-  local sizeX = 64
-  local sizeY = 64
-  local sizeZ = 64
+  local sizeX = 128
+  local sizeY = 128
+  local sizeZ = 128
 
   mesh = newMeshFromEdits(sculpture.edits, minX, minY, minZ, maxX, maxY, maxZ, sizeX, sizeY, sizeZ)
 end
