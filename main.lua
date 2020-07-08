@@ -423,7 +423,7 @@ function love.load(arg)
   local time = love.timer.getTime()
   mesh = newMeshFromEdits(sculpture.edits, minX, minY, minZ, maxX, maxY, maxZ, sizeX, sizeY, sizeZ)
   time = love.timer.getTime() - time
-  print(string.format("Total: Converted model to mesh in %.3f seconds.", time))
+  print(string.format("Total: Converted model to mesh in %.3f seconds", time))
 end
 
 local function debugDrawPointBases(points)
