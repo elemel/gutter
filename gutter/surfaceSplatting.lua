@@ -246,7 +246,10 @@ function M.newMeshFromEdits(edits, minX, minY, minZ, maxX, maxY, maxZ, sizeX, si
 
   local vertices = {}
   local vertexMap = {}
-  local diskRadius = (maxX - minX) / sizeX -- TODO: Per-axis radius?
+
+  local radiusX = (maxX - minX) / sizeX
+  local radiusY = (maxY - minY) / sizeY
+  local radiusZ = (maxZ - minZ) / sizeZ
 
   for _, disk in ipairs(disks) do
     local x, y, z, normalX, normalY, normalZ, red, green, blue, alpha = unpack(disk)
@@ -255,9 +258,9 @@ function M.newMeshFromEdits(edits, minX, minY, minZ, maxX, maxY, maxZ, sizeX, si
     local bitangentX, bitangentY, bitangentZ = cross(tangentX, tangentY, tangentZ, normalX, normalY, normalZ)
 
     table.insert(vertices, {
-      x - diskRadius * tangentX - diskRadius * bitangentX,
-      y - diskRadius * tangentY - diskRadius * bitangentY,
-      z - diskRadius * tangentZ - diskRadius * bitangentZ,
+      x - radiusX * tangentX - radiusX * bitangentX,
+      y - radiusY * tangentY - radiusY * bitangentY,
+      z - radiusZ * tangentZ - radiusZ * bitangentZ,
 
       normalX, normalY, normalZ,
       -1, -1,
@@ -266,9 +269,9 @@ function M.newMeshFromEdits(edits, minX, minY, minZ, maxX, maxY, maxZ, sizeX, si
     })
 
     table.insert(vertices, {
-      x + diskRadius * tangentX - diskRadius * bitangentX,
-      y + diskRadius * tangentY - diskRadius * bitangentY,
-      z + diskRadius * tangentZ - diskRadius * bitangentZ,
+      x + radiusX * tangentX - radiusX * bitangentX,
+      y + radiusY * tangentY - radiusY * bitangentY,
+      z + radiusZ * tangentZ - radiusZ * bitangentZ,
 
       normalX, normalY, normalZ,
       1, -1,
@@ -277,9 +280,9 @@ function M.newMeshFromEdits(edits, minX, minY, minZ, maxX, maxY, maxZ, sizeX, si
     })
 
     table.insert(vertices, {
-      x + diskRadius * tangentX + diskRadius * bitangentX,
-      y + diskRadius * tangentY + diskRadius * bitangentY,
-      z + diskRadius * tangentZ + diskRadius * bitangentZ,
+      x + radiusX * tangentX + radiusX * bitangentX,
+      y + radiusY * tangentY + radiusY * bitangentY,
+      z + radiusZ * tangentZ + radiusZ * bitangentZ,
 
       normalX, normalY, normalZ,
       1, 1,
@@ -288,9 +291,9 @@ function M.newMeshFromEdits(edits, minX, minY, minZ, maxX, maxY, maxZ, sizeX, si
     })
 
     table.insert(vertices, {
-      x - diskRadius * tangentX + diskRadius * bitangentX,
-      y - diskRadius * tangentY + diskRadius * bitangentY,
-      z - diskRadius * tangentZ + diskRadius * bitangentZ,
+      x - radiusX * tangentX + radiusX * bitangentX,
+      y - radiusY * tangentY + radiusY * bitangentY,
+      z - radiusZ * tangentZ + radiusZ * bitangentZ,
 
       normalX, normalY, normalZ,
       -1, 1,
