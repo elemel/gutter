@@ -70,6 +70,11 @@ function M.perp(x, y, z)
   end
 end
 
+function M.smoothstep(x1, x2, x)
+    x = min(max((x - x1) / (x2 - x1), 0), 1)
+    return x * x * (3 - 2 * x)
+end
+
 function M.transformPoint3(t, x, y, z)
   local t11, t12, t13, t14,
     t21, t22, t23, t24,

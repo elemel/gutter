@@ -1,47 +1,17 @@
+local csg = require("gutter.csg")
 local gutterMath = require("gutter.math")
 
-local clamp = gutterMath.clamp
 local cross = gutterMath.cross
-local length3 = gutterMath.length3
 local mix = gutterMath.mix
 local mix3 = gutterMath.mix3
 local mix4 = gutterMath.mix4
 local normalize3 = gutterMath.normalize3
 local perp = gutterMath.perp
+local smoothSubtractionColor = csg.smoothSubtractionColor
+local smoothUnionColor = csg.smoothUnionColor
+local sphere = csg.sphere
 local translate3 = gutterMath.translate3
 local transformPoint3 = gutterMath.transformPoint3
-
--- https://www.iquilezles.org/www/articles/smin/smin.htm
-local function smoothUnion(a, b, k)
-  local h = clamp(0.5 + 0.5 * (b - a) / k, 0, 1)
-  return mix(b, a, h) - k * h * (1 - h)
-end
-
-local function smoothSubtraction(d1, d2, k)
-  local h = clamp(0.5 - 0.5 * (d2 + d1) / k, 0, 1)
-  return mix(d2, -d1, h) + k * h * (1 - h)
-end
-
-local function smoothstep(x1, x2, x)
-    x = clamp((x - x1) / (x2 - x1), 0, 1)
-    return x * x * (3 - 2 * x)
-end
-
-local function smoothUnionColor(ad, ar, ag, ab, aa, bd, br, bg, bb, ba, k)
-  local d = smoothUnion(ad, bd, k)
-  local t = smoothstep(-k, k, ad - bd);
-  return d, mix4(ar, ag, ab, aa, br, bg, bb, ba, t)
-end
-
-local function smoothSubtractionColor(ad, ar, ag, ab, aa, bd, br, bg, bb, ba, k)
-  local d = smoothSubtraction(ad, bd, k)
-  local t = smoothstep(-k, k, bd + ad);
-  return d, mix4(ar, ag, ab, aa, br, bg, bb, ba, t)
-end
-
-local function sphere(x, y, z, radius)
-  return length3(x, y, z) - radius
-end
 
 local function newGrid(sizeX, sizeY, sizeZ)
   local grid = {}
