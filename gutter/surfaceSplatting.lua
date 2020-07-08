@@ -2,9 +2,11 @@ local csg = require("gutter.csg")
 local gutterMath = require("gutter.math")
 
 local cross = gutterMath.cross
+local fbm3 = gutterMath.fbm3
 local mix = gutterMath.mix
 local mix3 = gutterMath.mix3
 local mix4 = gutterMath.mix4
+local noise = love.math.noise
 local normalize3 = gutterMath.normalize3
 local perp = gutterMath.perp
 local smoothSubtractionColor = csg.smoothSubtractionColor
@@ -46,6 +48,13 @@ end
 function M.applyEditToGrid(edit, minX, minY, minZ, maxX, maxY, maxZ, grid)
   local editRed, editGreen, editBlue, editAlpha = unpack(edit.color)
 
+  local noiseConfig = edit.noise
+  local noiseFrequency = noiseConfig.frequency or 1
+  local noiseAmplitude = noiseConfig.amplitude or 1
+  local noiseOctaves = noiseConfig.octaves or 0
+  local noiseLacunarity = noiseConfig.lacunarity or 2
+  local noiseGain = noiseConfig.gain or 0.5
+
   for vertexZ, layer in ipairs(grid) do
     local z = mix(minZ, maxZ, (vertexZ - 1) / (#grid - 1))
 
@@ -62,6 +71,17 @@ function M.applyEditToGrid(edit, minX, minY, minZ, maxX, maxY, maxZ, grid)
           editDistance = sphere(editX, editY, editZ, edit.scale)
         else
           assert("Invalid primitive")
+        end
+
+        if noiseOctaves > 0 then
+          editDistance = editDistance + noiseAmplitude * (2 * fbm3(
+            noiseFrequency * x,
+            noiseFrequency * y,
+            noiseFrequency * z,
+            noise,
+            noiseOctaves,
+            noiseLacunarity,
+            noiseGain) - 1)
         end
 
         if edit.operation == "union" then

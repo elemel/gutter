@@ -1,6 +1,7 @@
 local abs = math.abs
 local max = math.max
 local min = math.min
+local modf = math.modf
 local sqrt = math.sqrt
 
 local M = {}
@@ -11,6 +12,127 @@ end
 
 function M.cross(ax, ay, az, bx, by, bz)
   return ay * bz - az * by, az * bx - ax * bz, ax * by - ay * bx
+end
+
+function M.fbm(x, noise, octaves, lacunarity, gain)
+    noise = noise or love.math.noise
+    octaves = octaves or 3
+    lacunarity = lacunarity or 2
+    gain = gain or 1 / lacunarity
+
+    local integralOctaves, fractionalOctaves = modf(octaves)
+    local amplitude = 1
+
+    local totalNoise = 0
+    local totalAmplitude = 0
+
+    for i = 1, integralOctaves do
+        totalNoise = totalNoise + amplitude * noise(x, 0)
+        totalAmplitude = totalAmplitude + amplitude
+
+        x = x * lacunarity
+        amplitude = amplitude * gain
+    end
+
+    if fractionalOctaves > 0 then
+        totalNoise = totalNoise + fractionalOctaves * amplitude * noise(x)
+        totalAmplitude = totalAmplitude + fractionalOctaves * amplitude
+    end
+
+    return totalNoise / totalAmplitude
+end
+
+function M.fbm2(x, y, noise, octaves, lacunarity, gain)
+    noise = noise or love.math.noise
+    octaves = octaves or 3
+    lacunarity = lacunarity or 2
+    gain = gain or 1 / lacunarity
+
+    local integralOctaves, fractionalOctaves = modf(octaves)
+    local amplitude = 1
+
+    local totalNoise = 0
+    local totalAmplitude = 0
+
+    for i = 1, integralOctaves do
+        totalNoise = totalNoise + amplitude * noise(x, y)
+        totalAmplitude = totalAmplitude + amplitude
+
+        x = x * lacunarity
+        y = y * lacunarity
+
+        amplitude = amplitude * gain
+    end
+
+    if fractionalOctaves > 0 then
+        totalNoise = totalNoise + fractionalOctaves * amplitude * noise(x, y)
+        totalAmplitude = totalAmplitude + fractionalOctaves * amplitude
+    end
+
+    return totalNoise / totalAmplitude
+end
+
+function M.fbm3(x, y, z, noise, octaves, lacunarity, gain)
+  noise = noise or love.math.noise
+  octaves = octaves or 3
+  lacunarity = lacunarity or 2
+  gain = gain or 1 / lacunarity
+
+  local integralOctaves, fractionalOctaves = modf(octaves)
+  local amplitude = 1
+
+  local totalNoise = 0
+  local totalAmplitude = 0
+
+  for i = 1, integralOctaves do
+    totalNoise = totalNoise + amplitude * noise(x, y, z)
+    totalAmplitude = totalAmplitude + amplitude
+
+    x = x * lacunarity
+    y = y * lacunarity
+    z = z * lacunarity
+
+    amplitude = amplitude * gain
+  end
+
+  if fractionalOctaves > 0 then
+    totalNoise = totalNoise + fractionalOctaves * amplitude * noise(x, y, z)
+    totalAmplitude = totalAmplitude + fractionalOctaves * amplitude
+  end
+
+  return totalNoise / totalAmplitude
+end
+
+function M.fbm4(x, y, z, w, noise, octaves, lacunarity, gain)
+  noise = noise or love.math.noise
+  octaves = octaves or 3
+  lacunarity = lacunarity or 2
+  gain = gain or 1 / lacunarity
+
+  local integralOctaves, fractionalOctaves = modf(octaves)
+  local amplitude = 1
+
+  local totalNoise = 0
+  local totalAmplitude = 0
+
+  for i = 1, integralOctaves do
+    totalNoise = totalNoise + amplitude * noise(x, y, z, w)
+    totalAmplitude = totalAmplitude + amplitude
+
+    x = x * lacunarity
+    y = y * lacunarity
+    z = z * lacunarity
+    w = w * lacunarity
+
+    amplitude = amplitude * gain
+  end
+
+  if fractionalOctaves > 0 then
+    totalNoise = totalNoise + fractionalOctaves * amplitude * noise(x, y, z, w)
+    totalAmplitude = totalAmplitude + fractionalOctaves * amplitude
+  end
+
+  return totalNoise / totalAmplitude
 end
 
 function M.length3(x, y, z)

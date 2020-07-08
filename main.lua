@@ -50,6 +50,7 @@ function love.load(arg)
         scale = 0.5,
         smoothRadius = 0,
         color = {0.5, 1, 0.25, 1},
+        noise = {},
       },
 
       {
@@ -59,6 +60,12 @@ function love.load(arg)
         scale = 0.75,
         smoothRadius = 0.5,
         color = {0.25, 0.75, 1, 1},
+
+        noise = {
+          amplitude = 0.5,
+          frequency = 2.5,
+          octaves = 2.5,
+        },
       },
 
       {
@@ -68,6 +75,7 @@ function love.load(arg)
         scale = 0.5,
         smoothRadius = 0.25,
         color = {1, 0.5, 0.25, 1},
+        noise = {},
       },
     }
   }
