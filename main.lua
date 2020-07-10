@@ -126,9 +126,9 @@ function love.load(arg)
     }
   }
 
-  local sizeX = 128
-  local sizeY = 128
-  local sizeZ = 128
+  local sizeX = 64
+  local sizeY = 64
+  local sizeZ = 64
 
   local minX = -2
   local minY = -2

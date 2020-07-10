@@ -1,7 +1,9 @@
 local csg = require("gutter.csg")
 local gutterMath = require("gutter.math")
 
+local cos = math.cos
 local cross = gutterMath.cross
+local dot3 = gutterMath.dot3
 local fbm3 = gutterMath.fbm3
 local huge = math.huge
 local min = math.min
@@ -11,8 +13,10 @@ local mix4 = gutterMath.mix4
 local noise = love.math.noise
 local normalize3 = gutterMath.normalize3
 local perp = gutterMath.perp
+local pi = math.pi
 local smoothSubtractionColor = csg.smoothSubtractionColor
 local smoothUnionColor = csg.smoothUnionColor
+local smoothstep = gutterMath.smoothstep
 local sphere = csg.sphere
 local squaredDistance3 = gutterMath.squaredDistance3
 local transformPoint3 = gutterMath.transformPoint3
@@ -437,6 +441,41 @@ function M.newMeshFromEdits(edits, grid)
   M.applyEdits(edits, grid)
   M.updateCells(grid)
   local triangles = M.generateTriangles(grid)
+
+  local minAlignment = cos(0.1875 * pi)
+  local maxAlignment = cos(0.0625 * pi)
+
+  for i = 1, #triangles, 3 do
+    local x1 = triangles[i + 0][1]
+    local y1 = triangles[i + 0][2]
+    local z1 = triangles[i + 0][3]
+
+    local x2 = triangles[i + 1][1]
+    local y2 = triangles[i + 1][2]
+    local z2 = triangles[i + 1][3]
+
+    local x3 = triangles[i + 2][1]
+    local y3 = triangles[i + 2][2]
+    local z3 = triangles[i + 2][3]
+
+    local faceNormalX, faceNormalY, faceNormalZ = normalize3(cross(
+      x3 - x1, y3 - y1, z3 - z1, x2 - x1, y2 - y1, z2 - z1))
+
+    for j = i, i + 2 do
+      local vertex = triangles[j]
+
+      local alignment = dot3(
+        vertex[4], vertex[5], vertex[6],
+        faceNormalX, faceNormalY, faceNormalZ)
+
+      local t = smoothstep(minAlignment, maxAlignment, alignment)
+
+      vertex[4], vertex[5], vertex[6] = mix3(
+        vertex[4], vertex[5], vertex[6],
+        faceNormalX, faceNormalY, faceNormalZ,
+        1 - t)
+    end
+  end
 
   local vertexFormat = {
     {"VertexPosition", "float", 3},

@@ -14,6 +14,10 @@ function M.cross(ax, ay, az, bx, by, bz)
   return ay * bz - az * by, az * bx - ax * bz, ax * by - ay * bx
 end
 
+function M.dot3(x1, y1, z1, x2, y2, z2)
+  return x1 * x2 + y1 * y2 + z1 * z2
+end
+
 function M.fbm(x, noise, octaves, lacunarity, gain)
     noise = noise or love.math.noise
     octaves = octaves or 3
