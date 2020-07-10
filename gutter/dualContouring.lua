@@ -442,8 +442,10 @@ function M.newMeshFromEdits(edits, grid)
   M.updateCells(grid)
   local triangles = M.generateTriangles(grid)
 
-  local minAlignment = cos(0.1875 * pi)
-  local maxAlignment = cos(0.0625 * pi)
+  local alignmentAngle = 0.125 * pi
+
+  local minAlignment = cos(1.5 * alignmentAngle)
+  local maxAlignment = cos(0.5 * alignmentAngle)
 
   for i = 1, #triangles, 3 do
     local x1 = triangles[i + 0][1]
