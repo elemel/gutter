@@ -1,45 +1,91 @@
+local argparse = require("argparse")
+local dualContouring = require("gutter.dualContouring")
 local gutterMath = require("gutter.math")
 local surfaceSplatting = require("gutter.surfaceSplatting")
 
 local translate3 = gutterMath.translate3
 
 function love.load(arg)
+  local parser = argparse("love DIRECTORY", "Mesh and draw a CSG model")
+  parser:option("--mesher", "Meshing algorithm"):args(1)
+  local success, result = parser:pparse(arg)
+
+  if not success then
+    print("Error:", result)
+    love.event.quit(1)
+    return
+  end
+
+  local parsedArgs = result
+  mesher = parsedArgs.mesher or "surface-splatting"
+
+  if mesher ~= "dual-contouring" and mesher ~= "surface-splatting" then
+    print("Error: argument for option '--mesher' must be one of 'dual-contouring', 'surface-splatting'")
+    love.event.quit(1)
+    return
+  end
+
   love.window.setTitle("Gutter")
 
   love.window.setMode(800, 600, {
-    highdpi = true,
+    -- highdpi = true,
     resizable = true,
   })
 
-  shader = love.graphics.newShader([[
-    varying vec3 VaryingNormal;
+  if mesher == "surface-splatting" then
+    shader = love.graphics.newShader([[
+      varying vec3 VaryingNormal;
 
-    vec4 effect(vec4 color, Image tex, vec2 texture_coords, vec2 screen_coords)
-    {
-      if (dot(texture_coords, texture_coords) > 1) {
-        discard;
+      vec4 effect(vec4 color, Image tex, vec2 texture_coords, vec2 screen_coords)
+      {
+        if (dot(texture_coords, texture_coords) > 1) {
+          discard;
+        }
+
+        vec3 normal = normalize(VaryingNormal);
+        vec3 sunLighting = dot(normalize(vec3(-2, -8, 4)), normal) * 3 * vec3(1, 0.5, 0.25);
+        vec3 skyLighting = 1 * vec3(0.25, 0.5, 1);
+        vec3 lighting = sunLighting + skyLighting;
+        return vec4(lighting, 1) * color;
       }
+    ]], [[
+      uniform mat3 MyNormalMatrix;
+      attribute vec3 VertexNormal;
+      attribute vec3 DiskCenter;
+      varying vec3 VaryingNormal;
 
-      vec3 normal = normalize(VaryingNormal);
-      vec3 sunLighting = dot(normalize(vec3(-2, -8, 4)), normal) * 3 * vec3(1, 0.5, 0.25);
-      vec3 skyLighting = 1 * vec3(0.25, 0.5, 1);
-      vec3 lighting = sunLighting + skyLighting;
-      return vec4(lighting, 1) * color;
-    }
-  ]], [[
-    uniform mat3 MyNormalMatrix;
-    attribute vec3 VertexNormal;
-    attribute vec3 DiskCenter;
-    varying vec3 VaryingNormal;
+      vec4 position(mat4 transform_projection, vec4 vertex_position)
+      {
+        VaryingNormal = MyNormalMatrix * VertexNormal;
+        vec4 result = transform_projection * vertex_position;
+        result.z = (transform_projection * vec4(DiskCenter, 1)).z;
+        return result;
+      }
+    ]])
+  else
+    shader = love.graphics.newShader([[
+      varying vec3 VaryingNormal;
 
-    vec4 position( mat4 transform_projection, vec4 vertex_position )
-    {
-      VaryingNormal = MyNormalMatrix * VertexNormal;
-      vec4 result = transform_projection * vertex_position;
-      result.z = (transform_projection * vec4(DiskCenter, 1)).z;
-      return result;
-    }
-  ]])
+      vec4 effect(vec4 color, Image tex, vec2 texture_coords, vec2 screen_coords)
+      {
+        vec3 normal = normalize(VaryingNormal);
+        vec3 sunLighting = dot(normalize(vec3(-2, -8, 4)), normal) * 3 * vec3(1, 0.5, 0.25);
+        vec3 skyLighting = 1 * vec3(0.25, 0.5, 1);
+        vec3 lighting = sunLighting + skyLighting;
+        return vec4(lighting, 1) * color;
+      }
+    ]], [[
+      uniform mat3 MyNormalMatrix;
+      attribute vec3 VertexNormal;
+      varying vec3 VaryingNormal;
+
+      vec4 position(mat4 transform_projection, vec4 vertex_position)
+      {
+        VaryingNormal = MyNormalMatrix * VertexNormal;
+        return transform_projection * vertex_position;
+      }
+    ]])
+  end
 
   local sculpture = {
     edits = {
@@ -80,6 +126,10 @@ function love.load(arg)
     }
   }
 
+  local sizeX = 128
+  local sizeY = 128
+  local sizeZ = 128
+
   local minX = -2
   local minY = -2
   local minZ = -2
@@ -88,14 +138,17 @@ function love.load(arg)
   local maxY = 2
   local maxZ = 2
 
-  local sizeX = 128
-  local sizeY = 128
-  local sizeZ = 128
-
   local time = love.timer.getTime()
 
-  mesh, disks = surfaceSplatting.newMeshFromEdits(
-    sculpture.edits, minX, minY, minZ, maxX, maxY, maxZ, sizeX, sizeY, sizeZ)
+  if mesher == "surface-splatting" then
+    mesh, disks = surfaceSplatting.newMeshFromEdits(
+      sculpture.edits, minX, minY, minZ, maxX, maxY, maxZ, sizeX, sizeY, sizeZ)
+  else
+    local grid = dualContouring.newGrid(
+      sizeX, sizeY, sizeZ, minX, minY, minZ, maxX, maxY, maxZ)
+
+    mesh = dualContouring.newMeshFromEdits(sculpture.edits, grid)
+  end
 
   time = love.timer.getTime() - time
   print(string.format("Total: Converted model to mesh in %.3f seconds", time))
@@ -111,17 +164,31 @@ function love.draw()
 
   -- love.graphics.rotate(0.25 * love.timer.getTime())
 
-  love.graphics.setColor(1, 1, 1, 1)
-  love.graphics.setShader(shader)
-  shader:send("MyNormalMatrix", {1, 0, 0, 0, 1, 0, 0, 0, 1})
-  love.graphics.setMeshCullMode("back")
-  love.graphics.setDepthMode("less", true)
-  love.graphics.draw(mesh)
-  love.graphics.setDepthMode()
-  love.graphics.setMeshCullMode("none")
-  love.graphics.setShader(nil)
+  if mesher == "surface-splatting" then
+    love.graphics.setColor(1, 1, 1, 1)
+    love.graphics.setShader(shader)
+    shader:send("MyNormalMatrix", {1, 0, 0, 0, 1, 0, 0, 0, 1})
+    love.graphics.setMeshCullMode("back")
+    love.graphics.setDepthMode("less", true)
+    love.graphics.draw(mesh)
+    love.graphics.setDepthMode()
+    love.graphics.setMeshCullMode("none")
+    love.graphics.setShader(nil)
+  else
+    love.graphics.setColor(1, 1, 1, 1)
+    love.graphics.setShader(shader)
+    shader:send("MyNormalMatrix", {1, 0, 0, 0, 1, 0, 0, 0, 1})
+    love.graphics.setMeshCullMode("back")
+    love.graphics.setDepthMode("less", true)
+    love.graphics.draw(mesh)
+    love.graphics.setDepthMode()
+    love.graphics.setMeshCullMode("none")
+    love.graphics.setShader(nil)
+  end
 
-  -- surfaceSplatting.debugDrawDiskBases(disks)
+  -- if disks then
+  --   surfaceSplatting.debugDrawDiskBases(disks)
+  -- end
 end
 
 function love.keypressed(key, scancode, isrepeat)

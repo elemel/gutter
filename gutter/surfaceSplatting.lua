@@ -112,7 +112,7 @@ function M.newMeshFromEdits(edits, minX, minY, minZ, maxX, maxY, maxZ, sizeX, si
   local grid = M.newGrid(sizeX + 1, sizeY + 1, sizeZ + 1)
 
   gridTime = love.timer.getTime() - gridTime
-  print(string.format("Initialized %dx%dx%d grid in %.3f seconds", sizeX, sizeY, sizeZ, gridTime))
+  print(string.format("Initialized %d x %d x %d grid in %.3f seconds", sizeX, sizeY, sizeZ, gridTime))
 
   local editTime = love.timer.getTime()
 
