@@ -1,6 +1,7 @@
 local csg = require("gutter.csg")
 local gutterMath = require("gutter.math")
 
+local acos = math.acos
 local cos = math.cos
 local cross = gutterMath.cross
 local dot3 = gutterMath.dot3
@@ -354,16 +355,19 @@ function M.generateTriangle(grid, insideX, insideY, insideZ, outsideX, outsideY,
     }
   end
 
+  -- Split quad along shortest diagonal
   if squaredDistance3(quadCells[2].x, quadCells[2].y, quadCells[2].z, quadCells[4].x, quadCells[4].y, quadCells[4].z) <
     squaredDistance3(quadCells[1].x, quadCells[1].y, quadCells[1].z, quadCells[3].x, quadCells[3].y, quadCells[3].z) then
 
     quadCells[1], quadCells[2], quadCells[3], quadCells[4] = quadCells[2], quadCells[3], quadCells[4], quadCells[1]
   end
 
+  -- Fix triangle winding
   if insideX + insideY + insideZ < outsideX + outsideY + outsideZ then
     quadCells[2], quadCells[4] = quadCells[4], quadCells[2]
   end
 
+  -- Generate triangle vertices
   for _, i in ipairs({1, 2, 3, 1, 3, 4}) do
     local cell = quadCells[i]
 
@@ -442,10 +446,8 @@ function M.newMeshFromEdits(edits, grid)
   M.updateCells(grid)
   local triangles = M.generateTriangles(grid)
 
-  local alignmentAngle = 0.125 * pi
-
-  local minAlignment = cos(1.5 * alignmentAngle)
-  local maxAlignment = cos(0.5 * alignmentAngle)
+  local maxAlignmentAngle = 0.25 * pi
+  local minAlignment = cos(maxAlignmentAngle)
 
   for i = 1, #triangles, 3 do
     local x1 = triangles[i + 0][1]
@@ -470,12 +472,14 @@ function M.newMeshFromEdits(edits, grid)
         vertex[4], vertex[5], vertex[6],
         faceNormalX, faceNormalY, faceNormalZ)
 
-      local t = smoothstep(minAlignment, maxAlignment, alignment)
+      if alignment < minAlignment then
+        local t = maxAlignmentAngle / acos(alignment)
 
-      vertex[4], vertex[5], vertex[6] = mix3(
-        vertex[4], vertex[5], vertex[6],
-        faceNormalX, faceNormalY, faceNormalZ,
-        1 - t)
+        vertex[4], vertex[5], vertex[6] = normalize3(mix3(
+          vertex[4], vertex[5], vertex[6],
+          faceNormalX, faceNormalY, faceNormalZ,
+          1 - t))
+      end
     end
   end
 
