@@ -4,6 +4,8 @@ local dualContouring2 = require("gutter.dualContouring2")
 local gutterMath = require("gutter.math")
 local surfaceSplatting = require("gutter.surfaceSplatting")
 
+local floor = math.floor
+local pi = math.pi
 local setRotation3 = gutterMath.setRotation3
 local translate3 = gutterMath.translate3
 
@@ -30,7 +32,7 @@ function love.load(arg)
   love.window.setTitle("Gutter")
 
   love.window.setMode(800, 600, {
-    -- highdpi = true,
+    highdpi = true,
     -- msaa = 8,
     resizable = true,
   })
@@ -96,7 +98,7 @@ function love.load(arg)
     ]])
   end
 
-  local sculpture = {
+  sculpture = {
     edits = {
       {
         operation = "union",
@@ -124,7 +126,7 @@ function love.load(arg)
       },
 
       {
-        operation = "subtract",
+        operation = "subtraction",
         primitive = "sphere",
         inverseTransform = translate3(love.math.newTransform(), 0, -0.25, 0.5):inverse(),
         scale = 0.5,
@@ -166,9 +168,12 @@ function love.load(arg)
 
   time = love.timer.getTime() - time
   print(string.format("Total: Converted model to mesh in %.3f seconds", time))
+
+  angle = 0
 end
 
 function love.draw()
+  love.graphics.push()
   local width, height = love.graphics.getDimensions()
   love.graphics.translate(0.5 * width, 0.5 * height)
 
@@ -177,7 +182,7 @@ function love.draw()
   love.graphics.setLineWidth(1 / scale)
 
   local transform = love.math.newTransform()
-  setRotation3(transform, 0, 1, 0, 0.5 * love.timer.getTime())
+  setRotation3(transform, 0, 1, 0, angle)
 
   if mesher == "surface-splatting" then
     love.graphics.setColor(1, 1, 1, 1)
@@ -201,9 +206,55 @@ function love.draw()
     love.graphics.setShader(nil)
   end
 
+  -- love.graphics.setColor(0, 0, 0, 0.5)
+  -- love.graphics.setLineWidth(3 / scale)
+  -- love.graphics.line(-0.5 * width / scale, 0, 0.5 * width / scale, 0)
+  -- love.graphics.line(0, -0.5 * height / scale, 0, 0.5 * height / scale)
+  -- love.graphics.setLineWidth(1 / scale)
+
+  love.graphics.setColor(1, 0.25, 0, 0.25)
+  love.graphics.line(-0.5 * width / scale, 0, 0.5 * width / scale, 0)
+
+  love.graphics.setColor(1, 0.25, 0, 1)
+  love.graphics.setDepthMode("less", false)
+  love.graphics.line(-0.5 * width / scale, 0, 0.5 * width / scale, 0)
+  love.graphics.setDepthMode()
+
+  love.graphics.setColor(0.25, 1, 0, 0.25)
+  love.graphics.line(0, -0.5 * height / scale, 0, 0.5 * height / scale)
+
+  love.graphics.setColor(0.25, 1, 0, 1)
+  love.graphics.setDepthMode("less", false)
+  love.graphics.line(0, -0.5 * height / scale, 0, 0.5 * height / scale)
+  love.graphics.setDepthMode()
+
   -- if disks then
   --   surfaceSplatting.debugDrawDiskBases(disks)
   -- end
+
+  for i, edit in ipairs(sculpture.edits) do
+    local x, y = transform:transformPoint(edit.inverseTransform:inverseTransformPoint(0, 0))
+    love.graphics.setColor(1, 1, 1, 1)
+    love.graphics.circle("line", x, y, edit.scale, 64)
+  end
+
+  love.graphics.pop()
+
+  local font = love.graphics.getFont()
+  local fontWidth = font:getWidth("M")
+  local fontHeight = font:getHeight()
+
+  for i, edit in ipairs(sculpture.edits) do
+    love.graphics.setColor(0, 0, 0, 1)
+    love.graphics.rectangle("fill", 0, 2 * (i - 1) * fontHeight, 200, 2 * fontHeight)
+
+    love.graphics.setColor(1, 1, 1, 1)
+    -- love.graphics.rectangle("line", 0, 2 * (i - 1) * fontHeight, 200, 2 * fontHeight)
+    love.graphics.print(edit.operation .. " " .. edit.primitive, fontWidth, floor((2 * (i - 1) + 0.5) * fontHeight))
+
+    love.graphics.setColor(edit.color)
+    love.graphics.circle("fill", 200 - fontHeight, (2 * (i - 1) + 1) * fontHeight, floor(0.5 * fontHeight))
+  end
 end
 
 function love.keypressed(key, scancode, isrepeat)
@@ -215,4 +266,8 @@ function love.keypressed(key, scancode, isrepeat)
     local directory = love.filesystem.getSaveDirectory()
     print("Captured screenshot: " .. directory .. "/" .. filename)
   end
+end
+
+function love.wheelmoved(x, y)
+  angle = angle - x / 16 * pi
 end

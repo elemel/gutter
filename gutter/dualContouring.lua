@@ -160,7 +160,7 @@ function M.applyEdits(edits, grid)
                 vertex.distance,
                 vertex.red, vertex.green, vertex.blue, vertex.alpha,
                 editDistance, editRed, editGreen, editBlue, editAlpha, edit.smoothRadius)
-          elseif edit.operation == "subtract" then
+          elseif edit.operation == "subtraction" then
             vertex.distance, vertex.red, vertex.green, vertex.blue, vertex.alpha =
               smoothSubtractionColor(
                 editDistance, editRed, editGreen, editBlue, editAlpha,
