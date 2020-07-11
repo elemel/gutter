@@ -1,5 +1,6 @@
 local argparse = require("argparse")
 local dualContouring = require("gutter.dualContouring")
+local dualContouring2 = require("gutter.dualContouring2")
 local gutterMath = require("gutter.math")
 local surfaceSplatting = require("gutter.surfaceSplatting")
 
@@ -19,8 +20,8 @@ function love.load(arg)
   local parsedArgs = result
   mesher = parsedArgs.mesher or "surface-splatting"
 
-  if mesher ~= "dual-contouring" and mesher ~= "surface-splatting" then
-    print("Error: argument for option '--mesher' must be one of 'dual-contouring', 'surface-splatting'")
+  if mesher ~= "dual-contouring" and mesher ~= "dual-contouring-2" and mesher ~= "surface-splatting" then
+    print("Error: argument for option '--mesher' must be one of 'dual-contouring', 'dual-contouring-2', 'surface-splatting'")
     love.event.quit(1)
     return
   end
@@ -28,7 +29,8 @@ function love.load(arg)
   love.window.setTitle("Gutter")
 
   love.window.setMode(800, 600, {
-    -- highdpi = true,
+    highdpi = true,
+    msaa = 8,
     resizable = true,
   })
 
@@ -140,14 +142,19 @@ function love.load(arg)
 
   local time = love.timer.getTime()
 
-  if mesher == "surface-splatting" then
-    mesh, disks = surfaceSplatting.newMeshFromEdits(
-      sculpture.edits, minX, minY, minZ, maxX, maxY, maxZ, sizeX, sizeY, sizeZ)
-  else
+  if mesher == "dual-contouring" then
     local grid = dualContouring.newGrid(
       sizeX, sizeY, sizeZ, minX, minY, minZ, maxX, maxY, maxZ)
 
     mesh = dualContouring.newMeshFromEdits(sculpture.edits, grid)
+  elseif mesher == "dual-contouring-2" then
+    local grid = dualContouring2.newGrid(
+      sizeX, sizeY, sizeZ, minX, minY, minZ, maxX, maxY, maxZ)
+
+    mesh = dualContouring2.newMeshFromEdits(sculpture.edits, grid)
+  else
+    mesh, disks = surfaceSplatting.newMeshFromEdits(
+      sculpture.edits, minX, minY, minZ, maxX, maxY, maxZ, sizeX, sizeY, sizeZ)
   end
 
   time = love.timer.getTime() - time
