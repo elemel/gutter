@@ -37,6 +37,7 @@ function love.load(arg)
 
   if mesher == "surface-splatting" then
     shader = love.graphics.newShader([[
+      varying vec3 VaryingPosition;
       varying vec3 VaryingNormal;
 
       vec4 effect(vec4 color, Image tex, vec2 texture_coords, vec2 screen_coords)
@@ -52,21 +53,24 @@ function love.load(arg)
         return vec4(lighting, 1) * color;
       }
     ]], [[
-      uniform mat3 MyNormalMatrix;
+      uniform mat4 ModelMatrix;
       attribute vec3 VertexNormal;
       attribute vec3 DiskCenter;
+      varying vec3 VaryingPosition;
       varying vec3 VaryingNormal;
 
       vec4 position(mat4 transform_projection, vec4 vertex_position)
       {
-        VaryingNormal = MyNormalMatrix * VertexNormal;
-        vec4 result = transform_projection * vertex_position;
+        VaryingPosition = vec3(ModelMatrix * vertex_position);
+        VaryingNormal = mat3(ModelMatrix) * VertexNormal;
+        vec4 result = transform_projection * ModelMatrix * vertex_position;
         // result.z = (transform_projection * vec4(DiskCenter, 1)).z;
         return result;
       }
     ]])
   else
     shader = love.graphics.newShader([[
+      varying vec3 VaryingPosition;
       varying vec3 VaryingNormal;
 
       vec4 effect(vec4 color, Image tex, vec2 texture_coords, vec2 screen_coords)
@@ -78,14 +82,16 @@ function love.load(arg)
         return vec4(lighting, 1) * color;
       }
     ]], [[
-      uniform mat3 MyNormalMatrix;
+      uniform mat4 ModelMatrix;
       attribute vec3 VertexNormal;
+      varying vec3 VaryingPosition;
       varying vec3 VaryingNormal;
 
       vec4 position(mat4 transform_projection, vec4 vertex_position)
       {
-        VaryingNormal = MyNormalMatrix * VertexNormal;
-        return transform_projection * vertex_position;
+        VaryingPosition = vec3(ModelMatrix * vertex_position);
+        VaryingNormal = mat3(ModelMatrix) * VertexNormal;
+        return transform_projection * ModelMatrix * vertex_position;
       }
     ]])
   end
@@ -171,13 +177,12 @@ function love.draw()
   love.graphics.setLineWidth(1 / scale)
 
   local transform = love.math.newTransform()
-  setRotation3(transform, 0, 1, 0, 0.25 * love.timer.getTime())
-  love.graphics.applyTransform(transform)
+  setRotation3(transform, 0, 1, 0, 0.5 * love.timer.getTime())
 
   if mesher == "surface-splatting" then
     love.graphics.setColor(1, 1, 1, 1)
     love.graphics.setShader(shader)
-    shader:send("MyNormalMatrix", {1, 0, 0, 0, 1, 0, 0, 0, 1})
+    shader:send("ModelMatrix", transform)
     love.graphics.setMeshCullMode("back")
     love.graphics.setDepthMode("less", true)
     love.graphics.draw(mesh)
@@ -187,7 +192,7 @@ function love.draw()
   else
     love.graphics.setColor(1, 1, 1, 1)
     love.graphics.setShader(shader)
-    shader:send("MyNormalMatrix", {1, 0, 0, 0, 1, 0, 0, 0, 1})
+    shader:send("ModelMatrix", transform)
     love.graphics.setMeshCullMode("back")
     love.graphics.setDepthMode("less", true)
     love.graphics.draw(mesh)
