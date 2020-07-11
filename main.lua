@@ -4,6 +4,7 @@ local dualContouring2 = require("gutter.dualContouring2")
 local gutterMath = require("gutter.math")
 local surfaceSplatting = require("gutter.surfaceSplatting")
 
+local setRotation3 = gutterMath.setRotation3
 local translate3 = gutterMath.translate3
 
 function love.load(arg)
@@ -29,8 +30,8 @@ function love.load(arg)
   love.window.setTitle("Gutter")
 
   love.window.setMode(800, 600, {
-    highdpi = true,
-    msaa = 8,
+    -- highdpi = true,
+    -- msaa = 8,
     resizable = true,
   })
 
@@ -60,7 +61,7 @@ function love.load(arg)
       {
         VaryingNormal = MyNormalMatrix * VertexNormal;
         vec4 result = transform_projection * vertex_position;
-        result.z = (transform_projection * vec4(DiskCenter, 1)).z;
+        // result.z = (transform_projection * vec4(DiskCenter, 1)).z;
         return result;
       }
     ]])
@@ -128,9 +129,9 @@ function love.load(arg)
     }
   }
 
-  local sizeX = 64
-  local sizeY = 64
-  local sizeZ = 64
+  local sizeX = 128
+  local sizeY = 128
+  local sizeZ = 128
 
   local minX = -2
   local minY = -2
@@ -169,7 +170,9 @@ function love.draw()
   love.graphics.scale(scale)
   love.graphics.setLineWidth(1 / scale)
 
-  -- love.graphics.rotate(0.25 * love.timer.getTime())
+  local transform = love.math.newTransform()
+  setRotation3(transform, 0, 1, 0, 0.25 * love.timer.getTime())
+  love.graphics.applyTransform(transform)
 
   if mesher == "surface-splatting" then
     love.graphics.setColor(1, 1, 1, 1)

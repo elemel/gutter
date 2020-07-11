@@ -1,7 +1,9 @@
 local abs = math.abs
+local cos = math.cos
 local max = math.max
 local min = math.min
 local modf = math.modf
+local sin = math.sin
 local sqrt = math.sqrt
 
 local M = {}
@@ -220,6 +222,34 @@ end
 
 function M.translate3(t, x, y, z)
   return t:apply(love.math.newTransform():setMatrix(1, 0, 0, x, 0, 1, 0, y, 0, 0, 1, z, 0, 0, 0, 1))
+end
+
+-- https://en.wikipedia.org/wiki/Rotation_matrix#Rotation_matrix_from_axis_and_angle
+function M.setRotation3(t, axisX, axisY, axisZ, angle)
+  local t11, t12, t13, t14,
+    t21, t22, t23, t24,
+    t31, t32, t33, t34,
+    t41, t42, t43, t44 = t:getMatrix()
+
+  local cosAngle = cos(angle)
+  local sinAngle = sin(angle)
+
+  t11 = cosAngle + axisX * axisX * (1 - cosAngle)
+  t12 = axisX * axisY * (1 - cosAngle) - axisZ * sinAngle
+  t13 = axisX * axisZ * (1 - cosAngle) + axisY * sinAngle
+
+  t21 = axisY * axisX * (1 - cosAngle) + axisZ * sinAngle
+  t22 = cosAngle + axisY * axisY * (1 - cosAngle)
+  t23 = axisY * axisZ * (1 - cosAngle) - axisX * sinAngle
+
+  t31 = axisZ * axisX * (1 - cosAngle) - axisY * sinAngle
+  t32 = axisZ * axisY * (1 - cosAngle) + axisX * sinAngle
+  t33 = cosAngle + axisZ * axisZ * (1 - cosAngle)
+
+  t:setMatrix(t11, t12, t13, t14,
+    t21, t22, t23, t24,
+    t31, t32, t33, t34,
+    t41, t42, t43, t44)
 end
 
 return M
