@@ -33,7 +33,7 @@ function love.load(arg)
 
   love.window.setMode(800, 600, {
     fullscreen = parsedArgs.fullscreen,
-    highdpi = parsedArgs.highDpi,
+    highdpi = parsedArgs.high_dpi,
     -- msaa = 8,
     resizable = true,
   })
