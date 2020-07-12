@@ -1,9 +1,6 @@
 local argparse = require("argparse")
 local gutterMath = require("gutter.math")
 
--- Disabled in conf.lua to avoid flickering window on invalid command line
-local window = require('love.window')
-
 local floor = math.floor
 local pi = math.pi
 local setRotation3 = gutterMath.setRotation3
@@ -16,15 +13,8 @@ function love.load(arg)
   parser:flag("--high-dpi", "Enable high DPI mode")
   parser:option("--mesher", "Meshing algorithm"):args(1)
   parser:option("--msaa", "Antialiasing samples"):args(1):convert(tonumber)
-  local success, result = parser:pparse(arg)
+  local parsedArgs = parser:parse(arg)
 
-  if not success then
-    print("Error:", result)
-    love.event.quit(1)
-    return
-  end
-
-  local parsedArgs = result
   mesher = parsedArgs.mesher or "surface-splatting"
 
   if mesher ~= "dual-contouring" and mesher ~= "dual-contouring-2" and mesher ~= "surface-splatting" then
@@ -32,6 +22,9 @@ function love.load(arg)
     love.event.quit(1)
     return
   end
+
+  -- Disabled in conf.lua to avoid window flicker on early exit
+  require('love.window')
 
   love.window.setTitle("Gutter")
 
