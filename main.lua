@@ -1,6 +1,9 @@
 local argparse = require("argparse")
 local gutterMath = require("gutter.math")
 
+-- Disabled in conf.lua to avoid flickering window on invalid command line
+local window = require('love.window')
+
 local floor = math.floor
 local pi = math.pi
 local setRotation3 = gutterMath.setRotation3
@@ -12,6 +15,7 @@ function love.load(arg)
   parser:flag("--fullscreen", "Enable fullscreen mode")
   parser:flag("--high-dpi", "Enable high DPI mode")
   parser:option("--mesher", "Meshing algorithm"):args(1)
+  parser:option("--msaa", "Antialiasing samples"):args(1):convert(tonumber)
   local success, result = parser:pparse(arg)
 
   if not success then
@@ -34,7 +38,7 @@ function love.load(arg)
   love.window.setMode(800, 600, {
     fullscreen = parsedArgs.fullscreen,
     highdpi = parsedArgs.high_dpi,
-    -- msaa = 8,
+    msaa = parsedArgs.msaa,
     resizable = true,
   })
 
