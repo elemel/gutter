@@ -1,5 +1,6 @@
 local csg = require("gutter.csg")
 local gutterMath = require("gutter.math")
+local loveMath = require("love.math")
 
 local acos = math.acos
 local cos = math.cos
@@ -11,7 +12,7 @@ local min = math.min
 local mix = gutterMath.mix
 local mix3 = gutterMath.mix3
 local mix4 = gutterMath.mix4
-local noise = love.math.noise
+local noise = loveMath.noise
 local normalize3 = gutterMath.normalize3
 local perp = gutterMath.perp
 local pi = math.pi
@@ -483,13 +484,7 @@ function M.newMeshFromEdits(edits, grid)
     end
   end
 
-  local vertexFormat = {
-    {"VertexPosition", "float", 3},
-    {"VertexNormal", "float", 3},
-    {"VertexColor", "byte", 4},
-  }
-
-  return love.graphics.newMesh(vertexFormat, triangles, "triangles")
+  return triangles
 end
 
 return M

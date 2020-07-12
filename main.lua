@@ -1,16 +1,16 @@
 local argparse = require("argparse")
-local dualContouring = require("gutter.dualContouring")
-local dualContouring2 = require("gutter.dualContouring2")
 local gutterMath = require("gutter.math")
-local surfaceSplatting = require("gutter.surfaceSplatting")
 
 local floor = math.floor
 local pi = math.pi
 local setRotation3 = gutterMath.setRotation3
+local transformPoint3 = gutterMath.transformPoint3
 local translate3 = gutterMath.translate3
 
 function love.load(arg)
   local parser = argparse("love DIRECTORY", "Mesh and draw a CSG model")
+  parser:flag("--fullscreen", "Enable fullscreen mode")
+  parser:flag("--high-dpi", "Enable high DPI mode")
   parser:option("--mesher", "Meshing algorithm"):args(1)
   local success, result = parser:pparse(arg)
 
@@ -32,7 +32,8 @@ function love.load(arg)
   love.window.setTitle("Gutter")
 
   love.window.setMode(800, 600, {
-    highdpi = true,
+    fullscreen = parsedArgs.fullscreen,
+    highdpi = parsedArgs.highDpi,
     -- msaa = 8,
     resizable = true,
   })
@@ -149,27 +150,77 @@ function love.load(arg)
   local maxY = 2
   local maxZ = 2
 
-  local time = love.timer.getTime()
+  -- if mesher == "dual-contouring" then
+  --   local grid = dualContouring.newGrid(
+  --     sizeX, sizeY, sizeZ, minX, minY, minZ, maxX, maxY, maxZ)
 
-  if mesher == "dual-contouring" then
-    local grid = dualContouring.newGrid(
-      sizeX, sizeY, sizeZ, minX, minY, minZ, maxX, maxY, maxZ)
+  --   mesh = dualContouring.newMeshFromEdits(sculpture.edits, grid)
+  -- elseif mesher == "dual-contouring-2" then
+  --   local grid = dualContouring2.newGrid(
+  --     sizeX, sizeY, sizeZ, minX, minY, minZ, maxX, maxY, maxZ)
 
-    mesh = dualContouring.newMeshFromEdits(sculpture.edits, grid)
-  elseif mesher == "dual-contouring-2" then
-    local grid = dualContouring2.newGrid(
-      sizeX, sizeY, sizeZ, minX, minY, minZ, maxX, maxY, maxZ)
-
-    mesh = dualContouring2.newMeshFromEdits(sculpture.edits, grid)
-  else
-    mesh, disks = surfaceSplatting.newMeshFromEdits(
-      sculpture.edits, minX, minY, minZ, maxX, maxY, maxZ, sizeX, sizeY, sizeZ)
-  end
-
-  time = love.timer.getTime() - time
-  print(string.format("Total: Converted model to mesh in %.3f seconds", time))
+  --   mesh = dualContouring2.newMeshFromEdits(sculpture.edits, grid)
+  -- else
+  --   -- mesh, disks = surfaceSplatting.newMeshFromEdits(
+  --   --   sculpture.edits, minX, minY, minZ, maxX, maxY, maxZ, sizeX, sizeY, sizeZ)
+  -- end
 
   angle = 0
+
+  love.thread.newThread("gutter/worker.lua"):start()
+  workerInputChannel = love.thread.getChannel("workerInput")
+
+  local size = 4
+
+  while size <= 128 do
+    workerInputChannel:push({
+      mesher = mesher,
+      edits = sculpture.edits,
+
+      minX = minX,
+      minY = minY,
+      minZ = minZ,
+
+      maxX = maxX,
+      maxY = maxY,
+      maxZ = maxZ,
+
+      sizeX = size,
+      sizeY = size,
+      sizeZ = size,
+    })
+
+    size = 2 * size
+  end
+
+  workerOutputChannel = love.thread.getChannel("workerOutput")
+end
+
+function love.update(dt)
+  local output = workerOutputChannel:pop()
+
+  if output and #output.vertices >= 3 then
+    if mesher == "surface-splatting" then
+      local vertexFormat = {
+        {"VertexPosition", "float", 3},
+        {"VertexNormal", "float", 3},
+        {"VertexTexCoord", "float", 2},
+        {"VertexColor", "byte", 4},
+        {"DiskCenter", "float", 3},
+      }
+
+      mesh = love.graphics.newMesh(vertexFormat, output.vertices, "triangles")
+      mesh:setVertexMap(output.vertexMap)
+    else
+      local vertexFormat = {
+        {"VertexPosition", "float", 3},
+        {"VertexNormal", "float", 3},
+        {"VertexColor", "byte", 4},
+      }
+
+      mesh = love.graphics.newMesh(vertexFormat, output.vertices, "triangles")
+    end
+  end
 end
 
 function love.draw()
@@ -185,15 +236,17 @@ function love.draw()
   setRotation3(transform, 0, 1, 0, angle)
 
   if mesher == "surface-splatting" then
-    love.graphics.setColor(1, 1, 1, 1)
-    love.graphics.setShader(shader)
-    shader:send("ModelMatrix", transform)
-    love.graphics.setMeshCullMode("back")
-    love.graphics.setDepthMode("less", true)
-    love.graphics.draw(mesh)
-    love.graphics.setDepthMode()
-    love.graphics.setMeshCullMode("none")
-    love.graphics.setShader(nil)
+    if mesh then
+      love.graphics.setColor(1, 1, 1, 1)
+      love.graphics.setShader(shader)
+      shader:send("ModelMatrix", transform)
+      love.graphics.setMeshCullMode("back")
+      love.graphics.setDepthMode("less", true)
+      love.graphics.draw(mesh)
+      love.graphics.setDepthMode()
+      love.graphics.setMeshCullMode("none")
+      love.graphics.setShader(nil)
+    end
   else
     love.graphics.setColor(1, 1, 1, 1)
     love.graphics.setShader(shader)
@@ -212,19 +265,19 @@ function love.draw()
   -- love.graphics.line(0, -0.5 * height / scale, 0, 0.5 * height / scale)
   -- love.graphics.setLineWidth(1 / scale)
 
-  love.graphics.setColor(1, 0.25, 0, 0.25)
+  love.graphics.setColor(1, 0.25, 0, 0.5)
   love.graphics.line(-0.5 * width / scale, 0, 0.5 * width / scale, 0)
 
   love.graphics.setColor(1, 0.25, 0, 1)
-  love.graphics.setDepthMode("less", false)
+  love.graphics.setDepthMode("lequal", false)
   love.graphics.line(-0.5 * width / scale, 0, 0.5 * width / scale, 0)
   love.graphics.setDepthMode()
 
-  love.graphics.setColor(0.25, 1, 0, 0.25)
+  love.graphics.setColor(0.25, 1, 0, 0.5)
   love.graphics.line(0, -0.5 * height / scale, 0, 0.5 * height / scale)
 
   love.graphics.setColor(0.25, 1, 0, 1)
-  love.graphics.setDepthMode("less", false)
+  love.graphics.setDepthMode("lequal", false)
   love.graphics.line(0, -0.5 * height / scale, 0, 0.5 * height / scale)
   love.graphics.setDepthMode()
 
@@ -233,9 +286,25 @@ function love.draw()
   -- end
 
   for i, edit in ipairs(sculpture.edits) do
-    local x, y = transform:transformPoint(edit.inverseTransform:inverseTransformPoint(0, 0))
-    love.graphics.setColor(1, 1, 1, 1)
+    local x, y, z = transformPoint3(transform, transformPoint3(edit.inverseTransform:inverse(), 0, 0, 0))
+
+    if edit.operation == "union" then
+      love.graphics.setColor(0.25, 1, 0, 0.5)
+    else
+      love.graphics.setColor(1, 0.25, 0, 0.5)
+    end
+
     love.graphics.circle("line", x, y, edit.scale, 64)
+
+    if edit.operation == "union" then
+      love.graphics.setColor(0.25, 1, 0, 1)
+    else
+      love.graphics.setColor(1, 0.25, 0, 1)
+    end
+
+    love.graphics.setDepthMode("lequal", false)
+    love.graphics.circle("line", x, y, edit.scale, 64)
+    love.graphics.setDepthMode()
   end
 
   love.graphics.pop()
@@ -266,6 +335,10 @@ function love.keypressed(key, scancode, isrepeat)
     local directory = love.filesystem.getSaveDirectory()
     print("Captured screenshot: " .. directory .. "/" .. filename)
   end
+end
+
+function love.threaderror(thread, errorstr)
+  print("Thread error: " .. errorstr)
 end
 
 function love.wheelmoved(x, y)

@@ -1,12 +1,14 @@
 local csg = require("gutter.csg")
 local gutterMath = require("gutter.math")
+local loveMath = require("love.math")
 
 local cross = gutterMath.cross
 local fbm3 = gutterMath.fbm3
+local huge = math.huge
 local mix = gutterMath.mix
 local mix3 = gutterMath.mix3
 local mix4 = gutterMath.mix4
-local noise = love.math.noise
+local noise = loveMath.noise
 local normalize3 = gutterMath.normalize3
 local perp = gutterMath.perp
 local smoothSubtractionColor = csg.smoothSubtractionColor
@@ -27,7 +29,7 @@ function M.newGrid(sizeX, sizeY, sizeZ)
 
       for x = 1, sizeX do
         row[x] = {
-          distance = math.huge,
+          distance = huge,
 
           red = 0,
           green = 0,
@@ -106,24 +108,13 @@ function M.applyEditToGrid(edit, minX, minY, minZ, maxX, maxY, maxZ, grid)
 end
 
 function M.newMeshFromEdits(edits, minX, minY, minZ, maxX, maxY, maxZ, sizeX, sizeY, sizeZ)
-  local gridTime = love.timer.getTime()
-
   -- We need an extra vertex after the last cell
   local grid = M.newGrid(sizeX + 1, sizeY + 1, sizeZ + 1)
-
-  gridTime = love.timer.getTime() - gridTime
-  print(string.format("Initialized %d x %d x %d grid in %.3f seconds", sizeX, sizeY, sizeZ, gridTime))
-
-  local editTime = love.timer.getTime()
 
   for _, edit in ipairs(edits) do
     M.applyEditToGrid(edit, minX, minY, minZ, maxX, maxY, maxZ, grid)
   end
 
-  editTime = love.timer.getTime() - editTime
-  print(string.format("Appled %d edits in %.3f seconds", #edits, editTime))
-
-  local diskTime = love.timer.getTime()
   local disks = {}
 
   for cellZ = 1, sizeZ do
@@ -239,11 +230,6 @@ function M.newMeshFromEdits(edits, minX, minY, minZ, maxX, maxY, maxZ, sizeX, si
     end
   end
 
-  diskTime = love.timer.getTime() - diskTime
-  print(string.format("Generated %d disks in %.3f seconds", #disks, diskTime))
-
-  local meshTime = love.timer.getTime()
-
   local vertices = {}
   local vertexMap = {}
 
@@ -310,42 +296,28 @@ function M.newMeshFromEdits(edits, minX, minY, minZ, maxX, maxY, maxZ, sizeX, si
     table.insert(vertexMap, #vertices)
   end
 
-  local vertexFormat = {
-    {"VertexPosition", "float", 3},
-    {"VertexNormal", "float", 3},
-    {"VertexTexCoord", "float", 2},
-    {"VertexColor", "byte", 4},
-    {"DiskCenter", "float", 3},
-  }
-
-  mesh = love.graphics.newMesh(vertexFormat, vertices, "triangles")
-  mesh:setVertexMap(vertexMap)
-
-  meshTime = love.timer.getTime() - meshTime
-  print(string.format("Created mesh in %.3f seconds", meshTime))
-
-  return mesh, disks
+  return vertices, vertexMap
 end
 
-function M.debugDrawDiskBases(disks)
-  local vectorScale = 0.25
+-- function M.debugDrawDiskBases(disks)
+--   local vectorScale = 0.25
 
-  for _, disk in ipairs(disks) do
-    local x, y, z, normalX, normalY, normalZ, red, green, blue, alpha = unpack(disk)
+--   for _, disk in ipairs(disks) do
+--     local x, y, z, normalX, normalY, normalZ, red, green, blue, alpha = unpack(disk)
 
-    if z < 0 then
-      love.graphics.setColor(0, 0.5, 1, 1)
-      love.graphics.line(x, y, x + vectorScale * normalX, y + vectorScale * normalY)
+--     if z < 0 then
+--       love.graphics.setColor(0, 0.5, 1, 1)
+--       love.graphics.line(x, y, x + vectorScale * normalX, y + vectorScale * normalY)
 
-      local tangentX, tangentY, tangentZ = perp(normalX, normalY, normalZ)
-      love.graphics.setColor(1, 0.25, 0, 1)
-      love.graphics.line(x, y, x + vectorScale * tangentX, y + vectorScale * tangentY)
+--       local tangentX, tangentY, tangentZ = perp(normalX, normalY, normalZ)
+--       love.graphics.setColor(1, 0.25, 0, 1)
+--       love.graphics.line(x, y, x + vectorScale * tangentX, y + vectorScale * tangentY)
 
-      local bitangentX, bitangentY, bitangentZ = cross(tangentX, tangentY, tangentZ, normalY, normalY, normalZ)
-      love.graphics.setColor(0, 1, 0, 1)
-      love.graphics.line(x, y, x + vectorScale * bitangentX, y + vectorScale * bitangentY)
-    end
-  end
-end
+--       local bitangentX, bitangentY, bitangentZ = cross(tangentX, tangentY, tangentZ, normalY, normalY, normalZ)
+--       love.graphics.setColor(0, 1, 0, 1)
+--       love.graphics.line(x, y, x + vectorScale * bitangentX, y + vectorScale * bitangentY)
+--     end
+--   end
+-- end
 
 return M

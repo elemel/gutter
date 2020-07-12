@@ -1,3 +1,5 @@
+local loveMath = require("love.math")
+
 local abs = math.abs
 local cos = math.cos
 local max = math.max
@@ -21,7 +23,7 @@ function M.dot3(x1, y1, z1, x2, y2, z2)
 end
 
 function M.fbm(x, noise, octaves, lacunarity, gain)
-    noise = noise or love.math.noise
+    noise = noise or loveMath.noise
     octaves = octaves or 3
     lacunarity = lacunarity or 2
     gain = gain or 1 / lacunarity
@@ -49,7 +51,7 @@ function M.fbm(x, noise, octaves, lacunarity, gain)
 end
 
 function M.fbm2(x, y, noise, octaves, lacunarity, gain)
-    noise = noise or love.math.noise
+    noise = noise or loveMath.noise
     octaves = octaves or 3
     lacunarity = lacunarity or 2
     gain = gain or 1 / lacunarity
@@ -79,7 +81,7 @@ function M.fbm2(x, y, noise, octaves, lacunarity, gain)
 end
 
 function M.fbm3(x, y, z, noise, octaves, lacunarity, gain)
-  noise = noise or love.math.noise
+  noise = noise or loveMath.noise
   octaves = octaves or 3
   lacunarity = lacunarity or 2
   gain = gain or 1 / lacunarity
@@ -110,7 +112,7 @@ function M.fbm3(x, y, z, noise, octaves, lacunarity, gain)
 end
 
 function M.fbm4(x, y, z, w, noise, octaves, lacunarity, gain)
-  noise = noise or love.math.noise
+  noise = noise or loveMath.noise
   octaves = octaves or 3
   lacunarity = lacunarity or 2
   gain = gain or 1 / lacunarity
@@ -221,7 +223,7 @@ function M.transformPoint3(t, x, y, z)
 end
 
 function M.translate3(t, x, y, z)
-  return t:apply(love.math.newTransform():setMatrix(1, 0, 0, x, 0, 1, 0, y, 0, 0, 1, z, 0, 0, 0, 1))
+  return t:apply(loveMath.newTransform():setMatrix(1, 0, 0, x, 0, 1, 0, y, 0, 0, 1, z, 0, 0, 0, 1))
 end
 
 -- https://en.wikipedia.org/wiki/Rotation_matrix#Rotation_matrix_from_axis_and_angle
