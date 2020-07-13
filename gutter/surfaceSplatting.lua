@@ -18,16 +18,24 @@ local transformPoint3 = gutterMath.transformPoint3
 
 local M = {}
 
-function M.newGrid(sizeX, sizeY, sizeZ)
-  local grid = {}
+function M.newGrid(size)
+  local sizeX, sizeY, sizeZ = unpack(size)
 
-  for z = 1, sizeZ do
+  local grid = {
+    sizeX = sizeX,
+    sizeY = sizeY,
+    sizeZ = sizeZ,
+  }
+
+  local vertices = {}
+
+  for z = 1, sizeZ + 1 do
     local layer = {}
 
-    for y = 1, sizeY do
+    for y = 1, sizeY + 1 do
       local row = {}
 
-      for x = 1, sizeX do
+      for x = 1, sizeX + 1 do
         row[x] = {
           distance = huge,
 
@@ -41,8 +49,10 @@ function M.newGrid(sizeX, sizeY, sizeZ)
       layer[y] = row
     end
 
-    grid[z] = layer
+    vertices[z] = layer
   end
+
+  grid.vertices = vertices
 
   return grid
 end
@@ -57,14 +67,18 @@ function M.applyEditToGrid(edit, minX, minY, minZ, maxX, maxY, maxZ, grid)
   local noiseLacunarity = noiseConfig.lacunarity or 2
   local noiseGain = noiseConfig.gain or 0.5
 
-  for vertexZ, layer in ipairs(grid) do
-    local z = mix(minZ, maxZ, (vertexZ - 1) / (#grid - 1))
+  local sizeX = grid.sizeX
+  local sizeY = grid.sizeY
+  local sizeZ = grid.sizeZ
+
+  for vertexZ, layer in ipairs(grid.vertices) do
+    local z = mix(minZ, maxZ, (vertexZ - 1) / sizeZ)
 
     for vertexY, row in ipairs(layer) do
-      local y = mix(minY, maxY, (vertexY - 1) / (#layer - 1))
+      local y = mix(minY, maxY, (vertexY - 1) / sizeY)
 
       for vertexX, vertex in ipairs(row) do
-        local x = mix(minX, maxX, (vertexX - 1) / (#row - 1))
+        local x = mix(minX, maxX, (vertexX - 1) / sizeX)
 
         local editX, editY, editZ = transformPoint3(edit.inverseTransform, x, y, z)
         local editDistance
@@ -108,8 +122,8 @@ function M.applyEditToGrid(edit, minX, minY, minZ, maxX, maxY, maxZ, grid)
 end
 
 function M.newMeshFromEdits(edits, minX, minY, minZ, maxX, maxY, maxZ, sizeX, sizeY, sizeZ)
-  -- We need an extra vertex after the last cell
-  local grid = M.newGrid(sizeX + 1, sizeY + 1, sizeZ + 1)
+  local grid = M.newGrid({sizeX, sizeY, sizeZ})
+  local vertices = grid.vertices
 
   for _, edit in ipairs(edits) do
     M.applyEditToGrid(edit, minX, minY, minZ, maxX, maxY, maxZ, grid)
@@ -147,7 +161,7 @@ function M.newMeshFromEdits(edits, minX, minY, minZ, maxX, maxY, maxZ, sizeX, si
         for vertexZ = 0, 1 do
           for vertexY = 0, 1 do
             for vertexX = 0, 1 do
-              local vertex = grid[cellZ + vertexZ][cellY + vertexY][cellX + vertexX]
+              local vertex = vertices[cellZ + vertexZ][cellY + vertexY][cellX + vertexX]
 
               if vertex.distance < 0 then
                 insideCount = insideCount + 1
@@ -207,14 +221,14 @@ function M.newMeshFromEdits(edits, minX, minY, minZ, maxX, maxY, maxZ, sizeX, si
           local y = mix(minY, maxY, (cellY - 1 + fractionY) / sizeY)
           local z = mix(minZ, maxZ, (cellZ - 1 + fractionZ) / sizeZ)
 
-          local distance000 = grid[cellZ + 0][cellY + 0][cellX + 0].distance
-          local distance001 = grid[cellZ + 0][cellY + 0][cellX + 1].distance
-          local distance010 = grid[cellZ + 0][cellY + 1][cellX + 0].distance
-          local distance011 = grid[cellZ + 0][cellY + 1][cellX + 1].distance
-          local distance100 = grid[cellZ + 1][cellY + 0][cellX + 0].distance
-          local distance101 = grid[cellZ + 1][cellY + 0][cellX + 1].distance
-          local distance110 = grid[cellZ + 1][cellY + 1][cellX + 0].distance
-          local distance111 = grid[cellZ + 1][cellY + 1][cellX + 1].distance
+          local distance000 = vertices[cellZ + 0][cellY + 0][cellX + 0].distance
+          local distance001 = vertices[cellZ + 0][cellY + 0][cellX + 1].distance
+          local distance010 = vertices[cellZ + 0][cellY + 1][cellX + 0].distance
+          local distance011 = vertices[cellZ + 0][cellY + 1][cellX + 1].distance
+          local distance100 = vertices[cellZ + 1][cellY + 0][cellX + 0].distance
+          local distance101 = vertices[cellZ + 1][cellY + 0][cellX + 1].distance
+          local distance110 = vertices[cellZ + 1][cellY + 1][cellX + 0].distance
+          local distance111 = vertices[cellZ + 1][cellY + 1][cellX + 1].distance
 
           local gradX = mix(mix(distance001 - distance000, distance011 - distance010, fractionY), mix(distance101 - distance100, distance111 - distance110, fractionY), fractionZ)
           local gradY = mix(mix(distance010 - distance000, distance011 - distance001, fractionX), mix(distance110 - distance100, distance111 - distance101, fractionX), fractionZ)
