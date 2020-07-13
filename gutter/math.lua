@@ -200,32 +200,6 @@ function M.perp(x, y, z)
   end
 end
 
-function M.smoothstep(x1, x2, x)
-    x = min(max((x - x1) / (x2 - x1), 0), 1)
-    return x * x * (3 - 2 * x)
-end
-
-function M.squaredDistance3(x1, y1, z1, x2, y2, z2)
-  return (x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1) + (z2 - z1) * (z2 - z1)
-end
-
-function M.transformPoint3(t, x, y, z)
-  local t11, t12, t13, t14,
-    t21, t22, t23, t24,
-    t31, t32, t33, t34,
-    t41, t42, t43, t44 = t:getMatrix()
-
-  local tx = t11 * x + t12 * y + t13 * z + t14
-  local ty = t21 * x + t22 * y + t23 * z + t24
-  local tz = t31 * x + t32 * y + t33 * z + t34
-
-  return tx, ty, tz
-end
-
-function M.translate3(t, x, y, z)
-  return t:apply(loveMath.newTransform():setMatrix(1, 0, 0, x, 0, 1, 0, y, 0, 0, 1, z, 0, 0, 0, 1))
-end
-
 -- https://en.wikipedia.org/wiki/Rotation_matrix#Rotation_matrix_from_axis_and_angle
 function M.setRotation3(t, axisX, axisY, axisZ, angle)
   local t11, t12, t13, t14,
@@ -252,6 +226,48 @@ function M.setRotation3(t, axisX, axisY, axisZ, angle)
     t21, t22, t23, t24,
     t31, t32, t33, t34,
     t41, t42, t43, t44)
+
+  return t
+end
+
+function M.setTranslation3(t, x, y, z)
+  local t11, t12, t13, t14,
+    t21, t22, t23, t24,
+    t31, t32, t33, t34,
+    t41, t42, t43, t44 = t:getMatrix()
+
+  t:setMatrix(t11, t12, t13, x,
+    t21, t22, t23, y,
+    t31, t32, t33, z,
+    t41, t42, t43, t44)
+
+  return t
+end
+
+function M.smoothstep(x1, x2, x)
+    x = min(max((x - x1) / (x2 - x1), 0), 1)
+    return x * x * (3 - 2 * x)
+end
+
+function M.squaredDistance3(x1, y1, z1, x2, y2, z2)
+  return (x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1) + (z2 - z1) * (z2 - z1)
+end
+
+function M.transformPoint3(t, x, y, z)
+  local t11, t12, t13, t14,
+    t21, t22, t23, t24,
+    t31, t32, t33, t34,
+    t41, t42, t43, t44 = t:getMatrix()
+
+  local tx = t11 * x + t12 * y + t13 * z + t14
+  local ty = t21 * x + t22 * y + t23 * z + t24
+  local tz = t31 * x + t32 * y + t33 * z + t34
+
+  return tx, ty, tz
+end
+
+function M.translate3(t, x, y, z)
+  return t:apply(loveMath.newTransform():setMatrix(1, 0, 0, x, 0, 1, 0, y, 0, 0, 1, z, 0, 0, 0, 1))
 end
 
 return M

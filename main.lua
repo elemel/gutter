@@ -4,6 +4,7 @@ local gutterMath = require("gutter.math")
 local floor = math.floor
 local pi = math.pi
 local setRotation3 = gutterMath.setRotation3
+local setTranslation3 = gutterMath.setTranslation3
 local transformPoint3 = gutterMath.transformPoint3
 local translate3 = gutterMath.translate3
 
@@ -31,9 +32,15 @@ function love.load(arg)
   love.window.setMode(800, 600, {
     fullscreen = parsedArgs.fullscreen,
     highdpi = parsedArgs.high_dpi,
+
+    minwidth = 800,
+    minheight = 600,
+
     msaa = parsedArgs.msaa,
     resizable = true,
   })
+
+  love.graphics.setBackgroundColor(0.125, 0.125, 0.125, 1)
 
   if mesher == "surface-splatting" then
     shader = love.graphics.newShader([[
@@ -135,10 +142,6 @@ function love.load(arg)
     }
   }
 
-  local sizeX = 128
-  local sizeY = 128
-  local sizeZ = 128
-
   local minX = -2
   local minY = -2
   local minZ = -2
@@ -167,9 +170,9 @@ function love.load(arg)
   love.thread.newThread("gutter/worker.lua"):start()
   workerInputChannel = love.thread.getChannel("workerInput")
 
-  local size = 4
+  local size = 16
 
-  while size <= 128 do
+  while size <= 64 do
     workerInputChannel:push({
       mesher = mesher,
       edits = sculpture.edits,
@@ -197,6 +200,11 @@ function love.update(dt)
   local output = workerOutputChannel:pop()
 
   if output and #output.vertices >= 3 then
+    if mesh then
+      mesh:release()
+      mesh = nil
+    end
+
     if mesher == "surface-splatting" then
       local vertexFormat = {
         {"VertexPosition", "float", 3},
@@ -223,6 +231,7 @@ end
 function love.draw()
   love.graphics.push()
   local width, height = love.graphics.getDimensions()
+  love.graphics.setScissor(200, 0, width - 400, height)
   love.graphics.translate(0.5 * width, 0.5 * height)
 
   local scale = 0.375 * height
@@ -305,15 +314,16 @@ function love.draw()
   end
 
   love.graphics.pop()
+  love.graphics.setScissor()
+
+  love.graphics.setColor(0.25, 0.25, 0.25, 1)
+  love.graphics.rectangle("fill", 0, 0, 200, height)
 
   local font = love.graphics.getFont()
   local fontWidth = font:getWidth("M")
   local fontHeight = font:getHeight()
 
   for i, edit in ipairs(sculpture.edits) do
-    love.graphics.setColor(0, 0, 0, 1)
-    love.graphics.rectangle("fill", 0, 2 * (i - 1) * fontHeight, 200, 2 * fontHeight)
-
     love.graphics.setColor(1, 1, 1, 1)
     -- love.graphics.rectangle("line", 0, 2 * (i - 1) * fontHeight, 200, 2 * fontHeight)
     love.graphics.print(edit.operation .. " " .. edit.primitive, fontWidth, floor((2 * (i - 1) + 0.5) * fontHeight))
@@ -321,6 +331,9 @@ function love.draw()
     love.graphics.setColor(edit.color)
     love.graphics.circle("fill", 200 - fontHeight, (2 * (i - 1) + 1) * fontHeight, floor(0.5 * fontHeight))
   end
+
+  love.graphics.setColor(0.25, 0.25, 0.25, 1)
+  love.graphics.rectangle("fill", width - 200, 0, 200, height)
 end
 
 function love.keypressed(key, scancode, isrepeat)
@@ -331,6 +344,48 @@ function love.keypressed(key, scancode, isrepeat)
 
     local directory = love.filesystem.getSaveDirectory()
     print("Captured screenshot: " .. directory .. "/" .. filename)
+  end
+end
+
+function love.mousemoved(x, y, dx, dy, istouch)
+  if love.mouse.isDown(1) then
+    local sensitivity = 1 / 128
+    local transform = sculpture.edits[3].inverseTransform:inverse()
+    transform = setTranslation3(love.math.newTransform(), sensitivity * dx, sensitivity * dy, 0) * transform
+    sculpture.edits[3].inverseTransform = transform:inverse()
+
+    workerInputChannel:clear()
+
+    local minX = -2
+    local minY = -2
+    local minZ = -2
+
+    local maxX = 2
+    local maxY = 2
+    local maxZ = 2
+
+    local size = 16
+
+    while size <= 64 do
+      workerInputChannel:push({
+        mesher = mesher,
+        edits = sculpture.edits,
+
+        minX = minX,
+        minY = minY,
+        minZ = minZ,
+
+        maxX = maxX,
+        maxY = maxY,
+        maxZ = maxZ,
+
+        sizeX = size,
+        sizeY = size,
+        sizeZ = size,
+      })
+
+      size = 2 * size
+    end
   end
 end
 
