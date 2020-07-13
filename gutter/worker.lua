@@ -28,10 +28,20 @@ local function main(arg)
 
       vertices = dualContouring2.newMeshFromEdits(input.edits, grid)
     else
+      local bounds = {
+        minX = input.minX,
+        minY = input.minY,
+        minZ = input.minZ,
+
+        maxX = input.maxX,
+        maxY = input.maxY,
+        maxZ = input.maxZ,
+      }
+
+      local gridSize = {input.sizeX, input.sizeY, input.sizeZ}
+
       vertices, vertexMap = surfaceSplatting.newMeshFromEdits(
-        input.edits,
-        input.minX, input.minY, input.minZ, input.maxX, input.maxY, input.maxZ,
-        input.sizeX, input.sizeY, input.sizeZ)
+        input.edits, bounds, gridSize)
     end
 
     outputChannel:push({vertices = vertices, vertexMap = vertexMap})

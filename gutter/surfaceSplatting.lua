@@ -18,13 +18,21 @@ local transformPoint3 = gutterMath.transformPoint3
 
 local M = {}
 
-function M.newGrid(size)
+function M.newGrid(size, bounds)
   local sizeX, sizeY, sizeZ = unpack(size)
 
   local grid = {
     sizeX = sizeX,
     sizeY = sizeY,
     sizeZ = sizeZ,
+
+    minX = bounds.minX,
+    minY = bounds.minY,
+    minZ = bounds.minZ,
+
+    maxX = bounds.maxX,
+    maxY = bounds.maxY,
+    maxZ = bounds.maxZ,
   }
 
   local vertices = {}
@@ -57,7 +65,7 @@ function M.newGrid(size)
   return grid
 end
 
-function M.applyEditToGrid(edit, minX, minY, minZ, maxX, maxY, maxZ, grid)
+function M.applyEditToGrid(edit, grid)
   local editRed, editGreen, editBlue, editAlpha = unpack(edit.color)
 
   local noiseConfig = edit.noise
@@ -70,6 +78,14 @@ function M.applyEditToGrid(edit, minX, minY, minZ, maxX, maxY, maxZ, grid)
   local sizeX = grid.sizeX
   local sizeY = grid.sizeY
   local sizeZ = grid.sizeZ
+
+  local minX = grid.minX
+  local minY = grid.minY
+  local minZ = grid.minZ
+
+  local maxX = grid.maxX
+  local maxY = grid.maxY
+  local maxZ = grid.maxZ
 
   for vertexZ, layer in ipairs(grid.vertices) do
     local z = mix(minZ, maxZ, (vertexZ - 1) / sizeZ)
@@ -121,12 +137,25 @@ function M.applyEditToGrid(edit, minX, minY, minZ, maxX, maxY, maxZ, grid)
   end
 end
 
-function M.newMeshFromEdits(edits, minX, minY, minZ, maxX, maxY, maxZ, sizeX, sizeY, sizeZ)
-  local grid = M.newGrid({sizeX, sizeY, sizeZ})
+function M.newMeshFromEdits(edits, bounds, gridSize)
+  local grid = M.newGrid(gridSize, bounds)
+
+  local sizeX = grid.sizeX
+  local sizeY = grid.sizeY
+  local sizeZ = grid.sizeZ
+
+  local minX = grid.minX
+  local minY = grid.minY
+  local minZ = grid.minZ
+
+  local maxX = grid.maxX
+  local maxY = grid.maxY
+  local maxZ = grid.maxZ
+
   local vertices = grid.vertices
 
   for _, edit in ipairs(edits) do
-    M.applyEditToGrid(edit, minX, minY, minZ, maxX, maxY, maxZ, grid)
+    M.applyEditToGrid(edit, grid)
   end
 
   local disks = {}
