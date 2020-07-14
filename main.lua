@@ -313,7 +313,7 @@ function love.draw()
         love.graphics.setColor(1, 0.25, 0, 0.5)
       end
 
-      love.graphics.circle("line", x, y, edit.scale, 64)
+      love.graphics.circle("line", x, y, edit.radius, 64)
 
       if edit.operation == "union" then
         love.graphics.setColor(0.25, 1, 0, 1)
@@ -322,7 +322,7 @@ function love.draw()
       end
 
       love.graphics.setDepthMode("lequal", false)
-      love.graphics.circle("line", x, y, edit.scale, 64)
+      love.graphics.circle("line", x, y, edit.radius, 64)
       love.graphics.setDepthMode()
     end
   end
