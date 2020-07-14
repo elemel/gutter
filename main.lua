@@ -106,8 +106,8 @@ function love.load(arg)
   end
 
   local boxTransform = love.math.newTransform()
-  boxTransform:apply(setTranslation3(love.math.newTransform(), 0, -0.25, 0.5))
-  boxTransform:apply(setRotation3(love.math.newTransform(), 1, 0, 0, 0.0625 * pi))
+  boxTransform:apply(setTranslation3(love.math.newTransform(), 0, -0.375, 0.875))
+  boxTransform:apply(setRotation3(love.math.newTransform(), 1, 0, 0, 0.125 * pi))
   boxTransform:apply(setRotation3(love.math.newTransform(), 0, 0, 1, 0.125 * pi))
 
   sculpture = {
@@ -116,8 +116,8 @@ function love.load(arg)
         operation = "union",
         primitive = "sphere",
         inverseTransform = love.math.newTransform(-0.5, -0.25):inverse(),
-        scale = 0.5,
-        smoothRadius = 0,
+        radius = 0.5,
+        blendRange = 0,
         color = {0.5, 1, 0.25, 1},
         noise = {},
       },
@@ -126,8 +126,8 @@ function love.load(arg)
         operation = "union",
         primitive = "sphere",
         inverseTransform = love.math.newTransform(0.5, 0.25):inverse(),
-        scale = 0.75,
-        smoothRadius = 0.5,
+        radius = 0.75,
+        blendRange = 0.5,
         color = {0.25, 0.75, 1, 1},
 
         noise = {
@@ -141,8 +141,8 @@ function love.load(arg)
         operation = "subtraction",
         primitive = "sphere",
         inverseTransform = translate3(love.math.newTransform(), 0, -0.25, 0.5):inverse(),
-        scale = 0.5,
-        smoothRadius = 0.25,
+        radius = 0.5,
+        blendRange = 0.25,
         color = {1, 0.5, 0.25, 1},
         noise = {},
       },
@@ -151,8 +151,9 @@ function love.load(arg)
         operation = "union",
         primitive = "box",
         inverseTransform = boxTransform:inverse(),
-        scale = 0.25,
-        smoothRadius = 0,
+        size = {0.25, 0.125, 0.5},
+        radius = 0,
+        blendRange = 0,
         color = {1, 0.75, 0.25, 1},
         noise = {},
       },

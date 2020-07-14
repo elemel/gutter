@@ -140,9 +140,10 @@ function M.applyEdits(edits, grid)
           local editDistance
 
           if edit.primitive == "box" then
-            editDistance = box(editX, editY, editZ, edit.scale, edit.scale, edit.scale)
+            local sizeX, sizeY, sizeZ = unpack(edit.size)
+            editDistance = box(editX, editY, editZ, sizeX, sizeY, sizeZ)
           elseif edit.primitive == "sphere" then
-            editDistance = sphere(editX, editY, editZ, edit.scale)
+            editDistance = sphere(editX, editY, editZ, edit.radius)
           else
             assert("Invalid primitive")
           end
@@ -163,14 +164,14 @@ function M.applyEdits(edits, grid)
               smoothUnionColor(
                 vertex.distance,
                 vertex.red, vertex.green, vertex.blue, vertex.alpha,
-                editDistance, editRed, editGreen, editBlue, editAlpha, edit.smoothRadius)
+                editDistance, editRed, editGreen, editBlue, editAlpha, edit.blendRange)
           elseif edit.operation == "subtraction" then
             vertex.distance, vertex.red, vertex.green, vertex.blue, vertex.alpha =
               smoothSubtractionColor(
                 editDistance, editRed, editGreen, editBlue, editAlpha,
                 vertex.distance,
                 vertex.red, vertex.green, vertex.blue, vertex.alpha,
-                edit.smoothRadius)
+                edit.blendRange)
           else
             assert("Invalid operation")
           end
