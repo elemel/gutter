@@ -2,6 +2,7 @@ local csg = require("gutter.csg")
 local gutterMath = require("gutter.math")
 local loveMath = require("love.math")
 
+local box = csg.box
 local cross = gutterMath.cross
 local fbm3 = gutterMath.fbm3
 local huge = math.huge
@@ -99,7 +100,9 @@ function M.applyEditToGrid(edit, grid)
         local editX, editY, editZ = transformPoint3(edit.inverseTransform, x, y, z)
         local editDistance
 
-        if edit.primitive == "sphere" then
+        if edit.primitive == "box" then
+          editDistance = box(editX, editY, editZ, edit.scale, edit.scale, edit.scale)
+        elseif edit.primitive == "sphere" then
           editDistance = sphere(editX, editY, editZ, edit.scale)
         else
           assert("Invalid primitive")

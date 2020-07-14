@@ -33,8 +33,18 @@ function M.smoothSubtractionColor(ad, ar, ag, ab, aa, bd, br, bg, bb, ba, k)
   return d, mix4(ar, ag, ab, aa, br, bg, bb, ba, t)
 end
 
-function M.sphere(x, y, z, radius)
-  return length3(x, y, z) - radius
+-- https://www.iquilezles.org/www/articles/distfunctions/distfunctions.htm
+function M.box(px, py, pz, bx, by, bz)
+  local qx = abs(px) - bx
+  local qy = abs(py) - by
+  local qz = abs(pz) - bz
+
+  return length3(max(qx, 0), max(qy, 0), max(qz, 0)) + min(max(qx, qy, qz), 0)
+end
+
+-- https://www.iquilezles.org/www/articles/distfunctions/distfunctions.htm
+function M.sphere(px, py, pz, s)
+  return length3(px, py, pz) - s
 end
 
 return M

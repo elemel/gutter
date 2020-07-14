@@ -10,12 +10,14 @@ local translate3 = gutterMath.translate3
 
 function love.load(arg)
   local parser = argparse("love DIRECTORY", "Mesh and draw a CSG model")
+  parser:flag("--editor", "Enable editor mode")
   parser:flag("--fullscreen", "Enable fullscreen mode")
   parser:flag("--high-dpi", "Enable high DPI mode")
   parser:option("--mesher", "Meshing algorithm"):args(1)
   parser:option("--msaa", "Antialiasing samples"):args(1):convert(tonumber)
   local parsedArgs = parser:parse(arg)
 
+  editor = parsedArgs.editor
   mesher = parsedArgs.mesher or "surface-splatting"
 
   if mesher ~= "dual-contouring" and mesher ~= "dual-contouring-2" and mesher ~= "surface-splatting" then
@@ -103,6 +105,11 @@ function love.load(arg)
     ]])
   end
 
+  local boxTransform = love.math.newTransform()
+  boxTransform:apply(setTranslation3(love.math.newTransform(), 0, -0.25, 0.5))
+  boxTransform:apply(setRotation3(love.math.newTransform(), 1, 0, 0, 0.0625 * pi))
+  boxTransform:apply(setRotation3(love.math.newTransform(), 0, 0, 1, 0.125 * pi))
+
   sculpture = {
     edits = {
       {
@@ -139,6 +146,16 @@ function love.load(arg)
         color = {1, 0.5, 0.25, 1},
         noise = {},
       },
+
+      {
+        operation = "union",
+        primitive = "box",
+        inverseTransform = boxTransform:inverse(),
+        scale = 0.25,
+        smoothRadius = 0,
+        color = {1, 0.75, 0.25, 1},
+        noise = {},
+      },
     }
   }
 
@@ -172,7 +189,7 @@ function love.load(arg)
 
   local size = 16
 
-  while size <= 64 do
+  while size <= 128 do
     workerInputChannel:push({
       mesher = mesher,
       edits = sculpture.edits,
@@ -231,7 +248,11 @@ end
 function love.draw()
   love.graphics.push()
   local width, height = love.graphics.getDimensions()
-  love.graphics.setScissor(200, 0, width - 400, height)
+
+  if editor then
+    love.graphics.setScissor(200, 0, width - 400, height)
+  end
+
   love.graphics.translate(0.5 * width, 0.5 * height)
 
   local scale = 0.375 * height
@@ -265,75 +286,72 @@ function love.draw()
     love.graphics.setShader(nil)
   end
 
-  -- love.graphics.setColor(0, 0, 0, 0.5)
-  -- love.graphics.setLineWidth(3 / scale)
-  -- love.graphics.line(-0.5 * width / scale, 0, 0.5 * width / scale, 0)
-  -- love.graphics.line(0, -0.5 * height / scale, 0, 0.5 * height / scale)
-  -- love.graphics.setLineWidth(1 / scale)
+  if editor then
+    love.graphics.setColor(1, 0.25, 0, 0.5)
+    love.graphics.line(-0.5 * width / scale, 0, 0.5 * width / scale, 0)
 
-  love.graphics.setColor(1, 0.25, 0, 0.5)
-  love.graphics.line(-0.5 * width / scale, 0, 0.5 * width / scale, 0)
-
-  love.graphics.setColor(1, 0.25, 0, 1)
-  love.graphics.setDepthMode("lequal", false)
-  love.graphics.line(-0.5 * width / scale, 0, 0.5 * width / scale, 0)
-  love.graphics.setDepthMode()
-
-  love.graphics.setColor(0.25, 1, 0, 0.5)
-  love.graphics.line(0, -0.5 * height / scale, 0, 0.5 * height / scale)
-
-  love.graphics.setColor(0.25, 1, 0, 1)
-  love.graphics.setDepthMode("lequal", false)
-  love.graphics.line(0, -0.5 * height / scale, 0, 0.5 * height / scale)
-  love.graphics.setDepthMode()
-
-  -- if disks then
-  --   surfaceSplatting.debugDrawDiskBases(disks)
-  -- end
-
-  for i, edit in ipairs(sculpture.edits) do
-    local x, y, z = transformPoint3(transform, transformPoint3(edit.inverseTransform:inverse(), 0, 0, 0))
-
-    if edit.operation == "union" then
-      love.graphics.setColor(0.25, 1, 0, 0.5)
-    else
-      love.graphics.setColor(1, 0.25, 0, 0.5)
-    end
-
-    love.graphics.circle("line", x, y, edit.scale, 64)
-
-    if edit.operation == "union" then
-      love.graphics.setColor(0.25, 1, 0, 1)
-    else
-      love.graphics.setColor(1, 0.25, 0, 1)
-    end
-
+    love.graphics.setColor(1, 0.25, 0, 1)
     love.graphics.setDepthMode("lequal", false)
-    love.graphics.circle("line", x, y, edit.scale, 64)
+    love.graphics.line(-0.5 * width / scale, 0, 0.5 * width / scale, 0)
     love.graphics.setDepthMode()
+
+    love.graphics.setColor(0.25, 1, 0, 0.5)
+    love.graphics.line(0, -0.5 * height / scale, 0, 0.5 * height / scale)
+
+    love.graphics.setColor(0.25, 1, 0, 1)
+    love.graphics.setDepthMode("lequal", false)
+    love.graphics.line(0, -0.5 * height / scale, 0, 0.5 * height / scale)
+    love.graphics.setDepthMode()
+
+    for i, edit in ipairs(sculpture.edits) do
+      local x, y, z = transformPoint3(transform, transformPoint3(edit.inverseTransform:inverse(), 0, 0, 0))
+
+      if edit.operation == "union" then
+        love.graphics.setColor(0.25, 1, 0, 0.5)
+      else
+        love.graphics.setColor(1, 0.25, 0, 0.5)
+      end
+
+      love.graphics.circle("line", x, y, edit.scale, 64)
+
+      if edit.operation == "union" then
+        love.graphics.setColor(0.25, 1, 0, 1)
+      else
+        love.graphics.setColor(1, 0.25, 0, 1)
+      end
+
+      love.graphics.setDepthMode("lequal", false)
+      love.graphics.circle("line", x, y, edit.scale, 64)
+      love.graphics.setDepthMode()
+    end
   end
 
   love.graphics.pop()
-  love.graphics.setScissor()
 
-  love.graphics.setColor(0.25, 0.25, 0.25, 1)
-  love.graphics.rectangle("fill", 0, 0, 200, height)
-
-  local font = love.graphics.getFont()
-  local fontWidth = font:getWidth("M")
-  local fontHeight = font:getHeight()
-
-  for i, edit in ipairs(sculpture.edits) do
-    love.graphics.setColor(1, 1, 1, 1)
-    -- love.graphics.rectangle("line", 0, 2 * (i - 1) * fontHeight, 200, 2 * fontHeight)
-    love.graphics.print(edit.operation .. " " .. edit.primitive, fontWidth, floor((2 * (i - 1) + 0.5) * fontHeight))
-
-    love.graphics.setColor(edit.color)
-    love.graphics.circle("fill", 200 - fontHeight, (2 * (i - 1) + 1) * fontHeight, floor(0.5 * fontHeight))
+  if editor then
+    love.graphics.setScissor()
   end
 
-  love.graphics.setColor(0.25, 0.25, 0.25, 1)
-  love.graphics.rectangle("fill", width - 200, 0, 200, height)
+  if editor then
+    love.graphics.setColor(0.25, 0.25, 0.25, 1)
+    love.graphics.rectangle("fill", 0, 0, 200, height)
+
+    local font = love.graphics.getFont()
+    local fontWidth = font:getWidth("M")
+    local fontHeight = font:getHeight()
+
+    for i, edit in ipairs(sculpture.edits) do
+      love.graphics.setColor(1, 1, 1, 1)
+      -- love.graphics.rectangle("line", 0, 2 * (i - 1) * fontHeight, 200, 2 * fontHeight)
+      love.graphics.print(edit.operation .. " " .. edit.primitive, fontWidth, floor((2 * (i - 1) + 0.5) * fontHeight))
+
+      love.graphics.setColor(edit.color)
+      love.graphics.circle("fill", 200 - fontHeight, (2 * (i - 1) + 1) * fontHeight, floor(0.5 * fontHeight))
+    end
+
+    love.graphics.setColor(0.25, 0.25, 0.25, 1)
+    love.graphics.rectangle("fill", width - 200, 0, 200, height)
+  end
 end
 
 function love.keypressed(key, scancode, isrepeat)
@@ -348,7 +366,7 @@ function love.keypressed(key, scancode, isrepeat)
 end
 
 function love.mousemoved(x, y, dx, dy, istouch)
-  if love.mouse.isDown(1) then
+  if editor and love.mouse.isDown(1) then
     local sensitivity = 1 / 128
     local transform = sculpture.edits[3].inverseTransform:inverse()
     transform = setTranslation3(love.math.newTransform(), sensitivity * dx, sensitivity * dy, 0) * transform
@@ -366,7 +384,7 @@ function love.mousemoved(x, y, dx, dy, istouch)
 
     local size = 16
 
-    while size <= 64 do
+    while size <= 128 do
       workerInputChannel:push({
         mesher = mesher,
         edits = sculpture.edits,
