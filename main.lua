@@ -1,7 +1,9 @@
 local argparse = require("argparse")
 local gutterMath = require("gutter.math")
+local quaternion = require("gutter.quaternion")
 
 local floor = math.floor
+local fromEulerAngles = quaternion.fromEulerAngles
 local pi = math.pi
 local setRotation3 = gutterMath.setRotation3
 local setTranslation3 = gutterMath.setTranslation3
@@ -105,57 +107,72 @@ function love.load(arg)
     ]])
   end
 
-  local boxTransform = love.math.newTransform()
-  boxTransform:apply(setTranslation3(love.math.newTransform(), 0, -0.375, 0.875))
-  boxTransform:apply(setRotation3(love.math.newTransform(), 1, 0, 0, 0.125 * pi))
-  boxTransform:apply(setRotation3(love.math.newTransform(), 0, 0, 1, 0.125 * pi))
-
   sculpture = {
     edits = {
       {
         operation = "union",
         primitive = "sphere",
-        inverseTransform = love.math.newTransform(-0.5, -0.25):inverse(),
-        radius = 0.5,
-        blendRange = 0,
         color = {0.5, 1, 0.25, 1},
+
+        translation = {-0.5, -0.25, 0},
+        rotation = {0, 0, 0, 1},
+        scale = 1,
+
+        radius = 0.5,
+
         noise = {},
+        blendRange = 0,
       },
 
       {
         operation = "union",
         primitive = "sphere",
-        inverseTransform = love.math.newTransform(0.5, 0.25):inverse(),
-        radius = 0.75,
-        blendRange = 0.5,
         color = {0.25, 0.75, 1, 1},
+
+        translation = {0.5, 0.25, 0},
+        rotation = {0, 0, 0, 1},
+        scale = 1,
+
+        radius = 0.75,
 
         noise = {
           amplitude = 0.5,
           frequency = 2.5,
           octaves = 2.5,
         },
+
+        blendRange = 0.5,
       },
 
       {
         operation = "subtraction",
         primitive = "sphere",
-        inverseTransform = translate3(love.math.newTransform(), 0, -0.25, 0.5):inverse(),
-        radius = 0.5,
-        blendRange = 0.25,
         color = {1, 0.5, 0.25, 1},
+
+        translation = {0, -0.25, 0.5},
+        rotation = {0, 0, 0, 1},
+        scale = 1,
+
+        radius = 0.5,
+
         noise = {},
+        blendRange = 0.25,
       },
 
       {
         operation = "union",
         primitive = "box",
-        inverseTransform = boxTransform:inverse(),
+        color = {1, 0.75, 0.25, 1},
+
+        translation = {0, -0.375, 0.75},
+        rotation = {fromEulerAngles(0.125 * math.pi, -0.125 * math.pi, 0.25 * math.pi)},
+        scale = 1,
+
         size = {0.25, 0.125, 0.5},
         radius = 0,
-        blendRange = 0,
-        color = {1, 0.75, 0.25, 1},
+
         noise = {},
+        blendRange = 0,
       },
     }
   }
@@ -305,7 +322,7 @@ function love.draw()
     love.graphics.setDepthMode()
 
     for i, edit in ipairs(sculpture.edits) do
-      local x, y, z = transformPoint3(transform, transformPoint3(edit.inverseTransform:inverse(), 0, 0, 0))
+      local x, y, z = transformPoint3(transform, unpack(edit.translation))
 
       if edit.operation == "union" then
         love.graphics.setColor(0.25, 1, 0, 0.5)
@@ -369,9 +386,9 @@ end
 function love.mousemoved(x, y, dx, dy, istouch)
   if editor and love.mouse.isDown(1) then
     local sensitivity = 1 / 128
-    local transform = sculpture.edits[3].inverseTransform:inverse()
-    transform = setTranslation3(love.math.newTransform(), sensitivity * dx, sensitivity * dy, 0) * transform
-    sculpture.edits[3].inverseTransform = transform:inverse()
+
+    sculpture.edits[3].translation[1] = sculpture.edits[3].translation[1] + sensitivity * dx
+    sculpture.edits[3].translation[2] = sculpture.edits[3].translation[2] + sensitivity * dy
 
     workerInputChannel:clear()
 

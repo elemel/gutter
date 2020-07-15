@@ -1,11 +1,13 @@
 local csg = require("gutter.csg")
 local gutterMath = require("gutter.math")
 local loveMath = require("love.math")
+local quaternion = require("gutter.quaternion")
 
 local box = csg.box
 local cross = gutterMath.cross
 local fbm3 = gutterMath.fbm3
 local huge = math.huge
+local inverseRotate = quaternion.inverseRotate
 local mix = gutterMath.mix
 local mix3 = gutterMath.mix3
 local mix4 = gutterMath.mix4
@@ -69,6 +71,10 @@ end
 function M.applyEditToGrid(edit, grid)
   local editRed, editGreen, editBlue, editAlpha = unpack(edit.color)
 
+  local translationX, translationY, translationZ = unpack(edit.translation)
+  local rotationA, rotationB, rotationC, rotationD = unpack(edit.rotation)
+  local scale = edit.scale
+
   local noiseConfig = edit.noise
   local noiseFrequency = noiseConfig.frequency or 1
   local noiseAmplitude = noiseConfig.amplitude or 1
@@ -97,7 +103,12 @@ function M.applyEditToGrid(edit, grid)
       for vertexX, vertex in ipairs(row) do
         local x = mix(minX, maxX, (vertexX - 1) / sizeX)
 
-        local editX, editY, editZ = transformPoint3(edit.inverseTransform, x, y, z)
+        local editX, editY, editZ = inverseRotate(
+          rotationA, rotationB, rotationC, rotationD,
+          (x - translationX) / scale,
+          (y - translationY) / scale,
+          (z - translationZ) / scale)
+
         local editDistance
 
         if edit.primitive == "box" then
@@ -111,14 +122,16 @@ function M.applyEditToGrid(edit, grid)
 
         if noiseOctaves > 0 then
           editDistance = editDistance + noiseAmplitude * (2 * fbm3(
-            noiseFrequency * x,
-            noiseFrequency * y,
-            noiseFrequency * z,
+            noiseFrequency * editX,
+            noiseFrequency * editY,
+            noiseFrequency * editZ,
             noise,
             noiseOctaves,
             noiseLacunarity,
             noiseGain) - 1)
         end
+
+        editDistance = editDistance * scale
 
         if edit.operation == "union" then
           vertex.distance, vertex.red, vertex.green, vertex.blue, vertex.alpha =

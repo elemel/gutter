@@ -1,6 +1,7 @@
 local csg = require("gutter.csg")
 local gutterMath = require("gutter.math")
 local loveMath = require("love.math")
+local quaternion = require("gutter.quaternion")
 
 local acos = math.acos
 local box = csg.box
@@ -9,6 +10,7 @@ local cross = gutterMath.cross
 local dot3 = gutterMath.dot3
 local fbm3 = gutterMath.fbm3
 local huge = math.huge
+local inverseRotate = quaternion.inverseRotate
 local min = math.min
 local mix = gutterMath.mix
 local mix3 = gutterMath.mix3
@@ -120,6 +122,10 @@ function M.applyEdits(edits, grid)
   for _, edit in ipairs(edits) do
     local editRed, editGreen, editBlue, editAlpha = unpack(edit.color)
 
+    local translationX, translationY, translationZ = unpack(edit.translation)
+    local rotationA, rotationB, rotationC, rotationD = unpack(edit.rotation)
+    local scale = edit.scale
+
     local noiseConfig = edit.noise
     local noiseFrequency = noiseConfig.frequency or 1
     local noiseAmplitude = noiseConfig.amplitude or 1
@@ -136,7 +142,12 @@ function M.applyEdits(edits, grid)
         for vertexX, vertex in ipairs(row) do
           local x = mix(minX, maxX, (vertexX - 1) / sizeZ)
 
-          local editX, editY, editZ = transformPoint3(edit.inverseTransform, x, y, z)
+          local editX, editY, editZ = inverseRotate(
+            rotationA, rotationB, rotationC, rotationD,
+            (x - translationX) / scale,
+            (y - translationY) / scale,
+            (z - translationZ) / scale)
+
           local editDistance
 
           if edit.primitive == "box" then
@@ -158,6 +169,8 @@ function M.applyEdits(edits, grid)
               noiseLacunarity,
               noiseGain) - 1)
           end
+
+          editDistance = editDistance / scale
 
           if edit.operation == "union" then
             vertex.distance, vertex.red, vertex.green, vertex.blue, vertex.alpha =
