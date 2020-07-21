@@ -1,5 +1,4 @@
 local dualContouring = require("gutter.dualContouring")
-local dualContouring2 = require("gutter.dualContouring2")
 local surfaceSplatting = require("gutter.surfaceSplatting")
 
 local function main(arg)
@@ -21,12 +20,6 @@ local function main(arg)
         input.minX, input.minY, input.minZ, input.maxX, input.maxY, input.maxZ)
 
       vertices = dualContouring.newMeshFromEdits(input.edits, grid)
-    elseif input.mesher == "dual-contouring-2" then
-      local grid = dualContouring2.newGrid(
-        input.sizeX, input.sizeY, input.sizeZ,
-        input.minX, input.minY, input.minZ, input.maxX, input.maxY, input.maxZ)
-
-      vertices = dualContouring2.newMeshFromEdits(input.edits, grid)
     else
       local bounds = {
         minX = input.minX,

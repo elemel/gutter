@@ -31,8 +31,8 @@ function love.load(arg)
   editor = parsedArgs.editor
   mesher = parsedArgs.mesher or "surface-splatting"
 
-  if mesher ~= "dual-contouring" and mesher ~= "dual-contouring-2" and mesher ~= "surface-splatting" then
-    print("Error: argument for option '--mesher' must be one of 'dual-contouring', 'dual-contouring-2', 'surface-splatting'")
+  if mesher ~= "dual-contouring" and mesher ~= "surface-splatting" then
+    print("Error: argument for option '--mesher' must be one of 'dual-contouring', 'surface-splatting'")
     love.event.quit(1)
     return
   end
@@ -215,21 +215,6 @@ function love.load(arg)
   local maxX = 2
   local maxY = 2
   local maxZ = 2
-
-  -- if mesher == "dual-contouring" then
-  --   local grid = dualContouring.newGrid(
-  --     sizeX, sizeY, sizeZ, minX, minY, minZ, maxX, maxY, maxZ)
-
-  --   mesh = dualContouring.newMeshFromEdits(sculpture.edits, grid)
-  -- elseif mesher == "dual-contouring-2" then
-  --   local grid = dualContouring2.newGrid(
-  --     sizeX, sizeY, sizeZ, minX, minY, minZ, maxX, maxY, maxZ)
-
-  --   mesh = dualContouring2.newMeshFromEdits(sculpture.edits, grid)
-  -- else
-  --   -- mesh, disks = surfaceSplatting.newMeshFromEdits(
-  --   --   sculpture.edits, minX, minY, minZ, maxX, maxY, maxZ, sizeX, sizeY, sizeZ)
-  -- end
 
   angle = 0
 
