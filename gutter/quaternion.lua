@@ -1,6 +1,7 @@
 local cos = math.cos
 local sin = math.sin
 local sqrt = math.sqrt
+local sub = string.sub
 
 local M = {}
 
@@ -14,6 +15,7 @@ function M.fromAxisAngle(ax, ay, az, angle)
   local qx = ax * sin(0.5 * angle)
   local qy = ay * sin(0.5 * angle)
   local qz = az * sin(0.5 * angle)
+
   local qw = cos(0.5 * angle)
 
   return qx, qy, qz, qw
@@ -24,16 +26,27 @@ function M.normalize(x, y, z, w)
   return x / length, y / length, z / length, w / length, length
 end
 
--- Unity order (ZXY): https://docs.unity3d.com/ScriptReference/Transform-eulerAngles.html
-function M.fromEulerAngles(pitchX, yawY, rollZ)
+local axisVectors = {
+  x = {1, 0, 0},
+  y = {0, 1, 0},
+  z = {0, 0, 1},
+}
+
+function M.fromEulerAngles(axes, ...)
   local qx = 0
   local qy = 0
   local qz = 0
   local qw = 1
 
-  qx, qy, qz, qw = M.product(qx, qy, qz, qw, M.fromAxisAngle(0, 0, 1, rollZ))
-  qx, qy, qz, qw = M.product(qx, qy, qz, qw, M.fromAxisAngle(1, 0, 0, pitchX))
-  qx, qy, qz, qw = M.product(qx, qy, qz, qw, M.fromAxisAngle(0, 1, 0, yawY))
+  for i = 1, #axes do
+    local axis = sub(axes, i, i)
+    local axisVector = assert(axisVectors[axis], "Invalid axis")
+    local ax, ay, az = unpack(axisVector)
+    local angle = select(i, ...)
+
+    qx, qy, qz, qw = M.product(
+      qx, qy, qz, qw, M.fromAxisAngle(ax, ay, az, angle))
+  end
 
   return qx, qy, qz, qw
 end

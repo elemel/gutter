@@ -1,6 +1,7 @@
 local argparse = require("argparse")
 local gutterMath = require("gutter.math")
 local quaternion = require("gutter.quaternion")
+local Slab = require("Slab")
 
 local floor = math.floor
 local fromEulerAngles = quaternion.fromEulerAngles
@@ -9,6 +10,14 @@ local setRotation3 = gutterMath.setRotation3
 local setTranslation3 = gutterMath.setTranslation3
 local transformPoint3 = gutterMath.transformPoint3
 local translate3 = gutterMath.translate3
+local upper = string.upper
+
+local selection
+
+local function capitalize(s)
+  s = s:gsub("^%l", upper)
+  return s
+end
 
 function love.load(arg)
   local parser = argparse("love DIRECTORY", "Mesh and draw a CSG model")
@@ -35,7 +44,7 @@ function love.load(arg)
 
   love.window.setMode(800, 600, {
     fullscreen = parsedArgs.fullscreen,
-    highdpi = parsedArgs.high_dpi,
+    -- highdpi = parsedArgs.high_dpi,
 
     minwidth = 800,
     minheight = 600,
@@ -118,9 +127,17 @@ function love.load(arg)
         rotation = {0, 0, 0, 1},
         scale = 1,
 
+        size = {0, 0, 0},
         radius = 0.5,
 
-        noise = {},
+        noise = {
+          amplitude = 1,
+          frequency = 1,
+          gain = 0.5,
+          lacunarity = 2,
+          octaves = 0,
+        },
+
         blendRange = 0,
       },
 
@@ -133,11 +150,14 @@ function love.load(arg)
         rotation = {0, 0, 0, 1},
         scale = 1,
 
+        size = {0, 0, 0},
         radius = 0.75,
 
         noise = {
           amplitude = 0.5,
           frequency = 2.5,
+          gain = 0.5,
+          lacunarity = 2,
           octaves = 2.5,
         },
 
@@ -153,9 +173,17 @@ function love.load(arg)
         rotation = {0, 0, 0, 1},
         scale = 1,
 
+        size = {0, 0, 0},
         radius = 0.5,
 
-        noise = {},
+        noise = {
+          amplitude = 1,
+          frequency = 1,
+          gain = 0.5,
+          lacunarity = 2,
+          octaves = 0,
+        },
+
         blendRange = 0.25,
       },
 
@@ -165,13 +193,20 @@ function love.load(arg)
         color = {1, 0.75, 0.25, 1},
 
         translation = {0, -0.375, 0.75},
-        rotation = {fromEulerAngles(0.125 * math.pi, -0.125 * math.pi, 0.25 * math.pi)},
+        rotation = {fromEulerAngles("xzy", 0.125 * math.pi, 0.375 * math.pi, -0.0625 * math.pi)},
         scale = 1,
 
         size = {0.25, 0.125, 0.5},
         radius = 0,
 
-        noise = {},
+        noise = {
+          amplitude = 1,
+          frequency = 1,
+          gain = 0.5,
+          lacunarity = 2,
+          octaves = 0,
+        },
+
         blendRange = 0,
       },
     }
@@ -229,9 +264,32 @@ function love.load(arg)
   end
 
   workerOutputChannel = love.thread.getChannel("workerOutput")
+
+  Slab.SetINIStatePath(nil)
+  Slab.Initialize(arg)
+end
+
+local combo = {value = 1, items = {'A', 'B', 'C'}}
+
+local operations = {"subtraction", "union"}
+local selectableOperations = {"Subtraction", "Union"}
+
+local primitives = {"box", "sphere"}
+local selectablePrimitives = {"Box", "Sphere"}
+
+local function index(t, v)
+  for i, v2 in ipairs(t) do
+    if v2 == v then
+      return i
+    end
+  end
+
+  return nil
 end
 
 function love.update(dt)
+  Slab.Update(dt)
+
   local output = workerOutputChannel:pop()
 
   if output and #output.vertices >= 3 then
@@ -260,6 +318,444 @@ function love.update(dt)
 
       mesh = love.graphics.newMesh(vertexFormat, output.vertices, "triangles")
     end
+  end
+
+  local width, height = love.graphics.getDimensions()
+
+  do
+    Slab.BeginWindow("edits", {
+      X = 0,
+      Y = 0,
+
+      W = 200 - 4,
+      H = height - 4,
+
+      AllowMove = false,
+      AllowResize = false,
+      AutoSizeContent = true,
+      AutoSizeWindow = false,
+      Border = 4,
+      ResetLayout = true,
+      Rounding = 0,
+      NoOutline = true,
+    })
+
+    Slab.Text("Edits")
+    Slab.Separator()
+
+    for i, edit in ipairs(sculpture.edits) do
+      if Slab.TextSelectable(capitalize(edit.operation) .. " " .. capitalize(edit.primitive) .. " #" .. i, {IsSelected = (selection == i)}) then
+        if selection == i then
+          selection = nil
+        else
+          selection = i
+        end
+      end
+    end
+
+    Slab.EndWindow()
+  end
+
+  do
+    Slab.BeginWindow("properties", {
+      X = width - 200,
+      Y = 0,
+
+      W = 200 - 4,
+      H = height - 4,
+
+      AllowMove = false,
+      AllowResize = false,
+      AutoSizeContent = true,
+      AutoSizeWindow = false,
+      Border = 4,
+      ResetLayout = true,
+      Rounding = 0,
+      NoOutline = true,
+    })
+
+    Slab.Text("Properties")
+    Slab.Separator()
+
+    if selection then
+      local edit = sculpture.edits[selection]
+
+      do
+        Slab.BeginLayout("operationAndPrimitive", {Columns = 2, ExpandW = true})
+
+        do
+          Slab.SetLayoutColumn(1)
+          Slab.Text("Operation")
+
+          Slab.SetLayoutColumn(2)
+          local selectedOperation = selectableOperations[index(operations, edit.operation)]
+
+          if Slab.BeginComboBox("operation", {Selected = selectedOperation}) then
+            for i, v in ipairs(selectableOperations) do
+              if Slab.TextSelectable(v) then
+                edit.operation = operations[i]
+                remesh()
+              end
+            end
+
+            Slab.EndComboBox()
+          end
+        end
+
+        do
+          Slab.SetLayoutColumn(1)
+          Slab.Text("Primitive")
+
+          Slab.SetLayoutColumn(2)
+          local selectedPrimitive = selectablePrimitives[index(primitives, edit.primitive)]
+
+          if Slab.BeginComboBox("primitive", {Selected = selectedPrimitive}) then
+            for i, v in ipairs(selectablePrimitives) do
+              if Slab.TextSelectable(v) then
+                edit.primitive = primitives[i]
+                remesh()
+              end
+            end
+
+            Slab.EndComboBox()
+          end
+        end
+
+        Slab.EndLayout()
+      end
+
+      Slab.Separator()
+
+      do
+        Slab.Text("Color")
+        Slab.BeginLayout("color", {Columns = 2, ExpandW = true})
+        local red, green, blue, alpha = unpack(edit.color)
+
+        do
+          Slab.SetLayoutColumn(1)
+          Slab.Text("Red")
+
+          Slab.SetLayoutColumn(2)
+
+          if Slab.Input("red", {Align = "left", Text = tostring(red)}) then
+            edit.color[1] = tonumber(Slab.GetInputText()) or edit.color[1]
+            remesh()
+          end
+        end
+
+        do
+          Slab.SetLayoutColumn(1)
+          Slab.Text("Green")
+
+          Slab.SetLayoutColumn(2)
+
+          if Slab.Input("green", {Align = "left", Text = tostring(green)}) then
+            edit.color[2] = tonumber(Slab.GetInputText()) or edit.color[2]
+            remesh()
+          end
+        end
+
+        do
+          Slab.SetLayoutColumn(1)
+          Slab.Text("Blue")
+
+          Slab.SetLayoutColumn(2)
+
+          if Slab.Input("blue", {Align = "left", Text = tostring(blue)}) then
+            edit.color[3] = tonumber(Slab.GetInputText()) or edit.color[3]
+            remesh()
+          end
+        end
+
+        do
+          Slab.SetLayoutColumn(1)
+          Slab.Text("Alpha")
+
+          Slab.SetLayoutColumn(2)
+
+          if Slab.Input("alpha", {Align = "left", Text = tostring(alpha)}) then
+            edit.color[4] = tonumber(Slab.GetInputText()) or edit.color[4]
+            remesh()
+          end
+        end
+
+        Slab.EndLayout()
+      end
+
+      Slab.Separator()
+
+      do
+        Slab.Text("Translation")
+        Slab.BeginLayout("translation", {Columns = 2, ExpandW = true})
+        local x, y, z = unpack(edit.translation)
+
+        do
+          Slab.SetLayoutColumn(1)
+          Slab.Text("X")
+
+          Slab.SetLayoutColumn(2)
+
+          if Slab.Input("translationX", {Align = "left", Text = tostring(x)}) then
+            edit.translation[1] = tonumber(Slab.GetInputText()) or edit.translation[1]
+            remesh()
+          end
+        end
+
+        do
+          Slab.SetLayoutColumn(1)
+          Slab.Text("Y")
+
+          Slab.SetLayoutColumn(2)
+
+          if Slab.Input("translationY", {Align = "left", Text = tostring(y)}) then
+            edit.translation[2] = tonumber(Slab.GetInputText()) or edit.translation[2]
+            remesh()
+          end
+        end
+
+        do
+          Slab.SetLayoutColumn(1)
+          Slab.Text("Z")
+
+          Slab.SetLayoutColumn(2)
+
+          if Slab.Input("translationZ", {Align = "left", Text = tostring(z)}) then
+            edit.translation[3] = tonumber(Slab.GetInputText()) or edit.translation[3]
+            remesh()
+          end
+        end
+
+        Slab.EndLayout()
+      end
+
+      Slab.Separator()
+
+      do
+        Slab.Text("Rotation")
+        Slab.BeginLayout("rotation", {Columns = 2, ExpandW = true})
+        local x, y, z, w = unpack(edit.rotation)
+
+        do
+          Slab.SetLayoutColumn(1)
+          Slab.Text("QX")
+
+          Slab.SetLayoutColumn(2)
+
+          if Slab.Input("rotationX", {Align = "left", Text = tostring(x)}) then
+            edit.rotation[1] = tonumber(Slab.GetInputText()) or edit.rotation[1]
+            remesh()
+          end
+        end
+
+        do
+          Slab.SetLayoutColumn(1)
+          Slab.Text("QY")
+
+          Slab.SetLayoutColumn(2)
+
+          if Slab.Input("rotationY", {Align = "left", Text = tostring(y)}) then
+            edit.rotation[2] = tonumber(Slab.GetInputText()) or edit.rotation[2]
+            remesh()
+          end
+        end
+
+        do
+          Slab.SetLayoutColumn(1)
+          Slab.Text("QZ")
+
+          Slab.SetLayoutColumn(2)
+
+          if Slab.Input("rotationZ", {Align = "left", Text = tostring(z)}) then
+            edit.rotation[3] = tonumber(Slab.GetInputText()) or edit.rotation[3]
+            remesh()
+          end
+        end
+
+        do
+          Slab.SetLayoutColumn(1)
+          Slab.Text("QW")
+
+          Slab.SetLayoutColumn(2)
+
+          if Slab.Input("rotationW", {Align = "left", Text = tostring(w)}) then
+            edit.rotation[4] = tonumber(Slab.GetInputText()) or edit.rotation[4]
+            remesh()
+          end
+        end
+
+        Slab.EndLayout()
+      end
+
+      Slab.Separator()
+
+      do
+        Slab.BeginLayout("scale", {Columns = 2, ExpandW = true})
+
+        do
+          Slab.SetLayoutColumn(1)
+          Slab.Text("Scale")
+
+          Slab.SetLayoutColumn(2)
+
+          if Slab.Input("scale", {Align = "left", Text = tostring(edit.scale)}) then
+            edit.scale = tonumber(Slab.GetInputText()) or edit.scale
+            remesh()
+          end
+        end
+
+        Slab.EndLayout()
+      end
+
+      Slab.Separator()
+
+      do
+        Slab.Text("Rounded Box")
+        Slab.BeginLayout("roundedBox", {Columns = 2, ExpandW = true})
+        local width, height, depth = unpack(edit.size)
+
+        do
+          Slab.SetLayoutColumn(1)
+          Slab.Text("Width")
+
+          Slab.SetLayoutColumn(2)
+
+          if Slab.Input("width", {Align = "left", Text = tostring(width)}) then
+            edit.size[1] = tonumber(Slab.GetInputText()) or edit.size[1]
+            remesh()
+          end
+        end
+
+        do
+          Slab.SetLayoutColumn(1)
+          Slab.Text("Height")
+
+          Slab.SetLayoutColumn(2)
+
+          if Slab.Input("height", {Align = "left", Text = tostring(height)}) then
+            edit.size[2] = tonumber(Slab.GetInputText()) or edit.size[2]
+            remesh()
+          end
+        end
+
+        do
+          Slab.SetLayoutColumn(1)
+          Slab.Text("Depth")
+
+          Slab.SetLayoutColumn(2)
+
+          if Slab.Input("depth", {Align = "left", Text = tostring(depth)}) then
+            edit.size[3] = tonumber(Slab.GetInputText()) or edit.size[3]
+            remesh()
+          end
+        end
+
+        do
+          Slab.SetLayoutColumn(1)
+          Slab.Text("Radius")
+
+          Slab.SetLayoutColumn(2)
+
+          if Slab.Input("radius", {Align = "left", Text = tostring(edit.radius)}) then
+            edit.radius = tonumber(Slab.GetInputText()) or edit.radius
+            remesh()
+          end
+        end
+
+        Slab.EndLayout()
+      end
+
+      Slab.Separator()
+
+      do
+        Slab.Text("Noise")
+        Slab.BeginLayout("noise", {Columns = 2, ExpandW = true})
+        local noise = edit.noise
+
+        do
+          Slab.SetLayoutColumn(1)
+          Slab.Text("Octaves")
+
+          Slab.SetLayoutColumn(2)
+
+          if Slab.Input("octaves", {Align = "left", Text = tostring(noise.octaves)}) then
+            noise.octaves = tonumber(Slab.GetInputText()) or noise.octaves
+            remesh()
+          end
+        end
+
+        do
+          Slab.SetLayoutColumn(1)
+          Slab.Text("Frequency")
+
+          Slab.SetLayoutColumn(2)
+
+          if Slab.Input("frequency", {Align = "left", Text = tostring(noise.frequency)}) then
+            noise.frequency = tonumber(Slab.GetInputText()) or noise.frequency
+            remesh()
+          end
+        end
+
+        do
+          Slab.SetLayoutColumn(1)
+          Slab.Text("Amplitude")
+
+          Slab.SetLayoutColumn(2)
+
+          if Slab.Input("amplitude", {Align = "left", Text = tostring(noise.amplitude)}) then
+            noise.amplitude = tonumber(Slab.GetInputText()) or noise.amplitude
+            remesh()
+          end
+        end
+
+        do
+          Slab.SetLayoutColumn(1)
+          Slab.Text("Lacunarity")
+
+          Slab.SetLayoutColumn(2)
+
+          if Slab.Input("lacunarity", {Align = "left", Text = tostring(noise.lacunarity)}) then
+            noise.lacunarity = tonumber(Slab.GetInputText()) or noise.lacunarity
+            remesh()
+          end
+        end
+
+        do
+          Slab.SetLayoutColumn(1)
+          Slab.Text("Gain")
+
+          Slab.SetLayoutColumn(2)
+
+          if Slab.Input("gain", {Align = "left", Text = tostring(noise.gain)}) then
+            noise.gain = tonumber(Slab.GetInputText()) or noise.gain
+            remesh()
+          end
+        end
+
+        Slab.EndLayout()
+      end
+
+      Slab.Separator()
+
+      do
+        Slab.BeginLayout("blendRange", {Columns = 2, ExpandW = true})
+
+        do
+          Slab.SetLayoutColumn(1)
+          Slab.Text("Blend Range")
+
+          Slab.SetLayoutColumn(2)
+
+          if Slab.Input("blendRange", {Align = "left", Text = tostring(edit.blendRange)}) then
+            edit.blendRange = tonumber(Slab.GetInputText()) or edit.blendRange
+            remesh()
+          end
+        end
+
+        Slab.EndLayout()
+      end
+    end
+
+    Slab.EndWindow()
   end
 end
 
@@ -370,6 +866,8 @@ function love.draw()
     love.graphics.setColor(0.25, 0.25, 0.25, 1)
     love.graphics.rectangle("fill", width - 200, 0, 200, height)
   end
+
+  Slab.Draw()
 end
 
 function love.keypressed(key, scancode, isrepeat)
@@ -431,4 +929,39 @@ end
 
 function love.wheelmoved(x, y)
   angle = angle - x / 16 * pi
+end
+
+function remesh()
+  workerInputChannel:clear()
+
+  local minX = -2
+  local minY = -2
+  local minZ = -2
+
+  local maxX = 2
+  local maxY = 2
+  local maxZ = 2
+
+  local size = 16
+
+  while size <= 128 do
+    workerInputChannel:push({
+      mesher = mesher,
+      edits = sculpture.edits,
+
+      minX = minX,
+      minY = minY,
+      minZ = minZ,
+
+      maxX = maxX,
+      maxY = maxY,
+      maxZ = maxZ,
+
+      sizeX = size,
+      sizeY = size,
+      sizeZ = size,
+    })
+
+    size = 2 * size
+  end
 end
