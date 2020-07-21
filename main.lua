@@ -120,7 +120,6 @@ function love.load(arg)
     edits = {
       {
         operation = "union",
-        primitive = "sphere",
         color = {0.5, 1, 0.25, 1},
 
         translation = {-0.5, -0.25, 0},
@@ -143,7 +142,6 @@ function love.load(arg)
 
       {
         operation = "union",
-        primitive = "sphere",
         color = {0.25, 0.75, 1, 1},
 
         translation = {0.5, 0.25, 0},
@@ -166,7 +164,6 @@ function love.load(arg)
 
       {
         operation = "subtraction",
-        primitive = "sphere",
         color = {1, 0.5, 0.25, 1},
 
         translation = {0, -0.25, 0.5},
@@ -189,7 +186,6 @@ function love.load(arg)
 
       {
         operation = "union",
-        primitive = "box",
         color = {1, 0.75, 0.25, 1},
 
         translation = {0, -0.375, 0.75},
@@ -274,9 +270,6 @@ local combo = {value = 1, items = {'A', 'B', 'C'}}
 local operations = {"subtraction", "union"}
 local selectableOperations = {"Subtraction", "Union"}
 
-local primitives = {"box", "sphere"}
-local selectablePrimitives = {"Box", "Sphere"}
-
 local function index(t, v)
   for i, v2 in ipairs(t) do
     if v2 == v then
@@ -344,7 +337,7 @@ function love.update(dt)
     Slab.Separator()
 
     for i, edit in ipairs(sculpture.edits) do
-      if Slab.TextSelectable(capitalize(edit.operation) .. " " .. capitalize(edit.primitive) .. " #" .. i, {IsSelected = (selection == i)}) then
+      if Slab.TextSelectable(capitalize(edit.operation) .. " #" .. i, {IsSelected = (selection == i)}) then
         if selection == i then
           selection = nil
         else
@@ -381,7 +374,7 @@ function love.update(dt)
       local edit = sculpture.edits[selection]
 
       do
-        Slab.BeginLayout("operationAndPrimitive", {Columns = 2, ExpandW = true})
+        Slab.BeginLayout("operation", {Columns = 2, ExpandW = true})
 
         do
           Slab.SetLayoutColumn(1)
@@ -394,25 +387,6 @@ function love.update(dt)
             for i, v in ipairs(selectableOperations) do
               if Slab.TextSelectable(v) then
                 edit.operation = operations[i]
-                remesh()
-              end
-            end
-
-            Slab.EndComboBox()
-          end
-        end
-
-        do
-          Slab.SetLayoutColumn(1)
-          Slab.Text("Primitive")
-
-          Slab.SetLayoutColumn(2)
-          local selectedPrimitive = selectablePrimitives[index(primitives, edit.primitive)]
-
-          if Slab.BeginComboBox("primitive", {Selected = selectedPrimitive}) then
-            for i, v in ipairs(selectablePrimitives) do
-              if Slab.TextSelectable(v) then
-                edit.primitive = primitives[i]
                 remesh()
               end
             end
@@ -844,27 +818,6 @@ function love.draw()
 
   if editor then
     love.graphics.setScissor()
-  end
-
-  if editor then
-    love.graphics.setColor(0.25, 0.25, 0.25, 1)
-    love.graphics.rectangle("fill", 0, 0, 200, height)
-
-    local font = love.graphics.getFont()
-    local fontWidth = font:getWidth("M")
-    local fontHeight = font:getHeight()
-
-    for i, edit in ipairs(sculpture.edits) do
-      love.graphics.setColor(1, 1, 1, 1)
-      -- love.graphics.rectangle("line", 0, 2 * (i - 1) * fontHeight, 200, 2 * fontHeight)
-      love.graphics.print(edit.operation .. " " .. edit.primitive, fontWidth, floor((2 * (i - 1) + 0.5) * fontHeight))
-
-      love.graphics.setColor(edit.color)
-      love.graphics.circle("fill", 200 - fontHeight, (2 * (i - 1) + 1) * fontHeight, floor(0.5 * fontHeight))
-    end
-
-    love.graphics.setColor(0.25, 0.25, 0.25, 1)
-    love.graphics.rectangle("fill", width - 200, 0, 200, height)
   end
 
   Slab.Draw()

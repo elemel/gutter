@@ -148,16 +148,8 @@ function M.applyEdits(edits, grid)
             (y - translationY) / scale,
             (z - translationZ) / scale)
 
-          local editDistance
-
-          if edit.primitive == "box" then
-            local sizeX, sizeY, sizeZ = unpack(edit.size)
-            editDistance = box(editX, editY, editZ, sizeX, sizeY, sizeZ)
-          elseif edit.primitive == "sphere" then
-            editDistance = sphere(editX, editY, editZ, edit.radius)
-          else
-            assert("Invalid primitive")
-          end
+          local sizeX, sizeY, sizeZ = unpack(edit.size)
+          local editDistance = box(editX, editY, editZ, sizeX, sizeY, sizeZ) - edit.radius
 
           if noiseOctaves > 0 then
             editDistance = editDistance + noiseAmplitude * (2 * fbm3(
