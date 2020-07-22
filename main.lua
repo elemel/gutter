@@ -386,64 +386,6 @@ function love.update(dt)
       Slab.Separator()
 
       do
-        Slab.Text("Color")
-        Slab.BeginLayout("color", {Columns = 2, ExpandW = true})
-        local red, green, blue, alpha = unpack(edit.color)
-
-        do
-          Slab.SetLayoutColumn(1)
-          Slab.Text("Red")
-
-          Slab.SetLayoutColumn(2)
-
-          if Slab.Input("red", {Align = "left", Text = tostring(red)}) then
-            edit.color[1] = tonumber(Slab.GetInputText()) or edit.color[1]
-            remesh()
-          end
-        end
-
-        do
-          Slab.SetLayoutColumn(1)
-          Slab.Text("Green")
-
-          Slab.SetLayoutColumn(2)
-
-          if Slab.Input("green", {Align = "left", Text = tostring(green)}) then
-            edit.color[2] = tonumber(Slab.GetInputText()) or edit.color[2]
-            remesh()
-          end
-        end
-
-        do
-          Slab.SetLayoutColumn(1)
-          Slab.Text("Blue")
-
-          Slab.SetLayoutColumn(2)
-
-          if Slab.Input("blue", {Align = "left", Text = tostring(blue)}) then
-            edit.color[3] = tonumber(Slab.GetInputText()) or edit.color[3]
-            remesh()
-          end
-        end
-
-        do
-          Slab.SetLayoutColumn(1)
-          Slab.Text("Alpha")
-
-          Slab.SetLayoutColumn(2)
-
-          if Slab.Input("alpha", {Align = "left", Text = tostring(alpha)}) then
-            edit.color[4] = tonumber(Slab.GetInputText()) or edit.color[4]
-            remesh()
-          end
-        end
-
-        Slab.EndLayout()
-      end
-
-      Slab.Separator()
-
-      do
         Slab.Text("Translation")
         Slab.BeginLayout("translation", {Columns = 2, ExpandW = true})
         local x, y, z = unpack(edit.translation)
@@ -538,6 +480,64 @@ function love.update(dt)
 
           if Slab.Input("rotationW", {Align = "left", Text = tostring(w)}) then
             edit.rotation[4] = tonumber(Slab.GetInputText()) or edit.rotation[4]
+            remesh()
+          end
+        end
+
+        Slab.EndLayout()
+      end
+
+      Slab.Separator()
+
+      do
+        Slab.Text("Color")
+        Slab.BeginLayout("color", {Columns = 2, ExpandW = true})
+        local red, green, blue, alpha = unpack(edit.color)
+
+        do
+          Slab.SetLayoutColumn(1)
+          Slab.Text("Red")
+
+          Slab.SetLayoutColumn(2)
+
+          if Slab.Input("red", {Align = "left", Text = tostring(red)}) then
+            edit.color[1] = tonumber(Slab.GetInputText()) or edit.color[1]
+            remesh()
+          end
+        end
+
+        do
+          Slab.SetLayoutColumn(1)
+          Slab.Text("Green")
+
+          Slab.SetLayoutColumn(2)
+
+          if Slab.Input("green", {Align = "left", Text = tostring(green)}) then
+            edit.color[2] = tonumber(Slab.GetInputText()) or edit.color[2]
+            remesh()
+          end
+        end
+
+        do
+          Slab.SetLayoutColumn(1)
+          Slab.Text("Blue")
+
+          Slab.SetLayoutColumn(2)
+
+          if Slab.Input("blue", {Align = "left", Text = tostring(blue)}) then
+            edit.color[3] = tonumber(Slab.GetInputText()) or edit.color[3]
+            remesh()
+          end
+        end
+
+        do
+          Slab.SetLayoutColumn(1)
+          Slab.Text("Alpha")
+
+          Slab.SetLayoutColumn(2)
+
+          if Slab.Input("alpha", {Align = "left", Text = tostring(alpha)}) then
+            edit.color[4] = tonumber(Slab.GetInputText()) or edit.color[4]
             remesh()
           end
         end
