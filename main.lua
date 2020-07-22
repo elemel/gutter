@@ -44,7 +44,7 @@ function love.load(arg)
 
   love.window.setMode(800, 600, {
     fullscreen = parsedArgs.fullscreen,
-    -- highdpi = parsedArgs.high_dpi,
+    highdpi = parsedArgs.high_dpi,
 
     minwidth = 800,
     minheight = 600,
@@ -183,7 +183,7 @@ function love.load(arg)
         orientation = {fromEulerAngles("xzy", 0.125 * math.pi, 0.375 * math.pi, -0.0625 * math.pi)},
 
         color = {1, 0.75, 0.25, 1},
-        roundedBox = {0.25, 0.125, 0.5, 0},
+        roundedBox = {0.5, 0.25, 1, 0},
 
         noise = {
           amplitude = 1,
@@ -306,10 +306,38 @@ function love.update(dt)
       NoOutline = true,
     })
 
-    Slab.Text("Edits")
+    Slab.Text("Edits", {Color = {1, 1, 1}})
     Slab.Separator()
 
-    for i, edit in ipairs(sculpture.edits) do
+    if Slab.Button("New") then
+      table.insert(sculpture.edits, {
+        operation = "union",
+        blendRange = 0,
+
+        position = {0, 0, 0},
+        orientation = {0, 0, 0, 1},
+
+        color = {0.5, 0.5, 0.5, 1},
+        roundedBox = {1, 1, 1, 0.5},
+
+        noise = {
+          amplitude = 1,
+          frequency = 1,
+          gain = 0.5,
+          lacunarity = 2,
+          octaves = 0,
+        },
+      })
+
+      selection = #sculpture.edits
+      remesh()
+    end
+
+    Slab.Separator()
+
+    for i = #sculpture.edits, 1, -1 do
+      edit = sculpture.edits[i]
+
       if Slab.TextSelectable(capitalize(edit.operation) .. " #" .. i, {IsSelected = (selection == i)}) then
         if selection == i then
           selection = nil
@@ -340,7 +368,7 @@ function love.update(dt)
       NoOutline = true,
     })
 
-    Slab.Text("Properties")
+    Slab.Text("Properties", {Color = {1, 1, 1}})
     Slab.Separator()
 
     if selection then
@@ -671,6 +699,20 @@ function love.update(dt)
         end
 
         Slab.EndLayout()
+      end
+
+      Slab.Separator()
+
+      if Slab.Button("Delete") then
+        table.remove(sculpture.edits, selection)
+
+        if #sculpture.edits == 0 then
+          selection = nil
+        else
+          selection = math.min(selection, #sculpture.edits)
+        end
+
+        remesh()
       end
     end
 

@@ -106,7 +106,9 @@ function M.applyEditToGrid(edit, grid)
         local editX, editY, editZ = inverseRotate(
           qx, qy, qz, qw, x - positionX, y - positionY, z - positionZ)
 
-        local editDistance = box(editX, editY, editZ, width - 2 * radius, height - 2 * radius, depth - 2 * radius) - radius
+        local editDistance = box(
+          editX, editY, editZ,
+          0.5 * width - radius, 0.5 * height - radius, 0.5 * depth - radius) - radius
 
         if noiseOctaves > 0 then
           editDistance = editDistance + noiseAmplitude * (2 * fbm3(

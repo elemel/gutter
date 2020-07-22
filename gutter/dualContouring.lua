@@ -146,7 +146,9 @@ function M.applyEdits(edits, grid)
             rotationA, rotationB, rotationC, rotationD,
             x - positionX, y - positionY, z - positionZ)
 
-          local editDistance = box(editX, editY, editZ, width, height, depth) - radius
+        local editDistance = box(
+          editX, editY, editZ,
+          0.5 * width - radius, 0.5 * height - radius, 0.5 * depth - radius) - radius
 
           if noiseOctaves > 0 then
             editDistance = editDistance + noiseAmplitude * (2 * fbm3(
