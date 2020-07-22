@@ -70,7 +70,7 @@ end
 
 function M.applyEditToGrid(edit, grid)
   local positionX, positionY, positionZ = unpack(edit.position)
-  local rotationA, rotationB, rotationC, rotationD = unpack(edit.rotation)
+  local qx, qy, qz, qw = unpack(edit.orientation)
 
   local editRed, editGreen, editBlue, editAlpha = unpack(edit.color)
   local width, height, depth, radius = unpack(edit.roundedBox)
@@ -104,8 +104,7 @@ function M.applyEditToGrid(edit, grid)
         local x = mix(minX, maxX, (vertexX - 1) / sizeX)
 
         local editX, editY, editZ = inverseRotate(
-          rotationA, rotationB, rotationC, rotationD,
-          x - positionX, y - positionY, z - positionZ)
+          qx, qy, qz, qw, x - positionX, y - positionY, z - positionZ)
 
         local editDistance = box(editX, editY, editZ, width - 2 * radius, height - 2 * radius, depth - 2 * radius) - radius
 

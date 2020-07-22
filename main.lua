@@ -123,7 +123,7 @@ function love.load(arg)
         blendRange = 0,
 
         position = {-0.5, -0.25, 0},
-        rotation = {0, 0, 0, 1},
+        orientation = {0, 0, 0, 1},
 
         color = {0.5, 1, 0.25, 1},
         roundedBox = {1, 1, 1, 0.5},
@@ -142,7 +142,7 @@ function love.load(arg)
         blendRange = 0.5,
 
         position = {0.5, 0.25, 0},
-        rotation = {0, 0, 0, 1},
+        orientation = {0, 0, 0, 1},
 
         color = {0.25, 0.75, 1, 1},
         roundedBox = {1.5, 1.5, 1.5, 0.75},
@@ -161,7 +161,7 @@ function love.load(arg)
         blendRange = 0.25,
 
         position = {0, -0.25, 0.5},
-        rotation = {0, 0, 0, 1},
+        orientation = {0, 0, 0, 1},
 
         color = {1, 0.5, 0.25, 1},
         roundedBox = {1, 1, 1, 0.5},
@@ -180,7 +180,7 @@ function love.load(arg)
         blendRange = 0,
 
         position = {0, -0.375, 0.75},
-        rotation = {fromEulerAngles("xzy", 0.125 * math.pi, 0.375 * math.pi, -0.0625 * math.pi)},
+        orientation = {fromEulerAngles("xzy", 0.125 * math.pi, 0.375 * math.pi, -0.0625 * math.pi)},
 
         color = {1, 0.75, 0.25, 1},
         roundedBox = {0.25, 0.125, 0.5, 0},
@@ -432,9 +432,9 @@ function love.update(dt)
       Slab.Separator()
 
       do
-        Slab.Text("Rotation")
-        Slab.BeginLayout("rotation", {Columns = 2, ExpandW = true})
-        local x, y, z, w = unpack(edit.rotation)
+        Slab.Text("Orientation")
+        Slab.BeginLayout("orientation", {Columns = 2, ExpandW = true})
+        local qx, qy, qz, qw = unpack(edit.orientation)
 
         do
           Slab.SetLayoutColumn(1)
@@ -442,8 +442,8 @@ function love.update(dt)
 
           Slab.SetLayoutColumn(2)
 
-          if Slab.Input("rotationX", {Align = "left", Text = tostring(x)}) then
-            edit.rotation[1] = tonumber(Slab.GetInputText()) or edit.rotation[1]
+          if Slab.Input("qx", {Align = "left", Text = tostring(qx)}) then
+            edit.orientation[1] = tonumber(Slab.GetInputText()) or qx
             remesh()
           end
         end
@@ -454,8 +454,8 @@ function love.update(dt)
 
           Slab.SetLayoutColumn(2)
 
-          if Slab.Input("rotationY", {Align = "left", Text = tostring(y)}) then
-            edit.rotation[2] = tonumber(Slab.GetInputText()) or edit.rotation[2]
+          if Slab.Input("qy", {Align = "left", Text = tostring(qy)}) then
+            edit.orientation[2] = tonumber(Slab.GetInputText()) or qy
             remesh()
           end
         end
@@ -466,8 +466,8 @@ function love.update(dt)
 
           Slab.SetLayoutColumn(2)
 
-          if Slab.Input("rotationZ", {Align = "left", Text = tostring(z)}) then
-            edit.rotation[3] = tonumber(Slab.GetInputText()) or edit.rotation[3]
+          if Slab.Input("qz", {Align = "left", Text = tostring(qz)}) then
+            edit.orientation[3] = tonumber(Slab.GetInputText()) or qz
             remesh()
           end
         end
@@ -478,8 +478,8 @@ function love.update(dt)
 
           Slab.SetLayoutColumn(2)
 
-          if Slab.Input("rotationW", {Align = "left", Text = tostring(w)}) then
-            edit.rotation[4] = tonumber(Slab.GetInputText()) or edit.rotation[4]
+          if Slab.Input("qw", {Align = "left", Text = tostring(qw)}) then
+            edit.orientation[4] = tonumber(Slab.GetInputText()) or qw
             remesh()
           end
         end
