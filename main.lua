@@ -125,7 +125,6 @@ function love.load(arg)
 
         translation = {-0.5, -0.25, 0},
         rotation = {0, 0, 0, 1},
-        scale = 1,
 
         size = {0, 0, 0},
         radius = 0.5,
@@ -146,7 +145,6 @@ function love.load(arg)
 
         translation = {0.5, 0.25, 0},
         rotation = {0, 0, 0, 1},
-        scale = 1,
 
         size = {0, 0, 0},
         radius = 0.75,
@@ -167,7 +165,6 @@ function love.load(arg)
 
         translation = {0, -0.25, 0.5},
         rotation = {0, 0, 0, 1},
-        scale = 1,
 
         size = {0, 0, 0},
         radius = 0.5,
@@ -188,7 +185,6 @@ function love.load(arg)
 
         translation = {0, -0.375, 0.75},
         rotation = {fromEulerAngles("xzy", 0.125 * math.pi, 0.375 * math.pi, -0.0625 * math.pi)},
-        scale = 1,
 
         size = {0.25, 0.125, 0.5},
         radius = 0,
@@ -546,26 +542,6 @@ function love.update(dt)
 
           if Slab.Input("rotationW", {Align = "left", Text = tostring(w)}) then
             edit.rotation[4] = tonumber(Slab.GetInputText()) or edit.rotation[4]
-            remesh()
-          end
-        end
-
-        Slab.EndLayout()
-      end
-
-      Slab.Separator()
-
-      do
-        Slab.BeginLayout("scale", {Columns = 2, ExpandW = true})
-
-        do
-          Slab.SetLayoutColumn(1)
-          Slab.Text("Scale")
-
-          Slab.SetLayoutColumn(2)
-
-          if Slab.Input("scale", {Align = "left", Text = tostring(edit.scale)}) then
-            edit.scale = tonumber(Slab.GetInputText()) or edit.scale
             remesh()
           end
         end

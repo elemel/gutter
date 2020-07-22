@@ -124,7 +124,6 @@ function M.applyEdits(edits, grid)
 
     local translationX, translationY, translationZ = unpack(edit.translation)
     local rotationA, rotationB, rotationC, rotationD = unpack(edit.rotation)
-    local scale = edit.scale
 
     local noiseConfig = edit.noise
     local noiseFrequency = noiseConfig.frequency or 1
@@ -144,9 +143,7 @@ function M.applyEdits(edits, grid)
 
           local editX, editY, editZ = inverseRotate(
             rotationA, rotationB, rotationC, rotationD,
-            (x - translationX) / scale,
-            (y - translationY) / scale,
-            (z - translationZ) / scale)
+            x - translationX, y - translationY, z - translationZ)
 
           local sizeX, sizeY, sizeZ = unpack(edit.size)
           local editDistance = box(editX, editY, editZ, sizeX, sizeY, sizeZ) - edit.radius
@@ -161,8 +158,6 @@ function M.applyEdits(edits, grid)
               noiseLacunarity,
               noiseGain) - 1)
           end
-
-          editDistance = editDistance / scale
 
           if edit.operation == "union" then
             vertex.distance, vertex.red, vertex.green, vertex.blue, vertex.alpha =
