@@ -42,9 +42,4 @@ function M.box(px, py, pz, bx, by, bz)
   return length3(max(qx, 0), max(qy, 0), max(qz, 0)) + min(max(qx, qy, qz), 0)
 end
 
--- https://www.iquilezles.org/www/articles/distfunctions/distfunctions.htm
-function M.sphere(px, py, pz, s)
-  return length3(px, py, pz) - s
-end
-
 return M
