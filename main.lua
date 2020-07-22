@@ -120,6 +120,7 @@ function love.load(arg)
     edits = {
       {
         operation = "union",
+        blendRange = 0,
         color = {0.5, 1, 0.25, 1},
 
         translation = {-0.5, -0.25, 0},
@@ -136,12 +137,11 @@ function love.load(arg)
           lacunarity = 2,
           octaves = 0,
         },
-
-        blendRange = 0,
       },
 
       {
         operation = "union",
+        blendRange = 0.5,
         color = {0.25, 0.75, 1, 1},
 
         translation = {0.5, 0.25, 0},
@@ -158,12 +158,11 @@ function love.load(arg)
           lacunarity = 2,
           octaves = 2.5,
         },
-
-        blendRange = 0.5,
       },
 
       {
         operation = "subtraction",
+        blendRange = 0.25,
         color = {1, 0.5, 0.25, 1},
 
         translation = {0, -0.25, 0.5},
@@ -180,12 +179,11 @@ function love.load(arg)
           lacunarity = 2,
           octaves = 0,
         },
-
-        blendRange = 0.25,
       },
 
       {
         operation = "union",
+        blendRange = 0,
         color = {1, 0.75, 0.25, 1},
 
         translation = {0, -0.375, 0.75},
@@ -202,8 +200,6 @@ function love.load(arg)
           lacunarity = 2,
           octaves = 0,
         },
-
-        blendRange = 0,
       },
     }
   }
@@ -377,6 +373,18 @@ function love.update(dt)
             end
 
             Slab.EndComboBox()
+          end
+        end
+
+        do
+          Slab.SetLayoutColumn(1)
+          Slab.Text("Blend Range")
+
+          Slab.SetLayoutColumn(2)
+
+          if Slab.Input("blendRange", {Align = "left", Text = tostring(edit.blendRange)}) then
+            edit.blendRange = tonumber(Slab.GetInputText()) or edit.blendRange
+            remesh()
           end
         end
 
@@ -686,26 +694,6 @@ function love.update(dt)
 
           if Slab.Input("gain", {Align = "left", Text = tostring(noise.gain)}) then
             noise.gain = tonumber(Slab.GetInputText()) or noise.gain
-            remesh()
-          end
-        end
-
-        Slab.EndLayout()
-      end
-
-      Slab.Separator()
-
-      do
-        Slab.BeginLayout("blendRange", {Columns = 2, ExpandW = true})
-
-        do
-          Slab.SetLayoutColumn(1)
-          Slab.Text("Blend Range")
-
-          Slab.SetLayoutColumn(2)
-
-          if Slab.Input("blendRange", {Align = "left", Text = tostring(edit.blendRange)}) then
-            edit.blendRange = tonumber(Slab.GetInputText()) or edit.blendRange
             remesh()
           end
         end
