@@ -120,10 +120,11 @@ function M.applyEdits(edits, grid)
   local vertices = grid.vertices
 
   for _, edit in ipairs(edits) do
-    local editRed, editGreen, editBlue, editAlpha = unpack(edit.color)
-
     local translationX, translationY, translationZ = unpack(edit.translation)
     local rotationA, rotationB, rotationC, rotationD = unpack(edit.rotation)
+
+    local editRed, editGreen, editBlue, editAlpha = unpack(edit.color)
+    local width, height, depth, radius = unpack(edit.roundedBox)
 
     local noiseConfig = edit.noise
     local noiseFrequency = noiseConfig.frequency or 1
@@ -145,8 +146,7 @@ function M.applyEdits(edits, grid)
             rotationA, rotationB, rotationC, rotationD,
             x - translationX, y - translationY, z - translationZ)
 
-          local sizeX, sizeY, sizeZ = unpack(edit.size)
-          local editDistance = box(editX, editY, editZ, sizeX, sizeY, sizeZ) - edit.radius
+          local editDistance = box(editX, editY, editZ, width, height, depth) - radius
 
           if noiseOctaves > 0 then
             editDistance = editDistance + noiseAmplitude * (2 * fbm3(

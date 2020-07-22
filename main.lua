@@ -126,8 +126,7 @@ function love.load(arg)
         translation = {-0.5, -0.25, 0},
         rotation = {0, 0, 0, 1},
 
-        size = {0, 0, 0},
-        radius = 0.5,
+        roundedBox = {0, 0, 0, 0.5},
 
         noise = {
           amplitude = 1,
@@ -146,8 +145,7 @@ function love.load(arg)
         translation = {0.5, 0.25, 0},
         rotation = {0, 0, 0, 1},
 
-        size = {0, 0, 0},
-        radius = 0.75,
+        roundedBox = {0, 0, 0, 0.75},
 
         noise = {
           amplitude = 0.5,
@@ -166,8 +164,7 @@ function love.load(arg)
         translation = {0, -0.25, 0.5},
         rotation = {0, 0, 0, 1},
 
-        size = {0, 0, 0},
-        radius = 0.5,
+        roundedBox = {0, 0, 0, 0.5},
 
         noise = {
           amplitude = 1,
@@ -186,8 +183,7 @@ function love.load(arg)
         translation = {0, -0.375, 0.75},
         rotation = {fromEulerAngles("xzy", 0.125 * math.pi, 0.375 * math.pi, -0.0625 * math.pi)},
 
-        size = {0.25, 0.125, 0.5},
-        radius = 0,
+        roundedBox = {0.25, 0.125, 0.5, 0},
 
         noise = {
           amplitude = 1,
@@ -554,7 +550,7 @@ function love.update(dt)
       do
         Slab.Text("Rounded Box")
         Slab.BeginLayout("roundedBox", {Columns = 2, ExpandW = true})
-        local width, height, depth = unpack(edit.size)
+        local width, height, depth, radius = unpack(edit.roundedBox)
 
         do
           Slab.SetLayoutColumn(1)
@@ -563,7 +559,7 @@ function love.update(dt)
           Slab.SetLayoutColumn(2)
 
           if Slab.Input("width", {Align = "left", Text = tostring(width)}) then
-            edit.size[1] = tonumber(Slab.GetInputText()) or edit.size[1]
+            edit.roundedBox[1] = tonumber(Slab.GetInputText()) or edit.roundedBox[1]
             remesh()
           end
         end
@@ -575,7 +571,7 @@ function love.update(dt)
           Slab.SetLayoutColumn(2)
 
           if Slab.Input("height", {Align = "left", Text = tostring(height)}) then
-            edit.size[2] = tonumber(Slab.GetInputText()) or edit.size[2]
+            edit.roundedBox[2] = tonumber(Slab.GetInputText()) or edit.roundedBox[2]
             remesh()
           end
         end
@@ -587,7 +583,7 @@ function love.update(dt)
           Slab.SetLayoutColumn(2)
 
           if Slab.Input("depth", {Align = "left", Text = tostring(depth)}) then
-            edit.size[3] = tonumber(Slab.GetInputText()) or edit.size[3]
+            edit.roundedBox[3] = tonumber(Slab.GetInputText()) or edit.roundedBox[3]
             remesh()
           end
         end
@@ -598,8 +594,8 @@ function love.update(dt)
 
           Slab.SetLayoutColumn(2)
 
-          if Slab.Input("radius", {Align = "left", Text = tostring(edit.radius)}) then
-            edit.radius = tonumber(Slab.GetInputText()) or edit.radius
+          if Slab.Input("radius", {Align = "left", Text = tostring(radius)}) then
+            edit.roundedBox[4] = tonumber(Slab.GetInputText()) or edit.roundedBox[4]
             remesh()
           end
         end
