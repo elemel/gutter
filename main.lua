@@ -121,12 +121,12 @@ function love.load(arg)
       {
         operation = "union",
         blendRange = 0,
-        color = {0.5, 1, 0.25, 1},
 
         translation = {-0.5, -0.25, 0},
         rotation = {0, 0, 0, 1},
 
-        roundedBox = {0, 0, 0, 0.5},
+        color = {0.5, 1, 0.25, 1},
+        roundedBox = {1, 1, 1, 0.5},
 
         noise = {
           amplitude = 1,
@@ -140,12 +140,12 @@ function love.load(arg)
       {
         operation = "union",
         blendRange = 0.5,
-        color = {0.25, 0.75, 1, 1},
 
         translation = {0.5, 0.25, 0},
         rotation = {0, 0, 0, 1},
 
-        roundedBox = {0, 0, 0, 0.75},
+        color = {0.25, 0.75, 1, 1},
+        roundedBox = {1.5, 1.5, 1.5, 0.75},
 
         noise = {
           amplitude = 0.5,
@@ -159,12 +159,12 @@ function love.load(arg)
       {
         operation = "subtraction",
         blendRange = 0.25,
-        color = {1, 0.5, 0.25, 1},
 
         translation = {0, -0.25, 0.5},
         rotation = {0, 0, 0, 1},
 
-        roundedBox = {0, 0, 0, 0.5},
+        color = {1, 0.5, 0.25, 1},
+        roundedBox = {1, 1, 1, 0.5},
 
         noise = {
           amplitude = 1,
@@ -178,11 +178,11 @@ function love.load(arg)
       {
         operation = "union",
         blendRange = 0,
-        color = {1, 0.75, 0.25, 1},
 
         translation = {0, -0.375, 0.75},
         rotation = {fromEulerAngles("xzy", 0.125 * math.pi, 0.375 * math.pi, -0.0625 * math.pi)},
 
+        color = {1, 0.75, 0.25, 1},
         roundedBox = {0.25, 0.125, 0.5, 0},
 
         noise = {
