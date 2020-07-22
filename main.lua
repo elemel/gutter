@@ -122,7 +122,7 @@ function love.load(arg)
         operation = "union",
         blendRange = 0,
 
-        translation = {-0.5, -0.25, 0},
+        position = {-0.5, -0.25, 0},
         rotation = {0, 0, 0, 1},
 
         color = {0.5, 1, 0.25, 1},
@@ -141,7 +141,7 @@ function love.load(arg)
         operation = "union",
         blendRange = 0.5,
 
-        translation = {0.5, 0.25, 0},
+        position = {0.5, 0.25, 0},
         rotation = {0, 0, 0, 1},
 
         color = {0.25, 0.75, 1, 1},
@@ -160,7 +160,7 @@ function love.load(arg)
         operation = "subtraction",
         blendRange = 0.25,
 
-        translation = {0, -0.25, 0.5},
+        position = {0, -0.25, 0.5},
         rotation = {0, 0, 0, 1},
 
         color = {1, 0.5, 0.25, 1},
@@ -179,7 +179,7 @@ function love.load(arg)
         operation = "union",
         blendRange = 0,
 
-        translation = {0, -0.375, 0.75},
+        position = {0, -0.375, 0.75},
         rotation = {fromEulerAngles("xzy", 0.125 * math.pi, 0.375 * math.pi, -0.0625 * math.pi)},
 
         color = {1, 0.75, 0.25, 1},
@@ -386,9 +386,9 @@ function love.update(dt)
       Slab.Separator()
 
       do
-        Slab.Text("Translation")
-        Slab.BeginLayout("translation", {Columns = 2, ExpandW = true})
-        local x, y, z = unpack(edit.translation)
+        Slab.Text("Position")
+        Slab.BeginLayout("position", {Columns = 2, ExpandW = true})
+        local x, y, z = unpack(edit.position)
 
         do
           Slab.SetLayoutColumn(1)
@@ -396,8 +396,8 @@ function love.update(dt)
 
           Slab.SetLayoutColumn(2)
 
-          if Slab.Input("translationX", {Align = "left", Text = tostring(x)}) then
-            edit.translation[1] = tonumber(Slab.GetInputText()) or edit.translation[1]
+          if Slab.Input("x", {Align = "left", Text = tostring(x)}) then
+            edit.position[1] = tonumber(Slab.GetInputText()) or x
             remesh()
           end
         end
@@ -408,8 +408,8 @@ function love.update(dt)
 
           Slab.SetLayoutColumn(2)
 
-          if Slab.Input("translationY", {Align = "left", Text = tostring(y)}) then
-            edit.translation[2] = tonumber(Slab.GetInputText()) or edit.translation[2]
+          if Slab.Input("y", {Align = "left", Text = tostring(y)}) then
+            edit.position[2] = tonumber(Slab.GetInputText()) or y
             remesh()
           end
         end
@@ -420,8 +420,8 @@ function love.update(dt)
 
           Slab.SetLayoutColumn(2)
 
-          if Slab.Input("translationZ", {Align = "left", Text = tostring(z)}) then
-            edit.translation[3] = tonumber(Slab.GetInputText()) or edit.translation[3]
+          if Slab.Input("z", {Align = "left", Text = tostring(z)}) then
+            edit.position[3] = tonumber(Slab.GetInputText()) or z
             remesh()
           end
         end
@@ -737,7 +737,7 @@ function love.draw()
     love.graphics.setDepthMode()
 
     for i, edit in ipairs(sculpture.edits) do
-      local x, y, z = transformPoint3(transform, unpack(edit.translation))
+      local x, y, z = transformPoint3(transform, unpack(edit.position))
 
       if edit.operation == "union" then
         love.graphics.setColor(0.25, 1, 0, 0.5)
@@ -783,8 +783,8 @@ function love.mousemoved(x, y, dx, dy, istouch)
   if editor and love.mouse.isDown(1) then
     local sensitivity = 1 / 128
 
-    sculpture.edits[3].translation[1] = sculpture.edits[3].translation[1] + sensitivity * dx
-    sculpture.edits[3].translation[2] = sculpture.edits[3].translation[2] + sensitivity * dy
+    sculpture.edits[3].position[1] = sculpture.edits[3].position[1] + sensitivity * dx
+    sculpture.edits[3].position[2] = sculpture.edits[3].position[2] + sensitivity * dy
 
     workerInputChannel:clear()
 
