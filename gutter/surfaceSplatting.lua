@@ -73,7 +73,7 @@ function M.applyEditToGrid(edit, grid)
   local qx, qy, qz, qw = unpack(edit.orientation)
 
   local editRed, editGreen, editBlue, editAlpha = unpack(edit.color)
-  local width, height, depth, radius = unpack(edit.roundedBox)
+  local width, height, depth, radius = unpack(edit.shape)
 
   local noiseConfig = edit.noise
   local noiseFrequency = noiseConfig.frequency or 1
