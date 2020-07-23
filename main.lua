@@ -323,7 +323,7 @@ function love.update(dt)
           orientation = {0, 0, 0, 1},
 
           color = {0.5, 0.5, 0.5, 1},
-          shape = {1, 1, 1, 0.5},
+          shape = {1, 1, 1, 1},
 
           noise = {
             amplitude = 1,
