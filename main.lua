@@ -309,28 +309,49 @@ function love.update(dt)
     Slab.Text("Edits", {Color = {1, 1, 1}})
     Slab.Separator()
 
-    if Slab.Button("New") then
-      table.insert(sculpture.edits, {
-        operation = "union",
-        blendRange = 0,
+    do
+      Slab.BeginLayout("newAndDelete", {Columns = 2})
+      Slab.SetLayoutColumn(1)
 
-        position = {0, 0, 0},
-        orientation = {0, 0, 0, 1},
+      if Slab.Button("New", {W = 94}) then
+        table.insert(sculpture.edits, {
+          operation = "union",
+          blendRange = 0,
 
-        color = {0.5, 0.5, 0.5, 1},
-        roundedBox = {1, 1, 1, 0.5},
+          position = {0, 0, 0},
+          orientation = {0, 0, 0, 1},
 
-        noise = {
-          amplitude = 1,
-          frequency = 1,
-          gain = 0.5,
-          lacunarity = 2,
-          octaves = 0,
-        },
-      })
+          color = {0.5, 0.5, 0.5, 1},
+          roundedBox = {1, 1, 1, 0.5},
 
-      selection = #sculpture.edits
-      remesh()
+          noise = {
+            amplitude = 1,
+            frequency = 1,
+            gain = 0.5,
+            lacunarity = 2,
+            octaves = 0,
+          },
+        })
+
+        selection = #sculpture.edits
+        remesh()
+      end
+
+      Slab.SetLayoutColumn(2)
+
+      if Slab.Button("Delete", {W = 94, Disabled = selection == nil}) then
+        table.remove(sculpture.edits, selection)
+
+        if #sculpture.edits == 0 then
+          selection = nil
+        else
+          selection = math.min(selection, #sculpture.edits)
+        end
+
+        remesh()
+      end
+
+      Slab.EndLayout()
     end
 
     Slab.Separator()
@@ -345,6 +366,51 @@ function love.update(dt)
           selection = i
         end
       end
+    end
+
+    Slab.Separator()
+
+    do
+      local edits = sculpture.edits
+
+      Slab.BeginLayout("order", {Columns = 2})
+      Slab.SetLayoutColumn(1)
+
+      if Slab.Button("Up", {Disabled = selection == nil or selection == #sculpture.edits, W = 94}) then
+        edits[selection], edits[selection + 1] = edits[selection + 1], edits[selection]
+        selection = selection + 1
+        remesh()
+      end
+
+      Slab.SetLayoutColumn(2)
+
+      if Slab.Button("Top", {Disabled = selection == nil or selection == #sculpture.edits, W = 94}) then
+        local edit = edits[selection]
+        table.remove(edits, selection)
+        table.insert(edits, edit)
+        selection = #sculpture.edits
+        remesh()
+      end
+
+      Slab.SetLayoutColumn(1)
+
+      if Slab.Button("Down", {Disabled = selection == nil or selection == 1, W = 94}) then
+        edits[selection], edits[selection - 1] = edits[selection - 1], edits[selection]
+        selection = selection - 1
+        remesh()
+      end
+
+      Slab.SetLayoutColumn(2)
+
+      if Slab.Button("Bottom", {Disabled = selection == nil or selection == 1, W = 94}) then
+        local edit = edits[selection]
+        table.remove(edits, selection)
+        table.insert(edits, 1, edit)
+        selection = 1
+        remesh()
+      end
+
+      Slab.EndLayout()
     end
 
     Slab.EndWindow()
@@ -699,20 +765,6 @@ function love.update(dt)
         end
 
         Slab.EndLayout()
-      end
-
-      Slab.Separator()
-
-      if Slab.Button("Delete") then
-        table.remove(sculpture.edits, selection)
-
-        if #sculpture.edits == 0 then
-          selection = nil
-        else
-          selection = math.min(selection, #sculpture.edits)
-        end
-
-        remesh()
       end
     end
 
