@@ -6,6 +6,8 @@ local Slab = require("Slab")
 local clamp = gutterMath.clamp
 local floor = math.floor
 local fromEulerAngles = quaternion.fromEulerAngles
+local max = math.max
+local min = math.min
 local pi = math.pi
 local setRotation3 = gutterMath.setRotation3
 local setTranslation3 = gutterMath.setTranslation3
@@ -181,7 +183,7 @@ function love.load(arg)
         blending = 0,
 
         position = {0, -0.375, 0.75},
-        orientation = {fromEulerAngles("xzy", 0.125 * math.pi, 0.375 * math.pi, -0.0625 * math.pi)},
+        orientation = {fromEulerAngles("xzy", 0.125 * pi, 0.375 * pi, -0.0625 * pi)},
 
         color = {1, 0.75, 0.25, 1},
         shape = {0.5, 0.25, 1, 0},
@@ -346,7 +348,7 @@ function love.update(dt)
         if #sculpture.edits == 0 then
           selection = nil
         else
-          selection = math.min(selection, #sculpture.edits)
+          selection = min(selection, #sculpture.edits)
         end
 
         remesh()
