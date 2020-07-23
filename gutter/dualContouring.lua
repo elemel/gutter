@@ -124,7 +124,8 @@ function M.applyEdits(edits, grid)
     local rotationA, rotationB, rotationC, rotationD = unpack(edit.rotation)
 
     local editRed, editGreen, editBlue, editAlpha = unpack(edit.color)
-    local width, height, depth, radius = unpack(edit.shape)
+    local width, height, depth, rounding = unpack(edit.shape)
+    local radius = rounding * 0.5 * min(width, height, depth)
 
     local noiseConfig = edit.noise
     local noiseFrequency = noiseConfig.frequency or 1

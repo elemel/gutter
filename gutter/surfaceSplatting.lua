@@ -8,6 +8,7 @@ local cross = gutterMath.cross
 local fbm3 = gutterMath.fbm3
 local huge = math.huge
 local inverseRotate = quaternion.inverseRotate
+local min = math.min
 local mix = gutterMath.mix
 local mix3 = gutterMath.mix3
 local mix4 = gutterMath.mix4
@@ -73,7 +74,8 @@ function M.applyEditToGrid(edit, grid)
   local qx, qy, qz, qw = unpack(edit.orientation)
 
   local editRed, editGreen, editBlue, editAlpha = unpack(edit.color)
-  local width, height, depth, radius = unpack(edit.shape)
+  local width, height, depth, rounding = unpack(edit.shape)
+  local radius = rounding * 0.5 * min(width, height, depth)
 
   local noiseConfig = edit.noise
   local noiseFrequency = noiseConfig.frequency or 1

@@ -3,6 +3,7 @@ local gutterMath = require("gutter.math")
 local quaternion = require("gutter.quaternion")
 local Slab = require("Slab")
 
+local clamp = gutterMath.clamp
 local floor = math.floor
 local fromEulerAngles = quaternion.fromEulerAngles
 local pi = math.pi
@@ -126,7 +127,7 @@ function love.load(arg)
         orientation = {0, 0, 0, 1},
 
         color = {0.5, 1, 0.25, 1},
-        shape = {1, 1, 1, 0.5},
+        shape = {1, 1, 1, 1},
 
         noise = {
           amplitude = 1,
@@ -145,7 +146,7 @@ function love.load(arg)
         orientation = {0, 0, 0, 1},
 
         color = {0.25, 0.75, 1, 1},
-        shape = {1.5, 1.5, 1.5, 0.75},
+        shape = {1.5, 1.5, 1.5, 1},
 
         noise = {
           amplitude = 0.5,
@@ -164,7 +165,7 @@ function love.load(arg)
         orientation = {0, 0, 0, 1},
 
         color = {1, 0.5, 0.25, 1},
-        shape = {1, 1, 1, 0.5},
+        shape = {1, 1, 1, 1},
 
         noise = {
           amplitude = 1,
@@ -644,7 +645,7 @@ function love.update(dt)
       do
         Slab.Text("Shape")
         Slab.BeginLayout("shape", {Columns = 2, ExpandW = true})
-        local width, height, depth, radius = unpack(edit.shape)
+        local width, height, depth, rounding = unpack(edit.shape)
 
         do
           Slab.SetLayoutColumn(1)
@@ -653,7 +654,7 @@ function love.update(dt)
           Slab.SetLayoutColumn(2)
 
           if Slab.Input("width", {Align = "left", Text = tostring(width)}) then
-            edit.shape[1] = tonumber(Slab.GetInputText()) or edit.shape[1]
+            edit.shape[1] = max(0, tonumber(Slab.GetInputText()) or width)
             remesh()
           end
         end
@@ -665,7 +666,7 @@ function love.update(dt)
           Slab.SetLayoutColumn(2)
 
           if Slab.Input("height", {Align = "left", Text = tostring(height)}) then
-            edit.shape[2] = tonumber(Slab.GetInputText()) or edit.shape[2]
+            edit.shape[2] = max(0, tonumber(Slab.GetInputText()) or height)
             remesh()
           end
         end
@@ -677,19 +678,19 @@ function love.update(dt)
           Slab.SetLayoutColumn(2)
 
           if Slab.Input("depth", {Align = "left", Text = tostring(depth)}) then
-            edit.shape[3] = tonumber(Slab.GetInputText()) or edit.shape[3]
+            edit.shape[3] = max(0, tonumber(Slab.GetInputText()) or depth)
             remesh()
           end
         end
 
         do
           Slab.SetLayoutColumn(1)
-          Slab.Text("Radius")
+          Slab.Text("Rounding")
 
           Slab.SetLayoutColumn(2)
 
-          if Slab.Input("radius", {Align = "left", Text = tostring(radius)}) then
-            edit.shape[4] = tonumber(Slab.GetInputText()) or edit.shape[4]
+          if Slab.Input("rounding", {Align = "left", Text = tostring(rounding)}) then
+            edit.shape[4] = clamp(tonumber(Slab.GetInputText()) or rounding, 0, 1)
             remesh()
           end
         end
