@@ -121,7 +121,7 @@ function love.load(arg)
     edits = {
       {
         operation = "union",
-        blendRange = 0,
+        blending = 0,
 
         position = {-0.5, -0.25, 0},
         orientation = {0, 0, 0, 1},
@@ -140,7 +140,7 @@ function love.load(arg)
 
       {
         operation = "union",
-        blendRange = 0.5,
+        blending = 0.5,
 
         position = {0.5, 0.25, 0},
         orientation = {0, 0, 0, 1},
@@ -159,7 +159,7 @@ function love.load(arg)
 
       {
         operation = "subtraction",
-        blendRange = 0.25,
+        blending = 0.25,
 
         position = {0, -0.25, 0.5},
         orientation = {0, 0, 0, 1},
@@ -178,7 +178,7 @@ function love.load(arg)
 
       {
         operation = "union",
-        blendRange = 0,
+        blending = 0,
 
         position = {0, -0.375, 0.75},
         orientation = {fromEulerAngles("xzy", 0.125 * math.pi, 0.375 * math.pi, -0.0625 * math.pi)},
@@ -317,7 +317,7 @@ function love.update(dt)
       if Slab.Button("New", {W = 94}) then
         table.insert(sculpture.edits, {
           operation = "union",
-          blendRange = 0,
+          blending = 0,
 
           position = {0, 0, 0},
           orientation = {0, 0, 0, 1},
@@ -465,12 +465,12 @@ function love.update(dt)
 
         do
           Slab.SetLayoutColumn(1)
-          Slab.Text("Blend Range")
+          Slab.Text("Blending")
 
           Slab.SetLayoutColumn(2)
 
-          if Slab.Input("blendRange", {Align = "left", Text = tostring(edit.blendRange)}) then
-            edit.blendRange = tonumber(Slab.GetInputText()) or edit.blendRange
+          if Slab.Input("blending", {Align = "left", Text = tostring(edit.blending)}) then
+            edit.blending = clamp(tonumber(Slab.GetInputText()) or edit.blending, 0, 1)
             remesh()
           end
         end

@@ -125,7 +125,9 @@ function M.applyEdits(edits, grid)
 
     local editRed, editGreen, editBlue, editAlpha = unpack(edit.color)
     local width, height, depth, rounding = unpack(edit.shape)
-    local radius = rounding * 0.5 * min(width, height, depth)
+    local maxRadius = 0.5 * min(width, height, depth)
+    local radius = rounding * maxRadius
+    local blendRange = edit.blending * maxRadius
 
     local noiseConfig = edit.noise
     local noiseFrequency = noiseConfig.frequency or 1
@@ -167,14 +169,14 @@ function M.applyEdits(edits, grid)
               smoothUnionColor(
                 vertex.distance,
                 vertex.red, vertex.green, vertex.blue, vertex.alpha,
-                editDistance, editRed, editGreen, editBlue, editAlpha, edit.blendRange)
+                editDistance, editRed, editGreen, editBlue, editAlpha, blendRange)
           elseif edit.operation == "subtraction" then
             vertex.distance, vertex.red, vertex.green, vertex.blue, vertex.alpha =
               smoothSubtractionColor(
                 editDistance, editRed, editGreen, editBlue, editAlpha,
                 vertex.distance,
                 vertex.red, vertex.green, vertex.blue, vertex.alpha,
-                edit.blendRange)
+                blendRange)
           else
             assert("Invalid operation")
           end
