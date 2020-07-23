@@ -121,7 +121,7 @@ function M.applyEdits(edits, grid)
 
   for _, edit in ipairs(edits) do
     local positionX, positionY, positionZ = unpack(edit.position)
-    local rotationA, rotationB, rotationC, rotationD = unpack(edit.rotation)
+    local qx, qy, qz, qw = unpack(edit.orientation)
 
     local editRed, editGreen, editBlue, editAlpha = unpack(edit.color)
     local width, height, depth, rounding = unpack(edit.shape)
@@ -144,7 +144,7 @@ function M.applyEdits(edits, grid)
           local x = mix(minX, maxX, (vertexX - 1) / sizeZ)
 
           local editX, editY, editZ = inverseRotate(
-            rotationA, rotationB, rotationC, rotationD,
+            qx, qy, qz, qw,
             x - positionX, y - positionY, z - positionZ)
 
         local editDistance = box(
