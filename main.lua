@@ -78,7 +78,6 @@ function love.load(arg)
     ]], [[
       uniform mat4 ModelMatrix;
       attribute vec3 VertexNormal;
-      attribute vec3 DiskCenter;
       varying vec3 VaryingPosition;
       varying vec3 VaryingNormal;
 
@@ -87,7 +86,6 @@ function love.load(arg)
         VaryingPosition = vec3(ModelMatrix * vertex_position);
         VaryingNormal = mat3(ModelMatrix) * VertexNormal;
         vec4 result = transform_projection * ModelMatrix * vertex_position;
-        // result.z = (transform_projection * vec4(DiskCenter, 1)).z;
         return result;
       }
     ]])
@@ -273,7 +271,6 @@ function love.update(dt)
         {"VertexNormal", "float", 3},
         {"VertexTexCoord", "float", 2},
         {"VertexColor", "byte", 4},
-        {"DiskCenter", "float", 3},
       }
 
       mesh = love.graphics.newMesh(vertexFormat, output.vertices, "triangles")

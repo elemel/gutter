@@ -304,7 +304,6 @@ function M.newMeshFromEdits(edits, bounds, gridSize)
       normalX, normalY, normalZ,
       -1, -1,
       red, green, blue, alpha,
-      x, y, z,
     })
 
     table.insert(vertices, {
@@ -315,7 +314,6 @@ function M.newMeshFromEdits(edits, bounds, gridSize)
       normalX, normalY, normalZ,
       1, -1,
       red, green, blue, alpha,
-      x, y, z,
     })
 
     table.insert(vertices, {
@@ -326,7 +324,6 @@ function M.newMeshFromEdits(edits, bounds, gridSize)
       normalX, normalY, normalZ,
       1, 1,
       red, green, blue, alpha,
-      x, y, z,
     })
 
     table.insert(vertices, {
@@ -337,7 +334,6 @@ function M.newMeshFromEdits(edits, bounds, gridSize)
       normalX, normalY, normalZ,
       -1, 1,
       red, green, blue, alpha,
-      x, y, z,
     })
 
     table.insert(vertexMap, #vertices - 3)
