@@ -524,7 +524,8 @@ function love.update(dt)
       do
         Slab.Text("Orientation")
         Slab.BeginLayout("orientation", {Columns = 2, ExpandW = true})
-        local qx, qy, qz, qw = unpack(instruction.orientation)
+        local orientation = instruction.orientation
+        local qx, qy, qz, qw = unpack(orientation)
 
         do
           Slab.SetLayoutColumn(1)
@@ -533,7 +534,11 @@ function love.update(dt)
           Slab.SetLayoutColumn(2)
 
           if Slab.Input("qx", {Align = "left", Text = tostring(qx)}) then
-            instruction.orientation[1] = tonumber(Slab.GetInputText()) or qx
+            orientation[1] = tonumber(Slab.GetInputText()) or qx
+
+            orientation[1], orientation[2], orientation[3], orientation[4] =
+              quaternion.normalize(unpack(orientation))
+
             remesh()
           end
         end
@@ -545,7 +550,11 @@ function love.update(dt)
           Slab.SetLayoutColumn(2)
 
           if Slab.Input("qy", {Align = "left", Text = tostring(qy)}) then
-            instruction.orientation[2] = tonumber(Slab.GetInputText()) or qy
+            orientation[2] = tonumber(Slab.GetInputText()) or qy
+
+            orientation[1], orientation[2], orientation[3], orientation[4] =
+              quaternion.normalize(unpack(orientation))
+
             remesh()
           end
         end
@@ -557,7 +566,11 @@ function love.update(dt)
           Slab.SetLayoutColumn(2)
 
           if Slab.Input("qz", {Align = "left", Text = tostring(qz)}) then
-            instruction.orientation[3] = tonumber(Slab.GetInputText()) or qz
+            orientation[3] = tonumber(Slab.GetInputText()) or qz
+
+            orientation[1], orientation[2], orientation[3], orientation[4] =
+              quaternion.normalize(unpack(orientation))
+
             remesh()
           end
         end
@@ -569,7 +582,11 @@ function love.update(dt)
           Slab.SetLayoutColumn(2)
 
           if Slab.Input("qw", {Align = "left", Text = tostring(qw)}) then
-            instruction.orientation[4] = tonumber(Slab.GetInputText()) or qw
+            orientation[4] = tonumber(Slab.GetInputText()) or qw
+
+            orientation[1], orientation[2], orientation[3], orientation[4] =
+              quaternion.normalize(unpack(orientation))
+
             remesh()
           end
         end
