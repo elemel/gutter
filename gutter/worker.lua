@@ -37,7 +37,11 @@ local function main(arg)
         input.instructions, bounds, gridSize)
     end
 
-    outputChannel:push({vertices = vertices, vertexMap = vertexMap})
+    outputChannel:push({
+      version = input.version,
+      vertices = vertices,
+      vertexMap = vertexMap,
+    })
   end
 end
 

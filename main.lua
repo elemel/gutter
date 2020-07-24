@@ -9,6 +9,7 @@ local fromEulerAngles = quaternion.fromEulerAngles
 local max = math.max
 local min = math.min
 local pi = math.pi
+local round3 = gutterMath.round3
 local setRotation3 = gutterMath.setRotation3
 local setTranslation3 = gutterMath.setTranslation3
 local transformPoint3 = gutterMath.transformPoint3
@@ -205,33 +206,18 @@ function love.load(arg)
 
   angle = 0
 
-  love.thread.newThread("gutter/worker.lua"):start()
+  workerInputVersion = 1
+  workerOutputVersion = 1
+
   workerInputChannel = love.thread.getChannel("workerInput")
-
-  local size = 16
-
-  while size <= 128 do
-    workerInputChannel:push({
-      mesher = mesher,
-      instructions = instructions,
-
-      minX = minX,
-      minY = minY,
-      minZ = minZ,
-
-      maxX = maxX,
-      maxY = maxY,
-      maxZ = maxZ,
-
-      sizeX = size,
-      sizeY = size,
-      sizeZ = size,
-    })
-
-    size = 2 * size
-  end
-
   workerOutputChannel = love.thread.getChannel("workerOutput")
+
+  love.thread.newThread("gutter/worker.lua"):start()
+  love.thread.newThread("gutter/worker.lua"):start()
+  love.thread.newThread("gutter/worker.lua"):start()
+  love.thread.newThread("gutter/worker.lua"):start()
+
+  remesh()
 
   Slab.SetINIStatePath(nil)
   Slab.Initialize(arg)
@@ -257,7 +243,9 @@ function love.update(dt)
 
   local output = workerOutputChannel:pop()
 
-  if output and #output.vertices >= 3 then
+  if output and output.version > workerOutputVersion and #output.vertices >= 3 then
+    workerOutputVersion = output.version
+
     if mesh then
       mesh:release()
       mesh = nil
@@ -827,42 +815,92 @@ function love.draw()
   end
 
   if editor then
-    love.graphics.setColor(1, 0.25, 0, 0.5)
-    love.graphics.line(-0.5 * width / scale, 0, 0.5 * width / scale, 0)
+    -- love.graphics.setColor(1, 0.25, 0, 0.5)
+    -- love.graphics.line(-0.5 * width / scale, 0, 0.5 * width / scale, 0)
 
-    love.graphics.setColor(1, 0.25, 0, 1)
-    love.graphics.setDepthMode("lequal", false)
-    love.graphics.line(-0.5 * width / scale, 0, 0.5 * width / scale, 0)
-    love.graphics.setDepthMode()
+    -- love.graphics.setColor(1, 0.25, 0, 1)
+    -- love.graphics.setDepthMode("lequal", false)
+    -- love.graphics.line(-0.5 * width / scale, 0, 0.5 * width / scale, 0)
+    -- love.graphics.setDepthMode()
 
-    love.graphics.setColor(0.25, 1, 0, 0.5)
-    love.graphics.line(0, -0.5 * height / scale, 0, 0.5 * height / scale)
+    -- love.graphics.setColor(0.25, 1, 0, 0.5)
+    -- love.graphics.line(0, -0.5 * height / scale, 0, 0.5 * height / scale)
 
-    love.graphics.setColor(0.25, 1, 0, 1)
-    love.graphics.setDepthMode("lequal", false)
-    love.graphics.line(0, -0.5 * height / scale, 0, 0.5 * height / scale)
-    love.graphics.setDepthMode()
+    -- love.graphics.setColor(0.25, 1, 0, 1)
+    -- love.graphics.setDepthMode("lequal", false)
+    -- love.graphics.line(0, -0.5 * height / scale, 0, 0.5 * height / scale)
+    -- love.graphics.setDepthMode()
 
     for i, instruction in ipairs(instructions) do
-      local x, y, z = transformPoint3(transform, unpack(instruction.position))
+      if i == selection then
+        local instructionTransform =
+          transform *
+          setTranslation3(love.math.newTransform(), unpack(instruction.position)) *
+          quaternion.toTransform(unpack(instruction.orientation))
 
-      if instruction.operation == "union" then
-        love.graphics.setColor(0.25, 1, 0, 0.5)
-      else
-        love.graphics.setColor(1, 0.25, 0, 0.5)
+        local width, height, depth, rounding = unpack(instruction.shape)
+
+        local x1, y1, z1 = transformPoint3(instructionTransform, -0.5 * width, -0.5 * height, -0.5 * depth)
+        local x2, y2, z2 = transformPoint3(instructionTransform, 0.5 * width, -0.5 * height, -0.5 * depth)
+        local x3, y3, z3 = transformPoint3(instructionTransform, -0.5 * width, 0.5 * height, -0.5 * depth)
+        local x4, y4, z4 = transformPoint3(instructionTransform, 0.5 * width, 0.5 * height, -0.5 * depth)
+        local x5, y5, z5 = transformPoint3(instructionTransform, -0.5 * width, -0.5 * height, 0.5 * depth)
+        local x6, y6, z6 = transformPoint3(instructionTransform, 0.5 * width, -0.5 * height, 0.5 * depth)
+        local x7, y7, z7 = transformPoint3(instructionTransform, -0.5 * width, 0.5 * height, 0.5 * depth)
+        local x8, y8, z8 = transformPoint3(instructionTransform, 0.5 * width, 0.5 * height, 0.5 * depth)
+
+        local lineWidth = love.graphics.getLineWidth()
+
+        love.graphics.setLineWidth(3 * lineWidth)
+        love.graphics.setColor(0, 0, 0, 1)
+
+        love.graphics.line(x1, y1, x2, y2)
+        love.graphics.line(x1, y1, x3, y3)
+        love.graphics.line(x1, y1, x5, y5)
+        love.graphics.line(x2, y2, x4, y4)
+        love.graphics.line(x2, y2, x6, y6)
+        love.graphics.line(x3, y3, x4, y4)
+        love.graphics.line(x3, y3, x7, y7)
+        love.graphics.line(x4, y4, x8, y8)
+        love.graphics.line(x5, y5, x6, y6)
+        love.graphics.line(x5, y5, x7, y7)
+        love.graphics.line(x6, y6, x8, y8)
+        love.graphics.line(x7, y7, x8, y8)
+
+        love.graphics.setLineWidth(lineWidth)
+        love.graphics.setColor(1, 1, 1, 1)
+
+        love.graphics.line(x1, y1, x2, y2)
+        love.graphics.line(x1, y1, x3, y3)
+        love.graphics.line(x1, y1, x5, y5)
+        love.graphics.line(x2, y2, x4, y4)
+        love.graphics.line(x2, y2, x6, y6)
+        love.graphics.line(x3, y3, x4, y4)
+        love.graphics.line(x3, y3, x7, y7)
+        love.graphics.line(x4, y4, x8, y8)
+        love.graphics.line(x5, y5, x6, y6)
+        love.graphics.line(x5, y5, x7, y7)
+        love.graphics.line(x6, y6, x8, y8)
+        love.graphics.line(x7, y7, x8, y8)
+
+        -- if instruction.operation == "union" then
+        --   love.graphics.setColor(0.25, 1, 0, 0.5)
+        -- else
+        --   love.graphics.setColor(1, 0.25, 0, 0.5)
+        -- end
+
+        -- love.graphics.circle("line", x, y, instruction.radius, 64)
+
+        -- if instruction.operation == "union" then
+        --   love.graphics.setColor(0.25, 1, 0, 1)
+        -- else
+        --   love.graphics.setColor(1, 0.25, 0, 1)
+        -- end
+
+        -- love.graphics.setDepthMode("lequal", false)
+        -- love.graphics.circle("line", x, y, instruction.radius, 64)
+        -- love.graphics.setDepthMode()
       end
-
-      love.graphics.circle("line", x, y, instruction.radius, 64)
-
-      if instruction.operation == "union" then
-        love.graphics.setColor(0.25, 1, 0, 1)
-      else
-        love.graphics.setColor(1, 0.25, 0, 1)
-      end
-
-      love.graphics.setDepthMode("lequal", false)
-      love.graphics.circle("line", x, y, instruction.radius, 64)
-      love.graphics.setDepthMode()
     end
   end
 
@@ -893,38 +931,7 @@ function love.mousemoved(x, y, dx, dy, istouch)
     instructions[3].position[1] = instructions[3].position[1] + sensitivity * dx
     instructions[3].position[2] = instructions[3].position[2] + sensitivity * dy
 
-    workerInputChannel:clear()
-
-    local minX = -2
-    local minY = -2
-    local minZ = -2
-
-    local maxX = 2
-    local maxY = 2
-    local maxZ = 2
-
-    local size = 16
-
-    while size <= 128 do
-      workerInputChannel:push({
-        mesher = mesher,
-        instructions = instructions,
-
-        minX = minX,
-        minY = minY,
-        minZ = minZ,
-
-        maxX = maxX,
-        maxY = maxY,
-        maxZ = maxZ,
-
-        sizeX = size,
-        sizeY = size,
-        sizeZ = size,
-      })
-
-      size = 2 * size
-    end
+    remesh()
   end
 end
 
@@ -949,8 +956,11 @@ function remesh()
 
   local size = 16
 
-  while size <= 128 do
+  while size <= 64 do
+    workerInputVersion = workerInputVersion + 1
+
     workerInputChannel:push({
+      version = workerInputVersion,
       mesher = mesher,
       instructions = instructions,
 

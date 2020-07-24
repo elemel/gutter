@@ -68,6 +68,29 @@ function M.rotate(qx, qy, qz, qw, x, y, z)
   return x2, y2, z2
 end
 
+-- https://www.euclideanspace.com/maths/geometry/rotations/conversions/quaternionToMatrix/index.htm
+function M.toTransform(qx, qy, qz, qw, transform)
+  transform = transform or love.math.newTransform()
+
+  return transform:setMatrix(
+    1 - 2 * qy * qy - 2 * qz * qz,
+    2 * qx * qy - 2 * qz * qw,
+    2 * qx * qz + 2 * qy * qw,
+    0,
+
+    2 * qx * qy + 2 * qz * qw,
+    1 - 2 * qx * qx - 2 * qz * qz,
+    2 * qy * qz - 2 * qx * qw,
+    0,
+
+    2 * qx * qz - 2 * qy * qw,
+    2 * qy * qz + 2 * qx * qw,
+    1 - 2 * qx * qx - 2 * qy * qy,
+    0,
+
+    0, 0, 0, 1)
+end
+
 function M.inverseRotate(qx, qy, qz, qw, x, y, z)
   local qx2, qy2, qz2, qw2 = M.conjugate(qx, qy, qz, qw)
   return M.rotate(qx2, qy2, qz2, qw2, x, y, z)

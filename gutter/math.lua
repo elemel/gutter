@@ -2,6 +2,7 @@ local loveMath = require("love.math")
 
 local abs = math.abs
 local cos = math.cos
+local floor = math.floor
 local max = math.max
 local min = math.min
 local modf = math.modf
@@ -198,6 +199,10 @@ function M.perp(x, y, z)
       return -z, 0, x
     end
   end
+end
+
+function M.round3(x, y, z)
+  return floor(x + 0.5), floor(y + 0.5), floor(z + 0.5)
 end
 
 -- https://en.wikipedia.org/wiki/Rotation_matrix#Rotation_matrix_from_axis_and_angle
