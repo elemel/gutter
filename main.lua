@@ -117,84 +117,82 @@ function love.load(arg)
     ]])
   end
 
-  sculpture = {
-    edits = {
-      {
-        operation = "union",
-        blending = 0,
+  instructions = {
+    {
+      operation = "union",
+      blending = 0,
 
-        position = {-0.5, -0.25, 0},
-        orientation = {0, 0, 0, 1},
+      position = {-0.5, -0.25, 0},
+      orientation = {0, 0, 0, 1},
 
-        color = {0.5, 1, 0.25, 1},
-        shape = {1, 1, 1, 1},
+      color = {0.5, 1, 0.25, 1},
+      shape = {1, 1, 1, 1},
 
-        noise = {
-          octaves = 0,
-          amplitude = 1,
-          frequency = 1,
-          gain = 0.5,
-          lacunarity = 1,
-        },
+      noise = {
+        octaves = 0,
+        amplitude = 1,
+        frequency = 1,
+        gain = 0.5,
+        lacunarity = 1,
       },
+    },
 
-      {
-        operation = "union",
-        blending = 0.5,
+    {
+      operation = "union",
+      blending = 0.5,
 
-        position = {0.5, 0.25, 0},
-        orientation = {0, 0, 0, 1},
+      position = {0.5, 0.25, 0},
+      orientation = {0, 0, 0, 1},
 
-        color = {0.25, 0.75, 1, 1},
-        shape = {1.5, 1.5, 1.5, 1},
+      color = {0.25, 0.75, 1, 1},
+      shape = {1.5, 1.5, 1.5, 1},
 
-        noise = {
-          octaves = 3,
-          amplitude = 0.5,
-          frequency = 1,
-          gain = 0.5,
-          lacunarity = 1,
-        },
+      noise = {
+        octaves = 3,
+        amplitude = 0.5,
+        frequency = 1,
+        gain = 0.5,
+        lacunarity = 1,
       },
+    },
 
-      {
-        operation = "subtraction",
-        blending = 0.25,
+    {
+      operation = "subtraction",
+      blending = 0.25,
 
-        position = {0, -0.25, 0.5},
-        orientation = {0, 0, 0, 1},
+      position = {0, -0.25, 0.5},
+      orientation = {0, 0, 0, 1},
 
-        color = {1, 0.5, 0.25, 1},
-        shape = {1, 1, 1, 1},
+      color = {1, 0.5, 0.25, 1},
+      shape = {1, 1, 1, 1},
 
-        noise = {
-          octaves = 0,
-          amplitude = 1,
-          frequency = 1,
-          gain = 0.5,
-          lacunarity = 1,
-        },
+      noise = {
+        octaves = 0,
+        amplitude = 1,
+        frequency = 1,
+        gain = 0.5,
+        lacunarity = 1,
       },
+    },
 
-      {
-        operation = "union",
-        blending = 0,
+    {
+      operation = "union",
+      blending = 0,
 
-        position = {0, -0.375, 0.75},
-        orientation = {fromEulerAngles("xzy", 0.125 * pi, 0.375 * pi, -0.0625 * pi)},
+      position = {0, -0.375, 0.75},
+      orientation = {fromEulerAngles("xzy", 0.125 * pi, 0.375 * pi, -0.0625 * pi)},
 
-        color = {1, 0.75, 0.25, 1},
-        shape = {0.5, 0.25, 1, 0},
+      color = {1, 0.75, 0.25, 1},
+      shape = {0.5, 0.25, 1, 0},
 
-        noise = {
-          octaves = 0,
-          amplitude = 1,
-          frequency = 1,
-          gain = 0.5,
-          lacunarity = 1,
-        },
+      noise = {
+        octaves = 0,
+        amplitude = 1,
+        frequency = 1,
+        gain = 0.5,
+        lacunarity = 1,
       },
-    }
+    },
   }
 
   local minX = -2
@@ -215,7 +213,7 @@ function love.load(arg)
   while size <= 128 do
     workerInputChannel:push({
       mesher = mesher,
-      edits = sculpture.edits,
+      instructions = instructions,
 
       minX = minX,
       minY = minY,
@@ -289,7 +287,7 @@ function love.update(dt)
   local width, height = love.graphics.getDimensions()
 
   do
-    Slab.BeginWindow("edits", {
+    Slab.BeginWindow("instructions", {
       X = 0,
       Y = 0,
 
@@ -306,7 +304,7 @@ function love.update(dt)
       NoOutline = true,
     })
 
-    Slab.Text("Edits", {Color = {1, 1, 1}})
+    Slab.Text("Instructions", {Color = {1, 1, 1}})
     Slab.Separator()
 
     do
@@ -314,7 +312,7 @@ function love.update(dt)
       Slab.SetLayoutColumn(1)
 
       if Slab.Button("New", {W = 94}) then
-        table.insert(sculpture.edits, {
+        table.insert(instructions, {
           operation = "union",
           blending = 0,
 
@@ -333,19 +331,19 @@ function love.update(dt)
           },
         })
 
-        selection = #sculpture.edits
+        selection = #instructions
         remesh()
       end
 
       Slab.SetLayoutColumn(2)
 
       if Slab.Button("Delete", {W = 94, Disabled = selection == nil}) then
-        table.remove(sculpture.edits, selection)
+        table.remove(instructions, selection)
 
-        if #sculpture.edits == 0 then
+        if #instructions == 0 then
           selection = nil
         else
-          selection = min(selection, #sculpture.edits)
+          selection = min(selection, #instructions)
         end
 
         remesh()
@@ -356,10 +354,10 @@ function love.update(dt)
 
     Slab.Separator()
 
-    for i = #sculpture.edits, 1, -1 do
-      edit = sculpture.edits[i]
+    for i = #instructions, 1, -1 do
+      instruction = instructions[i]
 
-      if Slab.TextSelectable(capitalize(edit.operation) .. " #" .. i, {IsSelected = (selection == i)}) then
+      if Slab.TextSelectable(capitalize(instruction.operation) .. " #" .. i, {IsSelected = (selection == i)}) then
         if selection == i then
           selection = nil
         else
@@ -371,31 +369,29 @@ function love.update(dt)
     Slab.Separator()
 
     do
-      local edits = sculpture.edits
-
       Slab.BeginLayout("order", {Columns = 2})
       Slab.SetLayoutColumn(1)
 
-      if Slab.Button("Up", {Disabled = selection == nil or selection == #sculpture.edits, W = 94}) then
-        edits[selection], edits[selection + 1] = edits[selection + 1], edits[selection]
+      if Slab.Button("Up", {Disabled = selection == nil or selection == #instructions, W = 94}) then
+        instructions[selection], instructions[selection + 1] = instructions[selection + 1], instructions[selection]
         selection = selection + 1
         remesh()
       end
 
       Slab.SetLayoutColumn(2)
 
-      if Slab.Button("Top", {Disabled = selection == nil or selection == #sculpture.edits, W = 94}) then
-        local edit = edits[selection]
-        table.remove(edits, selection)
-        table.insert(edits, edit)
-        selection = #sculpture.edits
+      if Slab.Button("Top", {Disabled = selection == nil or selection == #instructions, W = 94}) then
+        local instruction = instructions[selection]
+        table.remove(instructions, selection)
+        table.insert(instructions, instruction)
+        selection = #instructions
         remesh()
       end
 
       Slab.SetLayoutColumn(1)
 
       if Slab.Button("Down", {Disabled = selection == nil or selection == 1, W = 94}) then
-        edits[selection], edits[selection - 1] = edits[selection - 1], edits[selection]
+        instructions[selection], instructions[selection - 1] = instructions[selection - 1], instructions[selection]
         selection = selection - 1
         remesh()
       end
@@ -403,9 +399,9 @@ function love.update(dt)
       Slab.SetLayoutColumn(2)
 
       if Slab.Button("Bottom", {Disabled = selection == nil or selection == 1, W = 94}) then
-        local edit = edits[selection]
-        table.remove(edits, selection)
-        table.insert(edits, 1, edit)
+        local instruction = instructions[selection]
+        table.remove(instructions, selection)
+        table.insert(instructions, 1, instruction)
         selection = 1
         remesh()
       end
@@ -438,7 +434,7 @@ function love.update(dt)
     Slab.Separator()
 
     if selection then
-      local edit = sculpture.edits[selection]
+      local instruction = instructions[selection]
 
       do
         Slab.BeginLayout("operation", {Columns = 2, ExpandW = true})
@@ -448,12 +444,12 @@ function love.update(dt)
           Slab.Text("Operation")
 
           Slab.SetLayoutColumn(2)
-          local selectedOperation = selectableOperations[index(operations, edit.operation)]
+          local selectedOperation = selectableOperations[index(operations, instruction.operation)]
 
           if Slab.BeginComboBox("operation", {Selected = selectedOperation}) then
             for i, v in ipairs(selectableOperations) do
               if Slab.TextSelectable(v) then
-                edit.operation = operations[i]
+                instruction.operation = operations[i]
                 remesh()
               end
             end
@@ -468,8 +464,8 @@ function love.update(dt)
 
           Slab.SetLayoutColumn(2)
 
-          if Slab.Input("blending", {Align = "left", Text = tostring(edit.blending)}) then
-            edit.blending = clamp(tonumber(Slab.GetInputText()) or edit.blending, 0, 1)
+          if Slab.Input("blending", {Align = "left", Text = tostring(instruction.blending)}) then
+            instruction.blending = clamp(tonumber(Slab.GetInputText()) or instruction.blending, 0, 1)
             remesh()
           end
         end
@@ -482,7 +478,7 @@ function love.update(dt)
       do
         Slab.Text("Position")
         Slab.BeginLayout("position", {Columns = 2, ExpandW = true})
-        local x, y, z = unpack(edit.position)
+        local x, y, z = unpack(instruction.position)
 
         do
           Slab.SetLayoutColumn(1)
@@ -491,7 +487,7 @@ function love.update(dt)
           Slab.SetLayoutColumn(2)
 
           if Slab.Input("x", {Align = "left", Text = tostring(x)}) then
-            edit.position[1] = tonumber(Slab.GetInputText()) or x
+            instruction.position[1] = tonumber(Slab.GetInputText()) or x
             remesh()
           end
         end
@@ -503,7 +499,7 @@ function love.update(dt)
           Slab.SetLayoutColumn(2)
 
           if Slab.Input("y", {Align = "left", Text = tostring(y)}) then
-            edit.position[2] = tonumber(Slab.GetInputText()) or y
+            instruction.position[2] = tonumber(Slab.GetInputText()) or y
             remesh()
           end
         end
@@ -515,7 +511,7 @@ function love.update(dt)
           Slab.SetLayoutColumn(2)
 
           if Slab.Input("z", {Align = "left", Text = tostring(z)}) then
-            edit.position[3] = tonumber(Slab.GetInputText()) or z
+            instruction.position[3] = tonumber(Slab.GetInputText()) or z
             remesh()
           end
         end
@@ -528,7 +524,7 @@ function love.update(dt)
       do
         Slab.Text("Orientation")
         Slab.BeginLayout("orientation", {Columns = 2, ExpandW = true})
-        local qx, qy, qz, qw = unpack(edit.orientation)
+        local qx, qy, qz, qw = unpack(instruction.orientation)
 
         do
           Slab.SetLayoutColumn(1)
@@ -537,7 +533,7 @@ function love.update(dt)
           Slab.SetLayoutColumn(2)
 
           if Slab.Input("qx", {Align = "left", Text = tostring(qx)}) then
-            edit.orientation[1] = tonumber(Slab.GetInputText()) or qx
+            instruction.orientation[1] = tonumber(Slab.GetInputText()) or qx
             remesh()
           end
         end
@@ -549,7 +545,7 @@ function love.update(dt)
           Slab.SetLayoutColumn(2)
 
           if Slab.Input("qy", {Align = "left", Text = tostring(qy)}) then
-            edit.orientation[2] = tonumber(Slab.GetInputText()) or qy
+            instruction.orientation[2] = tonumber(Slab.GetInputText()) or qy
             remesh()
           end
         end
@@ -561,7 +557,7 @@ function love.update(dt)
           Slab.SetLayoutColumn(2)
 
           if Slab.Input("qz", {Align = "left", Text = tostring(qz)}) then
-            edit.orientation[3] = tonumber(Slab.GetInputText()) or qz
+            instruction.orientation[3] = tonumber(Slab.GetInputText()) or qz
             remesh()
           end
         end
@@ -573,7 +569,7 @@ function love.update(dt)
           Slab.SetLayoutColumn(2)
 
           if Slab.Input("qw", {Align = "left", Text = tostring(qw)}) then
-            edit.orientation[4] = tonumber(Slab.GetInputText()) or qw
+            instruction.orientation[4] = tonumber(Slab.GetInputText()) or qw
             remesh()
           end
         end
@@ -586,7 +582,7 @@ function love.update(dt)
       do
         Slab.Text("Color")
         Slab.BeginLayout("color", {Columns = 2, ExpandW = true})
-        local red, green, blue, alpha = unpack(edit.color)
+        local red, green, blue, alpha = unpack(instruction.color)
 
         do
           Slab.SetLayoutColumn(1)
@@ -595,7 +591,7 @@ function love.update(dt)
           Slab.SetLayoutColumn(2)
 
           if Slab.Input("red", {Align = "left", Text = tostring(red)}) then
-            edit.color[1] = tonumber(Slab.GetInputText()) or edit.color[1]
+            instruction.color[1] = tonumber(Slab.GetInputText()) or red
             remesh()
           end
         end
@@ -607,7 +603,7 @@ function love.update(dt)
           Slab.SetLayoutColumn(2)
 
           if Slab.Input("green", {Align = "left", Text = tostring(green)}) then
-            edit.color[2] = tonumber(Slab.GetInputText()) or edit.color[2]
+            instruction.color[2] = tonumber(Slab.GetInputText()) or green
             remesh()
           end
         end
@@ -619,7 +615,7 @@ function love.update(dt)
           Slab.SetLayoutColumn(2)
 
           if Slab.Input("blue", {Align = "left", Text = tostring(blue)}) then
-            edit.color[3] = tonumber(Slab.GetInputText()) or edit.color[3]
+            instruction.color[3] = tonumber(Slab.GetInputText()) or blue
             remesh()
           end
         end
@@ -631,7 +627,7 @@ function love.update(dt)
           Slab.SetLayoutColumn(2)
 
           if Slab.Input("alpha", {Align = "left", Text = tostring(alpha)}) then
-            edit.color[4] = tonumber(Slab.GetInputText()) or edit.color[4]
+            instruction.color[4] = tonumber(Slab.GetInputText()) or alpha
             remesh()
           end
         end
@@ -644,7 +640,7 @@ function love.update(dt)
       do
         Slab.Text("Shape")
         Slab.BeginLayout("shape", {Columns = 2, ExpandW = true})
-        local width, height, depth, rounding = unpack(edit.shape)
+        local width, height, depth, rounding = unpack(instruction.shape)
 
         do
           Slab.SetLayoutColumn(1)
@@ -653,7 +649,7 @@ function love.update(dt)
           Slab.SetLayoutColumn(2)
 
           if Slab.Input("width", {Align = "left", Text = tostring(width)}) then
-            edit.shape[1] = max(0, tonumber(Slab.GetInputText()) or width)
+            instruction.shape[1] = max(0, tonumber(Slab.GetInputText()) or width)
             remesh()
           end
         end
@@ -665,7 +661,7 @@ function love.update(dt)
           Slab.SetLayoutColumn(2)
 
           if Slab.Input("height", {Align = "left", Text = tostring(height)}) then
-            edit.shape[2] = max(0, tonumber(Slab.GetInputText()) or height)
+            instruction.shape[2] = max(0, tonumber(Slab.GetInputText()) or height)
             remesh()
           end
         end
@@ -677,7 +673,7 @@ function love.update(dt)
           Slab.SetLayoutColumn(2)
 
           if Slab.Input("depth", {Align = "left", Text = tostring(depth)}) then
-            edit.shape[3] = max(0, tonumber(Slab.GetInputText()) or depth)
+            instruction.shape[3] = max(0, tonumber(Slab.GetInputText()) or depth)
             remesh()
           end
         end
@@ -689,7 +685,7 @@ function love.update(dt)
           Slab.SetLayoutColumn(2)
 
           if Slab.Input("rounding", {Align = "left", Text = tostring(rounding)}) then
-            edit.shape[4] = clamp(tonumber(Slab.GetInputText()) or rounding, 0, 1)
+            instruction.shape[4] = clamp(tonumber(Slab.GetInputText()) or rounding, 0, 1)
             remesh()
           end
         end
@@ -702,7 +698,7 @@ function love.update(dt)
       do
         Slab.Text("Noise")
         Slab.BeginLayout("noise", {Columns = 2, ExpandW = true})
-        local noise = edit.noise
+        local noise = instruction.noise
 
         do
           Slab.SetLayoutColumn(1)
@@ -830,25 +826,25 @@ function love.draw()
     love.graphics.line(0, -0.5 * height / scale, 0, 0.5 * height / scale)
     love.graphics.setDepthMode()
 
-    for i, edit in ipairs(sculpture.edits) do
-      local x, y, z = transformPoint3(transform, unpack(edit.position))
+    for i, instruction in ipairs(instructions) do
+      local x, y, z = transformPoint3(transform, unpack(instruction.position))
 
-      if edit.operation == "union" then
+      if instruction.operation == "union" then
         love.graphics.setColor(0.25, 1, 0, 0.5)
       else
         love.graphics.setColor(1, 0.25, 0, 0.5)
       end
 
-      love.graphics.circle("line", x, y, edit.radius, 64)
+      love.graphics.circle("line", x, y, instruction.radius, 64)
 
-      if edit.operation == "union" then
+      if instruction.operation == "union" then
         love.graphics.setColor(0.25, 1, 0, 1)
       else
         love.graphics.setColor(1, 0.25, 0, 1)
       end
 
       love.graphics.setDepthMode("lequal", false)
-      love.graphics.circle("line", x, y, edit.radius, 64)
+      love.graphics.circle("line", x, y, instruction.radius, 64)
       love.graphics.setDepthMode()
     end
   end
@@ -877,8 +873,8 @@ function love.mousemoved(x, y, dx, dy, istouch)
   if editor and love.mouse.isDown(1) then
     local sensitivity = 1 / 128
 
-    sculpture.edits[3].position[1] = sculpture.edits[3].position[1] + sensitivity * dx
-    sculpture.edits[3].position[2] = sculpture.edits[3].position[2] + sensitivity * dy
+    instructions[3].position[1] = instructions[3].position[1] + sensitivity * dx
+    instructions[3].position[2] = instructions[3].position[2] + sensitivity * dy
 
     workerInputChannel:clear()
 
@@ -895,7 +891,7 @@ function love.mousemoved(x, y, dx, dy, istouch)
     while size <= 128 do
       workerInputChannel:push({
         mesher = mesher,
-        edits = sculpture.edits,
+        instructions = instructions,
 
         minX = minX,
         minY = minY,
@@ -939,7 +935,7 @@ function remesh()
   while size <= 128 do
     workerInputChannel:push({
       mesher = mesher,
-      edits = sculpture.edits,
+      instructions = instructions,
 
       minX = minX,
       minY = minY,

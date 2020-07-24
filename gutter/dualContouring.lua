@@ -104,7 +104,7 @@ function M.newGrid(sizeX, sizeY, sizeZ, minX, minY, minZ, maxX, maxY, maxZ)
   return grid
 end
 
-function M.applyEdits(edits, grid)
+function M.applyInstructions(instructions, grid)
   local sizeX = grid.sizeX
   local sizeY = grid.sizeY
   local sizeZ = grid.sizeZ
@@ -119,17 +119,17 @@ function M.applyEdits(edits, grid)
 
   local vertices = grid.vertices
 
-  for _, edit in ipairs(edits) do
-    local positionX, positionY, positionZ = unpack(edit.position)
-    local qx, qy, qz, qw = unpack(edit.orientation)
+  for _, instruction in ipairs(instructions) do
+    local positionX, positionY, positionZ = unpack(instruction.position)
+    local qx, qy, qz, qw = unpack(instruction.orientation)
 
-    local editRed, editGreen, editBlue, editAlpha = unpack(edit.color)
-    local width, height, depth, rounding = unpack(edit.shape)
+    local instructionRed, instructionGreen, instructionBlue, instructionAlpha = unpack(instruction.color)
+    local width, height, depth, rounding = unpack(instruction.shape)
     local maxRadius = 0.5 * min(width, height, depth)
     local radius = rounding * maxRadius
-    local blendRange = edit.blending * maxRadius
+    local blendRange = instruction.blending * maxRadius
 
-    local noiseConfig = edit.noise
+    local noiseConfig = instruction.noise
     local noiseOctaves = noiseConfig.octaves
     local noiseAmplitude = noiseConfig.amplitude * maxRadius
     local noiseFrequency = noiseConfig.frequency / noiseAmplitude
@@ -151,16 +151,16 @@ function M.applyEdits(edits, grid)
         for vertexX, vertex in ipairs(row) do
           local x = mix(minX, maxX, (vertexX - 1) / sizeZ)
 
-          local editX, editY, editZ = inverseRotate(
+          local instructionX, instructionY, instructionZ = inverseRotate(
             qx, qy, qz, qw,
             x - positionX, y - positionY, z - positionZ)
 
-        local editDistance = box(
-          editX, editY, editZ,
+        local instructionDistance = box(
+          instructionX, instructionY, instructionZ,
           0.5 * width - radius, 0.5 * height - radius, 0.5 * depth - radius) - radius
 
           if noiseOctaves > 0 then
-            editDistance = editDistance + noiseAmplitude * (2 * fbm3(
+            instructionDistance = instructionDistance + noiseAmplitude * (2 * fbm3(
               noiseFrequency * x,
               noiseFrequency * y,
               noiseFrequency * z,
@@ -170,16 +170,16 @@ function M.applyEdits(edits, grid)
               noiseGain) - 1)
           end
 
-          if edit.operation == "union" then
+          if instruction.operation == "union" then
             vertex.distance, vertex.red, vertex.green, vertex.blue, vertex.alpha =
               smoothUnionColor(
                 vertex.distance,
                 vertex.red, vertex.green, vertex.blue, vertex.alpha,
-                editDistance, editRed, editGreen, editBlue, editAlpha, blendRange)
-          elseif edit.operation == "subtraction" then
+                instructionDistance, instructionRed, instructionGreen, instructionBlue, instructionAlpha, blendRange)
+          elseif instruction.operation == "subtraction" then
             vertex.distance, vertex.red, vertex.green, vertex.blue, vertex.alpha =
               smoothSubtractionColor(
-                editDistance, editRed, editGreen, editBlue, editAlpha,
+                instructionDistance, instructionRed, instructionGreen, instructionBlue, instructionAlpha,
                 vertex.distance,
                 vertex.red, vertex.green, vertex.blue, vertex.alpha,
                 blendRange)
@@ -457,8 +457,8 @@ function M.generateTriangles(grid)
   return triangles
 end
 
-function M.newMeshFromEdits(edits, grid)
-  M.applyEdits(edits, grid)
+function M.newMeshFromInstructions(instructions, grid)
+  M.applyInstructions(instructions, grid)
   M.updateCells(grid)
   local triangles = M.generateTriangles(grid)
 

@@ -19,7 +19,7 @@ local function main(arg)
         input.sizeX, input.sizeY, input.sizeZ,
         input.minX, input.minY, input.minZ, input.maxX, input.maxY, input.maxZ)
 
-      vertices = dualContouring.newMeshFromEdits(input.edits, grid)
+      vertices = dualContouring.newMeshFromInstructions(input.instructions, grid)
     else
       local bounds = {
         minX = input.minX,
@@ -33,8 +33,8 @@ local function main(arg)
 
       local gridSize = {input.sizeX, input.sizeY, input.sizeZ}
 
-      vertices, vertexMap = surfaceSplatting.newMeshFromEdits(
-        input.edits, bounds, gridSize)
+      vertices, vertexMap = surfaceSplatting.newMeshFromInstructions(
+        input.instructions, bounds, gridSize)
     end
 
     outputChannel:push({vertices = vertices, vertexMap = vertexMap})
