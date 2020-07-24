@@ -591,7 +591,7 @@ function love.update(dt)
           Slab.SetLayoutColumn(2)
 
           if Slab.Input("red", {Align = "left", Text = tostring(red)}) then
-            instruction.color[1] = tonumber(Slab.GetInputText()) or red
+            instruction.color[1] = clamp(tonumber(Slab.GetInputText()) or red, 0, 1)
             remesh()
           end
         end
@@ -603,7 +603,7 @@ function love.update(dt)
           Slab.SetLayoutColumn(2)
 
           if Slab.Input("green", {Align = "left", Text = tostring(green)}) then
-            instruction.color[2] = tonumber(Slab.GetInputText()) or green
+            instruction.color[2] = clamp(tonumber(Slab.GetInputText()) or green, 0, 1)
             remesh()
           end
         end
@@ -615,7 +615,7 @@ function love.update(dt)
           Slab.SetLayoutColumn(2)
 
           if Slab.Input("blue", {Align = "left", Text = tostring(blue)}) then
-            instruction.color[3] = tonumber(Slab.GetInputText()) or blue
+            instruction.color[3] = clamp(tonumber(Slab.GetInputText()) or blue, 0, 1)
             remesh()
           end
         end
@@ -627,7 +627,7 @@ function love.update(dt)
           Slab.SetLayoutColumn(2)
 
           if Slab.Input("alpha", {Align = "left", Text = tostring(alpha)}) then
-            instruction.color[4] = tonumber(Slab.GetInputText()) or alpha
+            instruction.color[4] = clamp(tonumber(Slab.GetInputText()) or alpha, 0, 1)
             remesh()
           end
         end
