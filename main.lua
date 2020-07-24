@@ -221,6 +221,10 @@ function love.load(arg)
 
   Slab.SetINIStatePath(nil)
   Slab.Initialize(arg)
+
+  viewportTransform = love.math.newTransform()
+  cameraTransform = love.math.newTransform()
+  worldToScreenTransform = love.math.newTransform()
 end
 
 local combo = {value = 1, items = {'A', 'B', 'C'}}
@@ -774,21 +778,27 @@ function love.update(dt)
 end
 
 function love.draw()
-  love.graphics.push()
   local width, height = love.graphics.getDimensions()
+  local scale = 0.375
+
+  viewportTransform:reset():translate(0.5 * width, 0.5 * height):scale(height)
+
+  setRotation3(cameraTransform:reset(), 0, 1, 0, angle):apply(love.math.newTransform():setMatrix(
+    scale, 0, 0, 0,
+    0, scale, 0, 0,
+    0, 0, scale, 0,
+    0, 0, 0, 1))
+
+  worldToScreenTransform:reset():apply(viewportTransform):apply(cameraTransform)
 
   if editor then
     love.graphics.setScissor(200, 0, width - 400, height)
   end
 
-  love.graphics.translate(0.5 * width, 0.5 * height)
-
-  local scale = 0.375 * height
-  love.graphics.scale(scale)
-  love.graphics.setLineWidth(1 / scale)
+  love.graphics.push()
+  love.graphics.applyTransform(worldToScreenTransform)
 
   local transform = love.math.newTransform()
-  setRotation3(transform, 0, 1, 0, angle)
 
   if mesher == "surface-splatting" then
     if mesh then
@@ -814,6 +824,8 @@ function love.draw()
     love.graphics.setShader(nil)
   end
 
+  love.graphics.pop()
+
   if editor then
     -- love.graphics.setColor(1, 0.25, 0, 0.5)
     -- love.graphics.line(-0.5 * width / scale, 0, 0.5 * width / scale, 0)
@@ -834,24 +846,22 @@ function love.draw()
     for i, instruction in ipairs(instructions) do
       if i == selection then
         local instructionTransform =
-          transform *
+          worldToScreenTransform *
           setTranslation3(love.math.newTransform(), unpack(instruction.position)) *
           quaternion.toTransform(unpack(instruction.orientation))
 
         local width, height, depth, rounding = unpack(instruction.shape)
 
-        local x1, y1, z1 = transformPoint3(instructionTransform, -0.5 * width, -0.5 * height, -0.5 * depth)
-        local x2, y2, z2 = transformPoint3(instructionTransform, 0.5 * width, -0.5 * height, -0.5 * depth)
-        local x3, y3, z3 = transformPoint3(instructionTransform, -0.5 * width, 0.5 * height, -0.5 * depth)
-        local x4, y4, z4 = transformPoint3(instructionTransform, 0.5 * width, 0.5 * height, -0.5 * depth)
-        local x5, y5, z5 = transformPoint3(instructionTransform, -0.5 * width, -0.5 * height, 0.5 * depth)
-        local x6, y6, z6 = transformPoint3(instructionTransform, 0.5 * width, -0.5 * height, 0.5 * depth)
-        local x7, y7, z7 = transformPoint3(instructionTransform, -0.5 * width, 0.5 * height, 0.5 * depth)
-        local x8, y8, z8 = transformPoint3(instructionTransform, 0.5 * width, 0.5 * height, 0.5 * depth)
+        local x1, y1, z1 = round3(transformPoint3(instructionTransform, -0.5 * width, -0.5 * height, -0.5 * depth))
+        local x2, y2, z2 = round3(transformPoint3(instructionTransform, 0.5 * width, -0.5 * height, -0.5 * depth))
+        local x3, y3, z3 = round3(transformPoint3(instructionTransform, -0.5 * width, 0.5 * height, -0.5 * depth))
+        local x4, y4, z4 = round3(transformPoint3(instructionTransform, 0.5 * width, 0.5 * height, -0.5 * depth))
+        local x5, y5, z5 = round3(transformPoint3(instructionTransform, -0.5 * width, -0.5 * height, 0.5 * depth))
+        local x6, y6, z6 = round3(transformPoint3(instructionTransform, 0.5 * width, -0.5 * height, 0.5 * depth))
+        local x7, y7, z7 = round3(transformPoint3(instructionTransform, -0.5 * width, 0.5 * height, 0.5 * depth))
+        local x8, y8, z8 = round3(transformPoint3(instructionTransform, 0.5 * width, 0.5 * height, 0.5 * depth))
 
-        local lineWidth = love.graphics.getLineWidth()
-
-        love.graphics.setLineWidth(3 * lineWidth)
+        love.graphics.setLineWidth(3)
         love.graphics.setColor(0, 0, 0, 1)
 
         love.graphics.line(x1, y1, x2, y2)
@@ -867,7 +877,7 @@ function love.draw()
         love.graphics.line(x6, y6, x8, y8)
         love.graphics.line(x7, y7, x8, y8)
 
-        love.graphics.setLineWidth(lineWidth)
+        love.graphics.setLineWidth(1)
         love.graphics.setColor(1, 1, 1, 1)
 
         love.graphics.line(x1, y1, x2, y2)
@@ -903,8 +913,6 @@ function love.draw()
       end
     end
   end
-
-  love.graphics.pop()
 
   if editor then
     love.graphics.setScissor()
