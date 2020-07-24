@@ -98,8 +98,8 @@ function love.load(arg)
       vec4 effect(vec4 color, Image tex, vec2 texture_coords, vec2 screen_coords)
       {
         vec3 normal = normalize(VaryingNormal);
-        vec3 sunLighting = dot(normalize(vec3(-2, -8, 4)), normal) * 3 * vec3(1, 0.5, 0.25);
-        vec3 skyLighting = 1 * vec3(0.25, 0.5, 1);
+        vec3 sunLighting = max(0, dot(normalize(vec3(-2, -8, 4)), normal)) * 3 * vec3(1, 0.5, 0.25);
+        vec3 skyLighting = vec3(0.25, 0.5, 1) * (0.5 - 0.5 * normal.y);
         vec3 lighting = sunLighting + skyLighting;
         return vec4(lighting, 1) * color;
       }
