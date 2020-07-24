@@ -81,11 +81,17 @@ function M.applyEditToGrid(edit, grid)
   local blendRange = edit.blending * maxRadius
 
   local noiseConfig = edit.noise
-  local noiseFrequency = noiseConfig.frequency or 1
-  local noiseAmplitude = noiseConfig.amplitude or 1
-  local noiseOctaves = noiseConfig.octaves or 0
-  local noiseLacunarity = noiseConfig.lacunarity or 2
-  local noiseGain = noiseConfig.gain or 0.5
+  local noiseOctaves = noiseConfig.octaves
+  local noiseAmplitude = noiseConfig.amplitude * maxRadius
+  local noiseFrequency = noiseConfig.frequency / noiseAmplitude
+  local noiseGain = noiseConfig.gain
+  local noiseLacunarity = noiseConfig.lacunarity / noiseGain
+
+  if noiseAmplitude == 0 then
+    noiseOctaves = 0
+  elseif noiseGain == 0 then
+    noiseOctaves = 1
+  end
 
   local sizeX = grid.sizeX
   local sizeY = grid.sizeY

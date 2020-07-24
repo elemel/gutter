@@ -130,11 +130,11 @@ function love.load(arg)
         shape = {1, 1, 1, 1},
 
         noise = {
+          octaves = 0,
           amplitude = 1,
           frequency = 1,
           gain = 0.5,
-          lacunarity = 2,
-          octaves = 0,
+          lacunarity = 1,
         },
       },
 
@@ -149,11 +149,11 @@ function love.load(arg)
         shape = {1.5, 1.5, 1.5, 1},
 
         noise = {
+          octaves = 3,
           amplitude = 0.5,
-          frequency = 2.5,
+          frequency = 1,
           gain = 0.5,
-          lacunarity = 2,
-          octaves = 2.5,
+          lacunarity = 1,
         },
       },
 
@@ -168,11 +168,11 @@ function love.load(arg)
         shape = {1, 1, 1, 1},
 
         noise = {
+          octaves = 0,
           amplitude = 1,
           frequency = 1,
           gain = 0.5,
-          lacunarity = 2,
-          octaves = 0,
+          lacunarity = 1,
         },
       },
 
@@ -187,11 +187,11 @@ function love.load(arg)
         shape = {0.5, 0.25, 1, 0},
 
         noise = {
+          octaves = 0,
           amplitude = 1,
           frequency = 1,
           gain = 0.5,
-          lacunarity = 2,
-          octaves = 0,
+          lacunarity = 1,
         },
       },
     }
@@ -325,11 +325,11 @@ function love.update(dt)
           shape = {1, 1, 1, 1},
 
           noise = {
+            octaves = 0,
             amplitude = 1,
             frequency = 1,
             gain = 0.5,
-            lacunarity = 2,
-            octaves = 0,
+            lacunarity = 1,
           },
         })
 
@@ -711,19 +711,7 @@ function love.update(dt)
           Slab.SetLayoutColumn(2)
 
           if Slab.Input("octaves", {Align = "left", Text = tostring(noise.octaves)}) then
-            noise.octaves = tonumber(Slab.GetInputText()) or noise.octaves
-            remesh()
-          end
-        end
-
-        do
-          Slab.SetLayoutColumn(1)
-          Slab.Text("Frequency")
-
-          Slab.SetLayoutColumn(2)
-
-          if Slab.Input("frequency", {Align = "left", Text = tostring(noise.frequency)}) then
-            noise.frequency = tonumber(Slab.GetInputText()) or noise.frequency
+            noise.octaves = max(0, tonumber(Slab.GetInputText()) or noise.octaves)
             remesh()
           end
         end
@@ -735,19 +723,19 @@ function love.update(dt)
           Slab.SetLayoutColumn(2)
 
           if Slab.Input("amplitude", {Align = "left", Text = tostring(noise.amplitude)}) then
-            noise.amplitude = tonumber(Slab.GetInputText()) or noise.amplitude
+            noise.amplitude = clamp(tonumber(Slab.GetInputText()) or noise.amplitude, 0, 1)
             remesh()
           end
         end
 
         do
           Slab.SetLayoutColumn(1)
-          Slab.Text("Lacunarity")
+          Slab.Text("Frequency")
 
           Slab.SetLayoutColumn(2)
 
-          if Slab.Input("lacunarity", {Align = "left", Text = tostring(noise.lacunarity)}) then
-            noise.lacunarity = tonumber(Slab.GetInputText()) or noise.lacunarity
+          if Slab.Input("frequency", {Align = "left", Text = tostring(noise.frequency)}) then
+            noise.frequency = clamp(tonumber(Slab.GetInputText()) or noise.frequency, 0, 1)
             remesh()
           end
         end
@@ -759,7 +747,19 @@ function love.update(dt)
           Slab.SetLayoutColumn(2)
 
           if Slab.Input("gain", {Align = "left", Text = tostring(noise.gain)}) then
-            noise.gain = tonumber(Slab.GetInputText()) or noise.gain
+            noise.gain = clamp(tonumber(Slab.GetInputText()) or noise.gain, 0, 1)
+            remesh()
+          end
+        end
+
+        do
+          Slab.SetLayoutColumn(1)
+          Slab.Text("Lacunarity")
+
+          Slab.SetLayoutColumn(2)
+
+          if Slab.Input("lacunarity", {Align = "left", Text = tostring(noise.lacunarity)}) then
+            noise.lacunarity = clamp(tonumber(Slab.GetInputText()) or noise.lacunarity, 0, 1)
             remesh()
           end
         end
