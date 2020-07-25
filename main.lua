@@ -5,6 +5,7 @@ local Slab = require("Slab")
 
 local clamp = gutterMath.clamp
 local floor = math.floor
+local format = string.format
 local fromEulerAngles = quaternion.fromEulerAngles
 local max = math.max
 local min = math.min
@@ -22,6 +23,10 @@ local selection
 local function capitalize(s)
   s = s:gsub("^%l", upper)
   return s
+end
+
+local function formatNumber(n)
+  return tostring(n)
 end
 
 function love.load(arg)
@@ -455,7 +460,7 @@ function love.update(dt)
 
           Slab.SetLayoutColumn(2)
 
-          if Slab.Input("blending", {Align = "left", Text = tostring(instruction.blending)}) then
+          if Slab.Input("blending", {Align = "left", Text = formatNumber(instruction.blending)}) then
             instruction.blending = clamp(tonumber(Slab.GetInputText()) or instruction.blending, 0, 1)
             remesh()
           end
@@ -477,7 +482,7 @@ function love.update(dt)
 
           Slab.SetLayoutColumn(2)
 
-          if Slab.Input("x", {Align = "left", Text = tostring(x)}) then
+          if Slab.Input("x", {Align = "left", Text = formatNumber(x)}) then
             instruction.position[1] = tonumber(Slab.GetInputText()) or x
             remesh()
           end
@@ -489,7 +494,7 @@ function love.update(dt)
 
           Slab.SetLayoutColumn(2)
 
-          if Slab.Input("y", {Align = "left", Text = tostring(y)}) then
+          if Slab.Input("y", {Align = "left", Text = formatNumber(y)}) then
             instruction.position[2] = tonumber(Slab.GetInputText()) or y
             remesh()
           end
@@ -501,7 +506,7 @@ function love.update(dt)
 
           Slab.SetLayoutColumn(2)
 
-          if Slab.Input("z", {Align = "left", Text = tostring(z)}) then
+          if Slab.Input("z", {Align = "left", Text = formatNumber(z)}) then
             instruction.position[3] = tonumber(Slab.GetInputText()) or z
             remesh()
           end
@@ -524,7 +529,7 @@ function love.update(dt)
 
           Slab.SetLayoutColumn(2)
 
-          if Slab.Input("qx", {Align = "left", Text = tostring(qx)}) then
+          if Slab.Input("qx", {Align = "left", Text = formatNumber(qx)}) then
             orientation[1] = tonumber(Slab.GetInputText()) or qx
 
             orientation[1], orientation[2], orientation[3], orientation[4] =
@@ -540,7 +545,7 @@ function love.update(dt)
 
           Slab.SetLayoutColumn(2)
 
-          if Slab.Input("qy", {Align = "left", Text = tostring(qy)}) then
+          if Slab.Input("qy", {Align = "left", Text = formatNumber(qy)}) then
             orientation[2] = tonumber(Slab.GetInputText()) or qy
 
             orientation[1], orientation[2], orientation[3], orientation[4] =
@@ -556,7 +561,7 @@ function love.update(dt)
 
           Slab.SetLayoutColumn(2)
 
-          if Slab.Input("qz", {Align = "left", Text = tostring(qz)}) then
+          if Slab.Input("qz", {Align = "left", Text = formatNumber(qz)}) then
             orientation[3] = tonumber(Slab.GetInputText()) or qz
 
             orientation[1], orientation[2], orientation[3], orientation[4] =
@@ -572,7 +577,7 @@ function love.update(dt)
 
           Slab.SetLayoutColumn(2)
 
-          if Slab.Input("qw", {Align = "left", Text = tostring(qw)}) then
+          if Slab.Input("qw", {Align = "left", Text = formatNumber(qw)}) then
             orientation[4] = tonumber(Slab.GetInputText()) or qw
 
             orientation[1], orientation[2], orientation[3], orientation[4] =
@@ -598,7 +603,7 @@ function love.update(dt)
 
           Slab.SetLayoutColumn(2)
 
-          if Slab.Input("red", {Align = "left", Text = tostring(red)}) then
+          if Slab.Input("red", {Align = "left", Text = formatNumber(red)}) then
             instruction.color[1] = clamp(tonumber(Slab.GetInputText()) or red, 0, 1)
             remesh()
           end
@@ -610,7 +615,7 @@ function love.update(dt)
 
           Slab.SetLayoutColumn(2)
 
-          if Slab.Input("green", {Align = "left", Text = tostring(green)}) then
+          if Slab.Input("green", {Align = "left", Text = formatNumber(green)}) then
             instruction.color[2] = clamp(tonumber(Slab.GetInputText()) or green, 0, 1)
             remesh()
           end
@@ -622,7 +627,7 @@ function love.update(dt)
 
           Slab.SetLayoutColumn(2)
 
-          if Slab.Input("blue", {Align = "left", Text = tostring(blue)}) then
+          if Slab.Input("blue", {Align = "left", Text = formatNumber(blue)}) then
             instruction.color[3] = clamp(tonumber(Slab.GetInputText()) or blue, 0, 1)
             remesh()
           end
@@ -634,7 +639,7 @@ function love.update(dt)
 
           Slab.SetLayoutColumn(2)
 
-          if Slab.Input("alpha", {Align = "left", Text = tostring(alpha)}) then
+          if Slab.Input("alpha", {Align = "left", Text = formatNumber(alpha)}) then
             instruction.color[4] = clamp(tonumber(Slab.GetInputText()) or alpha, 0, 1)
             remesh()
           end
@@ -656,7 +661,7 @@ function love.update(dt)
 
           Slab.SetLayoutColumn(2)
 
-          if Slab.Input("width", {Align = "left", Text = tostring(width)}) then
+          if Slab.Input("width", {Align = "left", Text = formatNumber(width)}) then
             instruction.shape[1] = max(0, tonumber(Slab.GetInputText()) or width)
             remesh()
           end
@@ -668,7 +673,7 @@ function love.update(dt)
 
           Slab.SetLayoutColumn(2)
 
-          if Slab.Input("height", {Align = "left", Text = tostring(height)}) then
+          if Slab.Input("height", {Align = "left", Text = formatNumber(height)}) then
             instruction.shape[2] = max(0, tonumber(Slab.GetInputText()) or height)
             remesh()
           end
@@ -680,7 +685,7 @@ function love.update(dt)
 
           Slab.SetLayoutColumn(2)
 
-          if Slab.Input("depth", {Align = "left", Text = tostring(depth)}) then
+          if Slab.Input("depth", {Align = "left", Text = formatNumber(depth)}) then
             instruction.shape[3] = max(0, tonumber(Slab.GetInputText()) or depth)
             remesh()
           end
@@ -692,7 +697,7 @@ function love.update(dt)
 
           Slab.SetLayoutColumn(2)
 
-          if Slab.Input("rounding", {Align = "left", Text = tostring(rounding)}) then
+          if Slab.Input("rounding", {Align = "left", Text = formatNumber(rounding)}) then
             instruction.shape[4] = clamp(tonumber(Slab.GetInputText()) or rounding, 0, 1)
             remesh()
           end
@@ -714,7 +719,7 @@ function love.update(dt)
 
           Slab.SetLayoutColumn(2)
 
-          if Slab.Input("octaves", {Align = "left", Text = tostring(noise.octaves)}) then
+          if Slab.Input("octaves", {Align = "left", Text = formatNumber(noise.octaves)}) then
             noise.octaves = max(0, tonumber(Slab.GetInputText()) or noise.octaves)
             remesh()
           end
@@ -726,7 +731,7 @@ function love.update(dt)
 
           Slab.SetLayoutColumn(2)
 
-          if Slab.Input("amplitude", {Align = "left", Text = tostring(noise.amplitude)}) then
+          if Slab.Input("amplitude", {Align = "left", Text = formatNumber(noise.amplitude)}) then
             noise.amplitude = clamp(tonumber(Slab.GetInputText()) or noise.amplitude, 0, 1)
             remesh()
           end
@@ -738,7 +743,7 @@ function love.update(dt)
 
           Slab.SetLayoutColumn(2)
 
-          if Slab.Input("frequency", {Align = "left", Text = tostring(noise.frequency)}) then
+          if Slab.Input("frequency", {Align = "left", Text = formatNumber(noise.frequency)}) then
             noise.frequency = clamp(tonumber(Slab.GetInputText()) or noise.frequency, 0, 1)
             remesh()
           end
@@ -750,7 +755,7 @@ function love.update(dt)
 
           Slab.SetLayoutColumn(2)
 
-          if Slab.Input("gain", {Align = "left", Text = tostring(noise.gain)}) then
+          if Slab.Input("gain", {Align = "left", Text = formatNumber(noise.gain)}) then
             noise.gain = clamp(tonumber(Slab.GetInputText()) or noise.gain, 0, 1)
             remesh()
           end
@@ -762,7 +767,7 @@ function love.update(dt)
 
           Slab.SetLayoutColumn(2)
 
-          if Slab.Input("lacunarity", {Align = "left", Text = tostring(noise.lacunarity)}) then
+          if Slab.Input("lacunarity", {Align = "left", Text = formatNumber(noise.lacunarity)}) then
             noise.lacunarity = clamp(tonumber(Slab.GetInputText()) or noise.lacunarity, 0, 1)
             remesh()
           end
