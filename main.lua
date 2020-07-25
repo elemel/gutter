@@ -783,7 +783,7 @@ end
 
 function love.draw()
   local width, height = love.graphics.getDimensions()
-  local scale = 0.375
+  local scale = 0.25
 
   viewportTransform:reset():translate(0.5 * width, 0.5 * height):scale(height)
 
@@ -895,11 +895,33 @@ function love.keypressed(key, scancode, isrepeat)
 end
 
 function love.mousemoved(x, y, dx, dy, istouch)
-  if love.mouse.isDown(1) then
-    local sensitivity = 1 / 128
+  if selection and love.mouse.isDown(1) then
+    local width, height = love.graphics.getDimensions()
+    local scale = 0.25
 
-    instructions[3].position[1] = instructions[3].position[1] + sensitivity * dx
-    instructions[3].position[2] = instructions[3].position[2] + sensitivity * dy
+    local viewportTransform = love.math.newTransform():translate(0.5 * width, 0.5 * height):scale(height)
+    local cameraTransform = setRotation3(love.math.newTransform(), 0, 1, 0, angle):apply(love.math.newTransform():setMatrix(
+      scale, 0, 0, 0,
+      0, scale, 0, 0,
+      0, 0, scale, 0,
+      0, 0, 0, 1))
+
+    local worldToScreenTransform = love.math.newTransform():apply(viewportTransform):apply(cameraTransform)
+    local screenToWorldTransform = worldToScreenTransform:inverse()
+
+    local worldX1, worldY1, worldZ1 = transformPoint3(screenToWorldTransform, 0, 0, 0)
+    local worldX2, worldY2, worldZ2 = transformPoint3(screenToWorldTransform, dx, dy, 0)
+
+    local worldDx = worldX2 - worldX1
+    local worldDy = worldY2 - worldY1
+    local worldDz = worldZ2 - worldZ1
+
+    local instruction = instructions[selection]
+    local position = instruction.position
+
+    position[1] = position[1] + worldDx
+    position[2] = position[2] + worldDy
+    position[3] = position[3] + worldDz
 
     remesh()
   end
