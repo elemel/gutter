@@ -26,14 +26,12 @@ end
 
 function love.load(arg)
   local parser = argparse("love DIRECTORY", "Mesh and draw a CSG model")
-  parser:flag("--editor", "Enable editor mode")
   parser:flag("--fullscreen", "Enable fullscreen mode")
   parser:flag("--high-dpi", "Enable high DPI mode")
   parser:option("--mesher", "Meshing algorithm"):args(1)
   parser:option("--msaa", "Antialiasing samples"):args(1):convert(tonumber)
   local parsedArgs = parser:parse(arg)
 
-  editor = parsedArgs.editor
   mesher = parsedArgs.mesher or "surface-splatting"
 
   if mesher ~= "dual-contouring" and mesher ~= "surface-splatting" then
@@ -796,10 +794,7 @@ function love.draw()
     0, 0, 0, 1))
 
   worldToScreenTransform:reset():apply(viewportTransform):apply(cameraTransform)
-
-  if editor then
-    love.graphics.setScissor(200, 0, width - 400, height)
-  end
+  love.graphics.setScissor(200, 0, width - 400, height)
 
   love.graphics.push()
   love.graphics.applyTransform(worldToScreenTransform)
@@ -832,98 +827,59 @@ function love.draw()
 
   love.graphics.pop()
 
-  if editor then
-    -- love.graphics.setColor(1, 0.25, 0, 0.5)
-    -- love.graphics.line(-0.5 * width / scale, 0, 0.5 * width / scale, 0)
+  for i, instruction in ipairs(instructions) do
+    if i == selection then
+      local instructionTransform =
+        worldToScreenTransform *
+        setTranslation3(love.math.newTransform(), unpack(instruction.position)) *
+        quaternion.toTransform(unpack(instruction.orientation))
 
-    -- love.graphics.setColor(1, 0.25, 0, 1)
-    -- love.graphics.setDepthMode("lequal", false)
-    -- love.graphics.line(-0.5 * width / scale, 0, 0.5 * width / scale, 0)
-    -- love.graphics.setDepthMode()
+      local width, height, depth, rounding = unpack(instruction.shape)
 
-    -- love.graphics.setColor(0.25, 1, 0, 0.5)
-    -- love.graphics.line(0, -0.5 * height / scale, 0, 0.5 * height / scale)
+      local x1, y1, z1 = round3(transformPoint3(instructionTransform, -0.5 * width, -0.5 * height, -0.5 * depth))
+      local x2, y2, z2 = round3(transformPoint3(instructionTransform, 0.5 * width, -0.5 * height, -0.5 * depth))
+      local x3, y3, z3 = round3(transformPoint3(instructionTransform, -0.5 * width, 0.5 * height, -0.5 * depth))
+      local x4, y4, z4 = round3(transformPoint3(instructionTransform, 0.5 * width, 0.5 * height, -0.5 * depth))
+      local x5, y5, z5 = round3(transformPoint3(instructionTransform, -0.5 * width, -0.5 * height, 0.5 * depth))
+      local x6, y6, z6 = round3(transformPoint3(instructionTransform, 0.5 * width, -0.5 * height, 0.5 * depth))
+      local x7, y7, z7 = round3(transformPoint3(instructionTransform, -0.5 * width, 0.5 * height, 0.5 * depth))
+      local x8, y8, z8 = round3(transformPoint3(instructionTransform, 0.5 * width, 0.5 * height, 0.5 * depth))
 
-    -- love.graphics.setColor(0.25, 1, 0, 1)
-    -- love.graphics.setDepthMode("lequal", false)
-    -- love.graphics.line(0, -0.5 * height / scale, 0, 0.5 * height / scale)
-    -- love.graphics.setDepthMode()
+      love.graphics.setLineWidth(4)
+      love.graphics.setColor(0, 0, 0, 1)
 
-    for i, instruction in ipairs(instructions) do
-      if i == selection then
-        local instructionTransform =
-          worldToScreenTransform *
-          setTranslation3(love.math.newTransform(), unpack(instruction.position)) *
-          quaternion.toTransform(unpack(instruction.orientation))
+      love.graphics.line(extendLine(x1, y1, x2, y2, 1))
+      love.graphics.line(extendLine(x1, y1, x3, y3, 1))
+      love.graphics.line(extendLine(x1, y1, x5, y5, 1))
+      love.graphics.line(extendLine(x2, y2, x4, y4, 1))
+      love.graphics.line(extendLine(x2, y2, x6, y6, 1))
+      love.graphics.line(extendLine(x3, y3, x4, y4, 1))
+      love.graphics.line(extendLine(x3, y3, x7, y7, 1))
+      love.graphics.line(extendLine(x4, y4, x8, y8, 1))
+      love.graphics.line(extendLine(x5, y5, x6, y6, 1))
+      love.graphics.line(extendLine(x5, y5, x7, y7, 1))
+      love.graphics.line(extendLine(x6, y6, x8, y8, 1))
+      love.graphics.line(extendLine(x7, y7, x8, y8, 1))
 
-        local width, height, depth, rounding = unpack(instruction.shape)
+      love.graphics.setLineWidth(1)
+      love.graphics.setColor(1, 1, 1, 1)
 
-        local x1, y1, z1 = round3(transformPoint3(instructionTransform, -0.5 * width, -0.5 * height, -0.5 * depth))
-        local x2, y2, z2 = round3(transformPoint3(instructionTransform, 0.5 * width, -0.5 * height, -0.5 * depth))
-        local x3, y3, z3 = round3(transformPoint3(instructionTransform, -0.5 * width, 0.5 * height, -0.5 * depth))
-        local x4, y4, z4 = round3(transformPoint3(instructionTransform, 0.5 * width, 0.5 * height, -0.5 * depth))
-        local x5, y5, z5 = round3(transformPoint3(instructionTransform, -0.5 * width, -0.5 * height, 0.5 * depth))
-        local x6, y6, z6 = round3(transformPoint3(instructionTransform, 0.5 * width, -0.5 * height, 0.5 * depth))
-        local x7, y7, z7 = round3(transformPoint3(instructionTransform, -0.5 * width, 0.5 * height, 0.5 * depth))
-        local x8, y8, z8 = round3(transformPoint3(instructionTransform, 0.5 * width, 0.5 * height, 0.5 * depth))
-
-        love.graphics.setLineWidth(4)
-        love.graphics.setColor(0, 0, 0, 1)
-
-        love.graphics.line(extendLine(x1, y1, x2, y2, 1))
-        love.graphics.line(extendLine(x1, y1, x3, y3, 1))
-        love.graphics.line(extendLine(x1, y1, x5, y5, 1))
-        love.graphics.line(extendLine(x2, y2, x4, y4, 1))
-        love.graphics.line(extendLine(x2, y2, x6, y6, 1))
-        love.graphics.line(extendLine(x3, y3, x4, y4, 1))
-        love.graphics.line(extendLine(x3, y3, x7, y7, 1))
-        love.graphics.line(extendLine(x4, y4, x8, y8, 1))
-        love.graphics.line(extendLine(x5, y5, x6, y6, 1))
-        love.graphics.line(extendLine(x5, y5, x7, y7, 1))
-        love.graphics.line(extendLine(x6, y6, x8, y8, 1))
-        love.graphics.line(extendLine(x7, y7, x8, y8, 1))
-
-        love.graphics.setLineWidth(1)
-        love.graphics.setColor(1, 1, 1, 1)
-
-        love.graphics.line(x1, y1, x2, y2)
-        love.graphics.line(x1, y1, x3, y3)
-        love.graphics.line(x1, y1, x5, y5)
-        love.graphics.line(x2, y2, x4, y4)
-        love.graphics.line(x2, y2, x6, y6)
-        love.graphics.line(x3, y3, x4, y4)
-        love.graphics.line(x3, y3, x7, y7)
-        love.graphics.line(x4, y4, x8, y8)
-        love.graphics.line(x5, y5, x6, y6)
-        love.graphics.line(x5, y5, x7, y7)
-        love.graphics.line(x6, y6, x8, y8)
-        love.graphics.line(x7, y7, x8, y8)
-
-        -- if instruction.operation == "union" then
-        --   love.graphics.setColor(0.25, 1, 0, 0.5)
-        -- else
-        --   love.graphics.setColor(1, 0.25, 0, 0.5)
-        -- end
-
-        -- love.graphics.circle("line", x, y, instruction.radius, 64)
-
-        -- if instruction.operation == "union" then
-        --   love.graphics.setColor(0.25, 1, 0, 1)
-        -- else
-        --   love.graphics.setColor(1, 0.25, 0, 1)
-        -- end
-
-        -- love.graphics.setDepthMode("lequal", false)
-        -- love.graphics.circle("line", x, y, instruction.radius, 64)
-        -- love.graphics.setDepthMode()
-      end
+      love.graphics.line(x1, y1, x2, y2)
+      love.graphics.line(x1, y1, x3, y3)
+      love.graphics.line(x1, y1, x5, y5)
+      love.graphics.line(x2, y2, x4, y4)
+      love.graphics.line(x2, y2, x6, y6)
+      love.graphics.line(x3, y3, x4, y4)
+      love.graphics.line(x3, y3, x7, y7)
+      love.graphics.line(x4, y4, x8, y8)
+      love.graphics.line(x5, y5, x6, y6)
+      love.graphics.line(x5, y5, x7, y7)
+      love.graphics.line(x6, y6, x8, y8)
+      love.graphics.line(x7, y7, x8, y8)
     end
   end
 
-  if editor then
-    love.graphics.setScissor()
-  end
-
+  love.graphics.setScissor()
   Slab.Draw()
 end
 
@@ -939,7 +895,7 @@ function love.keypressed(key, scancode, isrepeat)
 end
 
 function love.mousemoved(x, y, dx, dy, istouch)
-  if editor and love.mouse.isDown(1) then
+  if love.mouse.isDown(1) then
     local sensitivity = 1 / 128
 
     instructions[3].position[1] = instructions[3].position[1] + sensitivity * dx
