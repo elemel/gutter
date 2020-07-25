@@ -176,6 +176,11 @@ function M.mix4(ax, ay, az, aw, bx, by, bz, bw, tx, ty, tz, tw)
   return x, y, z, w
 end
 
+function M.normalize2(x, y)
+  local length = sqrt(x * x + y * y)
+  return x / length, y / length, length
+end
+
 function M.normalize3(x, y, z)
   local length = sqrt(x * x + y * y + z * z)
   return x / length, y / length, z / length, length

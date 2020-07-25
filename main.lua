@@ -8,6 +8,7 @@ local floor = math.floor
 local fromEulerAngles = quaternion.fromEulerAngles
 local max = math.max
 local min = math.min
+local normalize2 = gutterMath.normalize2
 local pi = math.pi
 local round3 = gutterMath.round3
 local setRotation3 = gutterMath.setRotation3
@@ -777,6 +778,11 @@ function love.update(dt)
   end
 end
 
+function extendLine(x1, y1, x2, y2, r)
+  local tangentX, tangentY = normalize2(x2 - x1, y2 - y1)
+  return x1 - r * tangentX, y1 - r * tangentY, x2 + r * tangentX, y2 + r * tangentY
+end
+
 function love.draw()
   local width, height = love.graphics.getDimensions()
   local scale = 0.375
@@ -861,21 +867,21 @@ function love.draw()
         local x7, y7, z7 = round3(transformPoint3(instructionTransform, -0.5 * width, 0.5 * height, 0.5 * depth))
         local x8, y8, z8 = round3(transformPoint3(instructionTransform, 0.5 * width, 0.5 * height, 0.5 * depth))
 
-        love.graphics.setLineWidth(3)
+        love.graphics.setLineWidth(4)
         love.graphics.setColor(0, 0, 0, 1)
 
-        love.graphics.line(x1, y1, x2, y2)
-        love.graphics.line(x1, y1, x3, y3)
-        love.graphics.line(x1, y1, x5, y5)
-        love.graphics.line(x2, y2, x4, y4)
-        love.graphics.line(x2, y2, x6, y6)
-        love.graphics.line(x3, y3, x4, y4)
-        love.graphics.line(x3, y3, x7, y7)
-        love.graphics.line(x4, y4, x8, y8)
-        love.graphics.line(x5, y5, x6, y6)
-        love.graphics.line(x5, y5, x7, y7)
-        love.graphics.line(x6, y6, x8, y8)
-        love.graphics.line(x7, y7, x8, y8)
+        love.graphics.line(extendLine(x1, y1, x2, y2, 1))
+        love.graphics.line(extendLine(x1, y1, x3, y3, 1))
+        love.graphics.line(extendLine(x1, y1, x5, y5, 1))
+        love.graphics.line(extendLine(x2, y2, x4, y4, 1))
+        love.graphics.line(extendLine(x2, y2, x6, y6, 1))
+        love.graphics.line(extendLine(x3, y3, x4, y4, 1))
+        love.graphics.line(extendLine(x3, y3, x7, y7, 1))
+        love.graphics.line(extendLine(x4, y4, x8, y8, 1))
+        love.graphics.line(extendLine(x5, y5, x6, y6, 1))
+        love.graphics.line(extendLine(x5, y5, x7, y7, 1))
+        love.graphics.line(extendLine(x6, y6, x8, y8, 1))
+        love.graphics.line(extendLine(x7, y7, x8, y8, 1))
 
         love.graphics.setLineWidth(1)
         love.graphics.setColor(1, 1, 1, 1)
