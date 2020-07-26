@@ -460,8 +460,11 @@ function love.update(dt)
 
           Slab.SetLayoutColumn(2)
 
-          if Slab.Input("blending", {Align = "left", Text = formatNumber(instruction.blending)}) then
-            instruction.blending = clamp(tonumber(Slab.GetInputText()) or instruction.blending, 0, 1)
+          if Slab.InputNumberSlider("blending", instruction.blending, 0, 1, {
+            Align = "left",
+            ReturnOnText = true,
+          }) then
+            instruction.blending = Slab.GetInputNumber()
             remesh()
           end
         end
@@ -474,7 +477,9 @@ function love.update(dt)
       do
         Slab.Text("Position")
         Slab.BeginLayout("position", {Columns = 2, ExpandW = true})
-        local x, y, z = unpack(instruction.position)
+        local position = instruction.position
+        local x, y, z = unpack(position)
+        local step = 1 / 32
 
         do
           Slab.SetLayoutColumn(1)
@@ -482,8 +487,12 @@ function love.update(dt)
 
           Slab.SetLayoutColumn(2)
 
-          if Slab.Input("x", {Align = "left", Text = formatNumber(x)}) then
-            instruction.position[1] = tonumber(Slab.GetInputText()) or x
+          if Slab.InputNumberDrag("x", x, nil, nil, nil, {
+            Align = "left",
+            ReturnOnText = true,
+            Step = step,
+          }) then
+            position[1] = Slab.GetInputNumber()
             remesh()
           end
         end
@@ -494,8 +503,12 @@ function love.update(dt)
 
           Slab.SetLayoutColumn(2)
 
-          if Slab.Input("y", {Align = "left", Text = formatNumber(y)}) then
-            instruction.position[2] = tonumber(Slab.GetInputText()) or y
+          if Slab.InputNumberDrag("y", y, nil, nil, nil, {
+            Align = "left",
+            ReturnOnText = true,
+            Step = step,
+          }) then
+            position[2] = Slab.GetInputNumber()
             remesh()
           end
         end
@@ -506,8 +519,12 @@ function love.update(dt)
 
           Slab.SetLayoutColumn(2)
 
-          if Slab.Input("z", {Align = "left", Text = formatNumber(z)}) then
-            instruction.position[3] = tonumber(Slab.GetInputText()) or z
+          if Slab.InputNumberDrag("z", z, nil, nil, nil, {
+            Align = "left",
+            ReturnOnText = true,
+            Step = step,
+          }) then
+            position[3] = Slab.GetInputNumber()
             remesh()
           end
         end
@@ -529,8 +546,11 @@ function love.update(dt)
 
           Slab.SetLayoutColumn(2)
 
-          if Slab.Input("qx", {Align = "left", Text = formatNumber(qx)}) then
-            orientation[1] = tonumber(Slab.GetInputText()) or qx
+          if Slab.InputNumberSlider("qx", qx, -1, 1, {
+            Align = "left",
+            ReturnOnText = true,
+          }) then
+            orientation[1] = Slab.GetInputNumber()
 
             orientation[1], orientation[2], orientation[3], orientation[4] =
               quaternion.normalize(unpack(orientation))
@@ -545,8 +565,11 @@ function love.update(dt)
 
           Slab.SetLayoutColumn(2)
 
-          if Slab.Input("qy", {Align = "left", Text = formatNumber(qy)}) then
-            orientation[2] = tonumber(Slab.GetInputText()) or qy
+          if Slab.InputNumberSlider("qy", qy, -1, 1, {
+            Align = "left",
+            ReturnOnText = true,
+          }) then
+            orientation[2] = Slab.GetInputNumber()
 
             orientation[1], orientation[2], orientation[3], orientation[4] =
               quaternion.normalize(unpack(orientation))
@@ -561,8 +584,11 @@ function love.update(dt)
 
           Slab.SetLayoutColumn(2)
 
-          if Slab.Input("qz", {Align = "left", Text = formatNumber(qz)}) then
-            orientation[3] = tonumber(Slab.GetInputText()) or qz
+          if Slab.InputNumberSlider("qz", qz, -1, 1, {
+            Align = "left",
+            ReturnOnText = true,
+          }) then
+            orientation[3] = Slab.GetInputNumber()
 
             orientation[1], orientation[2], orientation[3], orientation[4] =
               quaternion.normalize(unpack(orientation))
@@ -577,8 +603,11 @@ function love.update(dt)
 
           Slab.SetLayoutColumn(2)
 
-          if Slab.Input("qw", {Align = "left", Text = formatNumber(qw)}) then
-            orientation[4] = tonumber(Slab.GetInputText()) or qw
+          if Slab.InputNumberSlider("qw", qw, -1, 1, {
+            Align = "left",
+            ReturnOnText = true,
+          }) then
+            orientation[4] = Slab.GetInputNumber()
 
             orientation[1], orientation[2], orientation[3], orientation[4] =
               quaternion.normalize(unpack(orientation))
@@ -595,7 +624,8 @@ function love.update(dt)
       do
         Slab.Text("Color")
         Slab.BeginLayout("color", {Columns = 2, ExpandW = true})
-        local red, green, blue, alpha = unpack(instruction.color)
+        local color = instruction.color
+        local red, green, blue, alpha = unpack(color)
 
         do
           Slab.SetLayoutColumn(1)
@@ -603,8 +633,11 @@ function love.update(dt)
 
           Slab.SetLayoutColumn(2)
 
-          if Slab.Input("red", {Align = "left", Text = formatNumber(red)}) then
-            instruction.color[1] = clamp(tonumber(Slab.GetInputText()) or red, 0, 1)
+          if Slab.InputNumberSlider("red", red, 0, 1, {
+            Align = "left",
+            ReturnOnText = true,
+          }) then
+            color[1] = Slab.GetInputNumber()
             remesh()
           end
         end
@@ -615,8 +648,11 @@ function love.update(dt)
 
           Slab.SetLayoutColumn(2)
 
-          if Slab.Input("green", {Align = "left", Text = formatNumber(green)}) then
-            instruction.color[2] = clamp(tonumber(Slab.GetInputText()) or green, 0, 1)
+          if Slab.InputNumberSlider("green", green, 0, 1, {
+            Align = "left",
+            ReturnOnText = true,
+          }) then
+            color[2] = Slab.GetInputNumber()
             remesh()
           end
         end
@@ -627,8 +663,11 @@ function love.update(dt)
 
           Slab.SetLayoutColumn(2)
 
-          if Slab.Input("blue", {Align = "left", Text = formatNumber(blue)}) then
-            instruction.color[3] = clamp(tonumber(Slab.GetInputText()) or blue, 0, 1)
+          if Slab.InputNumberSlider("blue", blue, 0, 1, {
+            Align = "left",
+            ReturnOnText = true,
+          }) then
+            color[3] = Slab.GetInputNumber()
             remesh()
           end
         end
@@ -639,8 +678,11 @@ function love.update(dt)
 
           Slab.SetLayoutColumn(2)
 
-          if Slab.Input("alpha", {Align = "left", Text = formatNumber(alpha)}) then
-            instruction.color[4] = clamp(tonumber(Slab.GetInputText()) or alpha, 0, 1)
+          if Slab.InputNumberSlider("alpha", alpha, 0, 1, {
+            Align = "left",
+            ReturnOnText = true,
+          }) then
+            color[4] = Slab.GetInputNumber()
             remesh()
           end
         end
@@ -653,7 +695,9 @@ function love.update(dt)
       do
         Slab.Text("Shape")
         Slab.BeginLayout("shape", {Columns = 2, ExpandW = true})
-        local width, height, depth, rounding = unpack(instruction.shape)
+        local shape = instruction.shape
+        local width, height, depth, rounding = unpack(shape)
+        local step = 1 / 32
 
         do
           Slab.SetLayoutColumn(1)
@@ -661,8 +705,12 @@ function love.update(dt)
 
           Slab.SetLayoutColumn(2)
 
-          if Slab.Input("width", {Align = "left", Text = formatNumber(width)}) then
-            instruction.shape[1] = max(0, tonumber(Slab.GetInputText()) or width)
+          if Slab.InputNumberDrag("width", width, 0, nil, nil, {
+            Align = "left",
+            ReturnOnText = true,
+            Step = step,
+          }) then
+            shape[1] = Slab.GetInputNumber()
             remesh()
           end
         end
@@ -673,8 +721,12 @@ function love.update(dt)
 
           Slab.SetLayoutColumn(2)
 
-          if Slab.Input("height", {Align = "left", Text = formatNumber(height)}) then
-            instruction.shape[2] = max(0, tonumber(Slab.GetInputText()) or height)
+          if Slab.InputNumberDrag("height", height, 0, nil, nil, {
+            Align = "left",
+            ReturnOnText = true,
+            Step = step,
+          }) then
+            shape[2] = Slab.GetInputNumber()
             remesh()
           end
         end
@@ -685,8 +737,12 @@ function love.update(dt)
 
           Slab.SetLayoutColumn(2)
 
-          if Slab.Input("depth", {Align = "left", Text = formatNumber(depth)}) then
-            instruction.shape[3] = max(0, tonumber(Slab.GetInputText()) or depth)
+          if Slab.InputNumberDrag("depth", depth, 0, nil, nil, {
+            Align = "left",
+            ReturnOnText = true,
+            Step = step,
+          }) then
+            shape[3] = Slab.GetInputNumber()
             remesh()
           end
         end
@@ -697,8 +753,11 @@ function love.update(dt)
 
           Slab.SetLayoutColumn(2)
 
-          if Slab.Input("rounding", {Align = "left", Text = formatNumber(rounding)}) then
-            instruction.shape[4] = clamp(tonumber(Slab.GetInputText()) or rounding, 0, 1)
+          if Slab.InputNumberSlider("rounding", rounding, 0, 1, {
+            Align = "left",
+            ReturnOnText = true,
+          }) then
+            shape[4] = Slab.GetInputNumber()
             remesh()
           end
         end
@@ -712,6 +771,7 @@ function love.update(dt)
         Slab.Text("Noise")
         Slab.BeginLayout("noise", {Columns = 2, ExpandW = true})
         local noise = instruction.noise
+        local step = 1 / 32
 
         do
           Slab.SetLayoutColumn(1)
@@ -719,8 +779,12 @@ function love.update(dt)
 
           Slab.SetLayoutColumn(2)
 
-          if Slab.Input("octaves", {Align = "left", Text = formatNumber(noise.octaves)}) then
-            noise.octaves = max(0, tonumber(Slab.GetInputText()) or noise.octaves)
+          if Slab.InputNumberDrag("octaves", noise.octaves, 0, nil, nil, {
+            Align = "left",
+            ReturnOnText = true,
+            Step = step,
+          }) then
+            noise.octaves = Slab.GetInputNumber()
             remesh()
           end
         end
@@ -731,8 +795,11 @@ function love.update(dt)
 
           Slab.SetLayoutColumn(2)
 
-          if Slab.Input("amplitude", {Align = "left", Text = formatNumber(noise.amplitude)}) then
-            noise.amplitude = clamp(tonumber(Slab.GetInputText()) or noise.amplitude, 0, 1)
+          if Slab.InputNumberSlider("amplitude", noise.amplitude, 0, 1, {
+            Align = "left",
+            ReturnOnText = true,
+          }) then
+            noise.amplitude = Slab.GetInputNumber()
             remesh()
           end
         end
@@ -743,8 +810,11 @@ function love.update(dt)
 
           Slab.SetLayoutColumn(2)
 
-          if Slab.Input("frequency", {Align = "left", Text = formatNumber(noise.frequency)}) then
-            noise.frequency = clamp(tonumber(Slab.GetInputText()) or noise.frequency, 0, 1)
+          if Slab.InputNumberSlider("frequency", noise.frequency, 0, 1, {
+            Align = "left",
+            ReturnOnText = true,
+          }) then
+            noise.frequency = Slab.GetInputNumber()
             remesh()
           end
         end
@@ -755,8 +825,11 @@ function love.update(dt)
 
           Slab.SetLayoutColumn(2)
 
-          if Slab.Input("gain", {Align = "left", Text = formatNumber(noise.gain)}) then
-            noise.gain = clamp(tonumber(Slab.GetInputText()) or noise.gain, 0, 1)
+          if Slab.InputNumberSlider("gain", noise.gain, 0, 1, {
+            Align = "left",
+            ReturnOnText = true,
+          }) then
+            noise.gain = Slab.GetInputNumber()
             remesh()
           end
         end
@@ -767,8 +840,11 @@ function love.update(dt)
 
           Slab.SetLayoutColumn(2)
 
-          if Slab.Input("lacunarity", {Align = "left", Text = formatNumber(noise.lacunarity)}) then
-            noise.lacunarity = clamp(tonumber(Slab.GetInputText()) or noise.lacunarity, 0, 1)
+          if Slab.InputNumberSlider("lacunarity", noise.lacunarity, 0, 1, {
+            Align = "left",
+            ReturnOnText = true,
+          }) then
+            noise.lacunarity = Slab.GetInputNumber()
             remesh()
           end
         end
@@ -900,7 +976,9 @@ function love.keypressed(key, scancode, isrepeat)
 end
 
 function love.mousemoved(x, y, dx, dy, istouch)
-  if selection and love.mouse.isDown(1) then
+  local width, height = love.graphics.getDimensions()
+
+  if 200 < x and x <= width - 200 and selection and love.mouse.isDown(1) then
     local width, height = love.graphics.getDimensions()
     local scale = 0.25
 
