@@ -251,13 +251,16 @@ function Editor:update(dt)
 
   local width, height = love.graphics.getDimensions()
 
+  local toolsHeight = 50
+  local statusHeight = 50
+
   do
-    Slab.BeginWindow("instructions", {
+    Slab.BeginWindow("tools", {
       X = 0,
       Y = 0,
 
-      W = 200 - 4,
-      H = height - 4,
+      W = width - 4,
+      H = toolsHeight - 4,
 
       AllowMove = false,
       AllowResize = false,
@@ -266,7 +269,26 @@ function Editor:update(dt)
       Border = 4,
       ResetLayout = true,
       Rounding = 0,
-      NoOutline = true,
+    })
+
+    Slab.EndWindow()
+  end
+
+  do
+    Slab.BeginWindow("instructions", {
+      X = 0,
+      Y = toolsHeight,
+
+      W = 200 - 4,
+      H = height - toolsHeight - statusHeight - 4,
+
+      AllowMove = false,
+      AllowResize = false,
+      AutoSizeContent = true,
+      AutoSizeWindow = false,
+      Border = 4,
+      ResetLayout = true,
+      Rounding = 0,
     })
 
     Slab.Text("Instructions", {Color = {1, 1, 1}})
@@ -380,10 +402,10 @@ function Editor:update(dt)
   do
     Slab.BeginWindow("properties", {
       X = width - 200,
-      Y = 0,
+      Y = toolsHeight,
 
       W = 200 - 4,
-      H = height - 4,
+      H = height - toolsHeight - statusHeight - 4,
 
       AllowMove = false,
       AllowResize = false,
@@ -392,7 +414,6 @@ function Editor:update(dt)
       Border = 4,
       ResetLayout = true,
       Rounding = 0,
-      NoOutline = true,
     })
 
     Slab.Text("Properties", {Color = {1, 1, 1}})
@@ -821,6 +842,26 @@ function Editor:update(dt)
         Slab.EndLayout()
       end
     end
+
+    Slab.EndWindow()
+  end
+
+  do
+    Slab.BeginWindow("status", {
+      X = 0,
+      Y = height - statusHeight,
+
+      W = width - 4,
+      H = statusHeight - 4,
+
+      AllowMove = false,
+      AllowResize = false,
+      AutoSizeContent = true,
+      AutoSizeWindow = false,
+      Border = 4,
+      ResetLayout = true,
+      Rounding = 0,
+    })
 
     Slab.EndWindow()
   end
