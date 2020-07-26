@@ -32,11 +32,11 @@ function Editor.new(instance, ...)
   return instance
 end
 
-function Editor:init(parsedArgs)
-  mesher = parsedArgs.mesher
+function Editor:init(config)
+  self.mesher = config.mesher
 
-  if mesher == "surface-splatting" then
-    shader = love.graphics.newShader([[
+  if self.mesher == "surface-splatting" then
+    self.shader = love.graphics.newShader([[
       varying vec3 VaryingPosition;
       varying vec3 VaryingNormal;
 
@@ -67,7 +67,7 @@ function Editor:init(parsedArgs)
       }
     ]])
   else
-    shader = love.graphics.newShader([[
+    self.shader = love.graphics.newShader([[
       varying vec3 VaryingPosition;
       varying vec3 VaryingNormal;
 
@@ -94,7 +94,7 @@ function Editor:init(parsedArgs)
     ]])
   end
 
-  instructions = {
+  self.instructions = {
     {
       operation = "union",
       blending = 0,
@@ -180,24 +180,24 @@ function Editor:init(parsedArgs)
   local maxY = 2
   local maxZ = 2
 
-  angle = 0
+  self.angle = 0
 
-  workerInputVersion = 1
-  workerOutputVersion = 1
+  self.workerInputVersion = 1
+  self.workerOutputVersion = 1
 
-  workerInputChannel = love.thread.getChannel("workerInput")
-  workerOutputChannel = love.thread.getChannel("workerOutput")
+  self.workerInputChannel = love.thread.getChannel("workerInput")
+  self.workerOutputChannel = love.thread.getChannel("workerOutput")
 
   love.thread.newThread("gutter/worker.lua"):start()
   love.thread.newThread("gutter/worker.lua"):start()
   love.thread.newThread("gutter/worker.lua"):start()
   love.thread.newThread("gutter/worker.lua"):start()
 
-  remesh()
+  self:remesh()
 
-  viewportTransform = love.math.newTransform()
-  cameraTransform = love.math.newTransform()
-  worldToScreenTransform = love.math.newTransform()
+  self.viewportTransform = love.math.newTransform()
+  self.cameraTransform = love.math.newTransform()
+  self.worldToScreenTransform = love.math.newTransform()
 end
 
 local combo = {value = 1, items = {'A', 'B', 'C'}}
@@ -218,17 +218,17 @@ end
 function Editor:update(dt)
   Slab.Update(dt)
 
-  local output = workerOutputChannel:pop()
+  local output = self.workerOutputChannel:pop()
 
-  if output and output.version > workerOutputVersion and #output.vertices >= 3 then
-    workerOutputVersion = output.version
+  if output and output.version > self.workerOutputVersion and #output.vertices >= 3 then
+    self.workerOutputVersion = output.version
 
     if mesh then
       mesh:release()
       mesh = nil
     end
 
-    if mesher == "surface-splatting" then
+    if self.mesher == "surface-splatting" then
       local vertexFormat = {
         {"VertexPosition", "float", 3},
         {"VertexNormal", "float", 3},
@@ -277,7 +277,7 @@ function Editor:update(dt)
       Slab.SetLayoutColumn(1)
 
       if Slab.Button("New", {W = 94}) then
-        table.insert(instructions, {
+        table.insert(self.instructions, {
           operation = "union",
           blending = 0,
 
@@ -296,22 +296,22 @@ function Editor:update(dt)
           },
         })
 
-        selection = #instructions
-        remesh()
+        selection = #self.instructions
+        self:remesh()
       end
 
       Slab.SetLayoutColumn(2)
 
       if Slab.Button("Delete", {W = 94, Disabled = selection == nil}) then
-        table.remove(instructions, selection)
+        table.remove(self.instructions, selection)
 
-        if #instructions == 0 then
+        if #self.instructions == 0 then
           selection = nil
         else
-          selection = min(selection, #instructions)
+          selection = min(selection, #self.instructions)
         end
 
-        remesh()
+        self:remesh()
       end
 
       Slab.EndLayout()
@@ -319,8 +319,8 @@ function Editor:update(dt)
 
     Slab.Separator()
 
-    for i = #instructions, 1, -1 do
-      instruction = instructions[i]
+    for i = #self.instructions, 1, -1 do
+      local instruction = self.instructions[i]
 
       if Slab.TextSelectable(capitalize(instruction.operation) .. " #" .. i, {IsSelected = (selection == i)}) then
         if selection == i then
@@ -337,38 +337,38 @@ function Editor:update(dt)
       Slab.BeginLayout("order", {Columns = 2})
       Slab.SetLayoutColumn(1)
 
-      if Slab.Button("Up", {Disabled = selection == nil or selection == #instructions, W = 94}) then
-        instructions[selection], instructions[selection + 1] = instructions[selection + 1], instructions[selection]
+      if Slab.Button("Up", {Disabled = selection == nil or selection == #self.instructions, W = 94}) then
+        self.instructions[selection], self.instructions[selection + 1] = self.instructions[selection + 1], self.instructions[selection]
         selection = selection + 1
-        remesh()
+        self:remesh()
       end
 
       Slab.SetLayoutColumn(2)
 
-      if Slab.Button("Top", {Disabled = selection == nil or selection == #instructions, W = 94}) then
-        local instruction = instructions[selection]
-        table.remove(instructions, selection)
-        table.insert(instructions, instruction)
-        selection = #instructions
-        remesh()
+      if Slab.Button("Top", {Disabled = selection == nil or selection == #self.instructions, W = 94}) then
+        local instruction = self.instructions[selection]
+        table.remove(self.instructions, selection)
+        table.insert(self.instructions, instruction)
+        selection = #self.instructions
+        self:remesh()
       end
 
       Slab.SetLayoutColumn(1)
 
       if Slab.Button("Down", {Disabled = selection == nil or selection == 1, W = 94}) then
-        instructions[selection], instructions[selection - 1] = instructions[selection - 1], instructions[selection]
+        self.instructions[selection], self.instructions[selection - 1] = self.instructions[selection - 1], self.instructions[selection]
         selection = selection - 1
-        remesh()
+        self:remesh()
       end
 
       Slab.SetLayoutColumn(2)
 
       if Slab.Button("Bottom", {Disabled = selection == nil or selection == 1, W = 94}) then
-        local instruction = instructions[selection]
-        table.remove(instructions, selection)
-        table.insert(instructions, 1, instruction)
+        local instruction = self.instructions[selection]
+        table.remove(self.instructions, selection)
+        table.insert(self.instructions, 1, instruction)
         selection = 1
-        remesh()
+        self:remesh()
       end
 
       Slab.EndLayout()
@@ -399,7 +399,7 @@ function Editor:update(dt)
     Slab.Separator()
 
     if selection then
-      local instruction = instructions[selection]
+      local instruction = self.instructions[selection]
 
       do
         Slab.BeginLayout("operation", {Columns = 2, ExpandW = true})
@@ -415,7 +415,7 @@ function Editor:update(dt)
             for i, v in ipairs(selectableOperations) do
               if Slab.TextSelectable(v) then
                 instruction.operation = operations[i]
-                remesh()
+                self:remesh()
               end
             end
 
@@ -434,7 +434,7 @@ function Editor:update(dt)
             ReturnOnText = true,
           }) then
             instruction.blending = Slab.GetInputNumber()
-            remesh()
+            self:remesh()
           end
         end
 
@@ -462,7 +462,7 @@ function Editor:update(dt)
             Step = step,
           }) then
             position[1] = Slab.GetInputNumber()
-            remesh()
+            self:remesh()
           end
         end
 
@@ -478,7 +478,7 @@ function Editor:update(dt)
             Step = step,
           }) then
             position[2] = Slab.GetInputNumber()
-            remesh()
+            self:remesh()
           end
         end
 
@@ -494,7 +494,7 @@ function Editor:update(dt)
             Step = step,
           }) then
             position[3] = Slab.GetInputNumber()
-            remesh()
+            self:remesh()
           end
         end
 
@@ -524,7 +524,7 @@ function Editor:update(dt)
             orientation[1], orientation[2], orientation[3], orientation[4] =
               quaternion.normalize(unpack(orientation))
 
-            remesh()
+            self:remesh()
           end
         end
 
@@ -543,7 +543,7 @@ function Editor:update(dt)
             orientation[1], orientation[2], orientation[3], orientation[4] =
               quaternion.normalize(unpack(orientation))
 
-            remesh()
+            self:remesh()
           end
         end
 
@@ -562,7 +562,7 @@ function Editor:update(dt)
             orientation[1], orientation[2], orientation[3], orientation[4] =
               quaternion.normalize(unpack(orientation))
 
-            remesh()
+            self:remesh()
           end
         end
 
@@ -581,7 +581,7 @@ function Editor:update(dt)
             orientation[1], orientation[2], orientation[3], orientation[4] =
               quaternion.normalize(unpack(orientation))
 
-            remesh()
+            self:remesh()
           end
         end
 
@@ -607,7 +607,7 @@ function Editor:update(dt)
             ReturnOnText = true,
           }) then
             color[1] = Slab.GetInputNumber()
-            remesh()
+            self:remesh()
           end
         end
 
@@ -622,7 +622,7 @@ function Editor:update(dt)
             ReturnOnText = true,
           }) then
             color[2] = Slab.GetInputNumber()
-            remesh()
+            self:remesh()
           end
         end
 
@@ -637,7 +637,7 @@ function Editor:update(dt)
             ReturnOnText = true,
           }) then
             color[3] = Slab.GetInputNumber()
-            remesh()
+            self:remesh()
           end
         end
 
@@ -652,7 +652,7 @@ function Editor:update(dt)
             ReturnOnText = true,
           }) then
             color[4] = Slab.GetInputNumber()
-            remesh()
+            self:remesh()
           end
         end
 
@@ -680,7 +680,7 @@ function Editor:update(dt)
             Step = step,
           }) then
             shape[1] = Slab.GetInputNumber()
-            remesh()
+            self:remesh()
           end
         end
 
@@ -696,7 +696,7 @@ function Editor:update(dt)
             Step = step,
           }) then
             shape[2] = Slab.GetInputNumber()
-            remesh()
+            self:remesh()
           end
         end
 
@@ -712,7 +712,7 @@ function Editor:update(dt)
             Step = step,
           }) then
             shape[3] = Slab.GetInputNumber()
-            remesh()
+            self:remesh()
           end
         end
 
@@ -727,7 +727,7 @@ function Editor:update(dt)
             ReturnOnText = true,
           }) then
             shape[4] = Slab.GetInputNumber()
-            remesh()
+            self:remesh()
           end
         end
 
@@ -754,7 +754,7 @@ function Editor:update(dt)
             Step = step,
           }) then
             noise.octaves = Slab.GetInputNumber()
-            remesh()
+            self:remesh()
           end
         end
 
@@ -769,7 +769,7 @@ function Editor:update(dt)
             ReturnOnText = true,
           }) then
             noise.amplitude = Slab.GetInputNumber()
-            remesh()
+            self:remesh()
           end
         end
 
@@ -784,7 +784,7 @@ function Editor:update(dt)
             ReturnOnText = true,
           }) then
             noise.frequency = Slab.GetInputNumber()
-            remesh()
+            self:remesh()
           end
         end
 
@@ -799,7 +799,7 @@ function Editor:update(dt)
             ReturnOnText = true,
           }) then
             noise.gain = Slab.GetInputNumber()
-            remesh()
+            self:remesh()
           end
         end
 
@@ -814,7 +814,7 @@ function Editor:update(dt)
             ReturnOnText = true,
           }) then
             noise.lacunarity = Slab.GetInputNumber()
-            remesh()
+            self:remesh()
           end
         end
 
@@ -835,27 +835,27 @@ function Editor:draw()
   local width, height = love.graphics.getDimensions()
   local scale = 0.25
 
-  viewportTransform:reset():translate(0.5 * width, 0.5 * height):scale(height)
+  self.viewportTransform:reset():translate(0.5 * width, 0.5 * height):scale(height)
 
-  setRotation3(cameraTransform:reset(), 0, 1, 0, angle):apply(love.math.newTransform():setMatrix(
+  setRotation3(self.cameraTransform:reset(), 0, 1, 0, self.angle):apply(love.math.newTransform():setMatrix(
     scale, 0, 0, 0,
     0, scale, 0, 0,
     0, 0, scale, 0,
     0, 0, 0, 1))
 
-  worldToScreenTransform:reset():apply(viewportTransform):apply(cameraTransform)
+  self.worldToScreenTransform:reset():apply(self.viewportTransform):apply(self.cameraTransform)
   love.graphics.setScissor(200, 0, width - 400, height)
 
   love.graphics.push()
-  love.graphics.applyTransform(worldToScreenTransform)
+  love.graphics.applyTransform(self.worldToScreenTransform)
 
   local transform = love.math.newTransform()
 
-  if mesher == "surface-splatting" then
+  if self.mesher == "surface-splatting" then
     if mesh then
       love.graphics.setColor(1, 1, 1, 1)
-      love.graphics.setShader(shader)
-      shader:send("ModelMatrix", transform)
+      love.graphics.setShader(self.shader)
+      self.shader:send("ModelMatrix", transform)
       love.graphics.setMeshCullMode("back")
       love.graphics.setDepthMode("less", true)
       love.graphics.draw(mesh)
@@ -865,8 +865,8 @@ function Editor:draw()
     end
   else
     love.graphics.setColor(1, 1, 1, 1)
-    love.graphics.setShader(shader)
-    shader:send("ModelMatrix", transform)
+    love.graphics.setShader(self.shader)
+    self.shader:send("ModelMatrix", transform)
     love.graphics.setMeshCullMode("back")
     love.graphics.setDepthMode("less", true)
     love.graphics.draw(mesh)
@@ -877,10 +877,10 @@ function Editor:draw()
 
   love.graphics.pop()
 
-  for i, instruction in ipairs(instructions) do
+  for i, instruction in ipairs(self.instructions) do
     if i == selection then
       local instructionTransform =
-        worldToScreenTransform *
+        self.worldToScreenTransform *
         setTranslation3(love.math.newTransform(), unpack(instruction.position)) *
         quaternion.toTransform(unpack(instruction.orientation))
 
@@ -941,7 +941,7 @@ function Editor:mousemoved(x, y, dx, dy, istouch)
     local scale = 0.25
 
     local viewportTransform = love.math.newTransform():translate(0.5 * width, 0.5 * height):scale(height)
-    local cameraTransform = setRotation3(love.math.newTransform(), 0, 1, 0, angle):apply(love.math.newTransform():setMatrix(
+    local cameraTransform = setRotation3(love.math.newTransform(), 0, 1, 0, self.angle):apply(love.math.newTransform():setMatrix(
       scale, 0, 0, 0,
       0, scale, 0, 0,
       0, 0, scale, 0,
@@ -957,23 +957,23 @@ function Editor:mousemoved(x, y, dx, dy, istouch)
     local worldDy = worldY2 - worldY1
     local worldDz = worldZ2 - worldZ1
 
-    local instruction = instructions[selection]
+    local instruction = self.instructions[selection]
     local position = instruction.position
 
     position[1] = position[1] + worldDx
     position[2] = position[2] + worldDy
     position[3] = position[3] + worldDz
 
-    remesh()
+    self:remesh()
   end
 end
 
 function Editor:wheelmoved(x, y)
-  angle = angle - x / 16 * pi
+  self.angle = self.angle - x / 16 * pi
 end
 
-function remesh()
-  workerInputChannel:clear()
+function Editor:remesh()
+  self.workerInputChannel:clear()
 
   local minX = -2
   local minY = -2
@@ -986,12 +986,12 @@ function remesh()
   local size = 16
 
   while size <= 64 do
-    workerInputVersion = workerInputVersion + 1
+    self.workerInputVersion = self.workerInputVersion + 1
 
-    workerInputChannel:push({
-      version = workerInputVersion,
-      mesher = mesher,
-      instructions = instructions,
+    self.workerInputChannel:push({
+      version = self.workerInputVersion,
+      mesher = self.mesher,
+      instructions = self.instructions,
 
       minX = minX,
       minY = minY,
