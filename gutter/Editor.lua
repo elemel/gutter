@@ -296,19 +296,19 @@ function Editor:update(dt)
           },
         })
 
-        selection = #self.instructions
+        self.selection = #self.instructions
         self:remesh()
       end
 
       Slab.SetLayoutColumn(2)
 
-      if Slab.Button("Delete", {W = 94, Disabled = selection == nil}) then
-        table.remove(self.instructions, selection)
+      if Slab.Button("Delete", {W = 94, Disabled = self.selection == nil}) then
+        table.remove(self.instructions, self.selection)
 
         if #self.instructions == 0 then
-          selection = nil
+          self.selection = nil
         else
-          selection = min(selection, #self.instructions)
+          self.selection = min(self.selection, #self.instructions)
         end
 
         self:remesh()
@@ -322,11 +322,11 @@ function Editor:update(dt)
     for i = #self.instructions, 1, -1 do
       local instruction = self.instructions[i]
 
-      if Slab.TextSelectable(capitalize(instruction.operation) .. " #" .. i, {IsSelected = (selection == i)}) then
-        if selection == i then
-          selection = nil
+      if Slab.TextSelectable(capitalize(instruction.operation) .. " #" .. i, {IsSelected = (self.selection == i)}) then
+        if self.selection == i then
+          self.selection = nil
         else
-          selection = i
+          self.selection = i
         end
       end
     end
@@ -337,37 +337,37 @@ function Editor:update(dt)
       Slab.BeginLayout("order", {Columns = 2})
       Slab.SetLayoutColumn(1)
 
-      if Slab.Button("Up", {Disabled = selection == nil or selection == #self.instructions, W = 94}) then
-        self.instructions[selection], self.instructions[selection + 1] = self.instructions[selection + 1], self.instructions[selection]
-        selection = selection + 1
+      if Slab.Button("Up", {Disabled = self.selection == nil or self.selection == #self.instructions, W = 94}) then
+        self.instructions[self.selection], self.instructions[self.selection + 1] = self.instructions[self.selection + 1], self.instructions[self.selection]
+        self.selection = self.selection + 1
         self:remesh()
       end
 
       Slab.SetLayoutColumn(2)
 
-      if Slab.Button("Top", {Disabled = selection == nil or selection == #self.instructions, W = 94}) then
-        local instruction = self.instructions[selection]
-        table.remove(self.instructions, selection)
+      if Slab.Button("Top", {Disabled = self.selection == nil or self.selection == #self.instructions, W = 94}) then
+        local instruction = self.instructions[self.selection]
+        table.remove(self.instructions, self.selection)
         table.insert(self.instructions, instruction)
-        selection = #self.instructions
+        self.selection = #self.instructions
         self:remesh()
       end
 
       Slab.SetLayoutColumn(1)
 
-      if Slab.Button("Down", {Disabled = selection == nil or selection == 1, W = 94}) then
-        self.instructions[selection], self.instructions[selection - 1] = self.instructions[selection - 1], self.instructions[selection]
-        selection = selection - 1
+      if Slab.Button("Down", {Disabled = self.selection == nil or self.selection == 1, W = 94}) then
+        self.instructions[self.selection], self.instructions[self.selection - 1] = self.instructions[self.selection - 1], self.instructions[self.selection]
+        self.selection = self.selection - 1
         self:remesh()
       end
 
       Slab.SetLayoutColumn(2)
 
-      if Slab.Button("Bottom", {Disabled = selection == nil or selection == 1, W = 94}) then
-        local instruction = self.instructions[selection]
-        table.remove(self.instructions, selection)
+      if Slab.Button("Bottom", {Disabled = self.selection == nil or self.selection == 1, W = 94}) then
+        local instruction = self.instructions[self.selection]
+        table.remove(self.instructions, self.selection)
         table.insert(self.instructions, 1, instruction)
-        selection = 1
+        self.selection = 1
         self:remesh()
       end
 
@@ -398,8 +398,8 @@ function Editor:update(dt)
     Slab.Text("Properties", {Color = {1, 1, 1}})
     Slab.Separator()
 
-    if selection then
-      local instruction = self.instructions[selection]
+    if self.selection then
+      local instruction = self.instructions[self.selection]
 
       do
         Slab.BeginLayout("operation", {Columns = 2, ExpandW = true})
@@ -878,7 +878,7 @@ function Editor:draw()
   love.graphics.pop()
 
   for i, instruction in ipairs(self.instructions) do
-    if i == selection then
+    if i == self.selection then
       local instructionTransform =
         self.worldToScreenTransform *
         setTranslation3(love.math.newTransform(), unpack(instruction.position)) *
@@ -936,7 +936,7 @@ end
 function Editor:mousemoved(x, y, dx, dy, istouch)
   local width, height = love.graphics.getDimensions()
 
-  if 200 < x and x <= width - 200 and selection and love.mouse.isDown(1) then
+  if 200 < x and x <= width - 200 and self.selection and love.mouse.isDown(1) then
     local width, height = love.graphics.getDimensions()
     local scale = 0.25
 
@@ -957,7 +957,7 @@ function Editor:mousemoved(x, y, dx, dy, istouch)
     local worldDy = worldY2 - worldY1
     local worldDz = worldZ2 - worldZ1
 
-    local instruction = self.instructions[selection]
+    local instruction = self.instructions[self.selection]
     local position = instruction.position
 
     position[1] = position[1] + worldDx
