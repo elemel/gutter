@@ -3,17 +3,20 @@ local quaternion = require("gutter.quaternion")
 local Slab = require("Slab")
 
 local clamp = gutterMath.clamp
+local distance2 = gutterMath.distance2
 local floor = math.floor
 local format = string.format
 local fromEulerAngles = quaternion.fromEulerAngles
 local max = math.max
 local min = math.min
 local normalize2 = gutterMath.normalize2
+local normalize3 = gutterMath.normalize3
 local pi = math.pi
 local round3 = gutterMath.round3
 local setRotation3 = gutterMath.setRotation3
 local setTranslation3 = gutterMath.setTranslation3
 local transformPoint3 = gutterMath.transformPoint3
+local transformVector3 = gutterMath.transformVector3
 local translate3 = gutterMath.translate3
 local upper = string.upper
 
@@ -975,9 +978,7 @@ function Editor:draw()
 end
 
 function Editor:mousemoved(x, y, dx, dy, istouch)
-  local width, height = love.graphics.getDimensions()
-
-  if 200 < x and x <= width - 200 and self.selection and love.mouse.isDown(1) then
+  if self.controller == "translation" and self.selection then
     local width, height = love.graphics.getDimensions()
     local scale = 0.25
 
@@ -1006,7 +1007,61 @@ function Editor:mousemoved(x, y, dx, dy, istouch)
     position[3] = position[3] + worldDz
 
     self:remesh()
+  elseif self.controller == "rotation" and self.selection then
+    if x == self.startScreenX and y == self.startScreenY then
+      instruction.orientation = {unpack(self.startOrientation)}
+    else
+      local width, height = love.graphics.getDimensions()
+      local scale = 0.25
+
+      local viewportTransform = love.math.newTransform():translate(0.5 * width, 0.5 * height):scale(height)
+      local cameraTransform = setRotation3(love.math.newTransform(), 0, 1, 0, self.angle):apply(love.math.newTransform():setMatrix(
+        scale, 0, 0, 0,
+        0, scale, 0, 0,
+        0, 0, scale, 0,
+        0, 0, 0, 1))
+
+      local worldToScreenTransform = love.math.newTransform():apply(viewportTransform):apply(cameraTransform)
+      local screenToWorldTransform = worldToScreenTransform:inverse()
+
+      local screenAxisAngleX = self.startScreenY - y
+      local screenAxisAngleY = x - self.startScreenX
+
+      local axisX, axisY, axisZ, angle = normalize3(transformVector3(screenToWorldTransform, screenAxisAngleX, screenAxisAngleY, 0))
+      angle = math.pi * angle
+
+      local instruction = self.instructions[self.selection]
+      local qx1, qy1, qz1, qw1 = unpack(self.startOrientation)
+
+      local qx2, qy2, qz2, qw2 = quaternion.fromAxisAngle(axisX, axisY, axisZ, angle)
+
+      instruction.orientation = {quaternion.product(qx2, qy2, qz2, qw2, qx1, qy1, qz1, qw1)}
+    end
+
+    self:remesh()
   end
+end
+
+function Editor:mousepressed(x, y, button, istouch, presses)
+  local width, height = love.graphics.getDimensions()
+
+  if 200 < x and x <= width - 200 and 50 < y and y <= height - 50 then
+    if button == 1 then
+      self.controller = "translation"
+    elseif button == 2 and self.selection then
+      self.controller = "rotation"
+
+      self.startScreenX = x
+      self.startScreenY = y
+
+      local instruction = self.instructions[self.selection]
+      self.startOrientation = {unpack(instruction.orientation)}
+    end
+  end
+end
+
+function Editor:mousereleased(x, y, button, istouch, presses)
+  self.controller = nil
 end
 
 function Editor:wheelmoved(x, y)

@@ -19,6 +19,13 @@ function M.cross(ax, ay, az, bx, by, bz)
   return ay * bz - az * by, az * bx - ax * bz, ax * by - ay * bx
 end
 
+function M.distance2(x1, y1, x2, y2)
+  local dx = x2 - x1
+  local dy = y2 - y1
+
+  return sqrt(dx * dx + dy * dy)
+end
+
 function M.dot3(x1, y1, z1, x2, y2, z2)
   return x1 * x2 + y1 * y2 + z1 * z2
 end
@@ -272,6 +279,19 @@ function M.transformPoint3(t, x, y, z)
   local tx = t11 * x + t12 * y + t13 * z + t14
   local ty = t21 * x + t22 * y + t23 * z + t24
   local tz = t31 * x + t32 * y + t33 * z + t34
+
+  return tx, ty, tz
+end
+
+function M.transformVector3(t, x, y, z)
+  local t11, t12, t13, t14,
+    t21, t22, t23, t24,
+    t31, t32, t33, t34,
+    t41, t42, t43, t44 = t:getMatrix()
+
+  local tx = t11 * x + t12 * y + t13 * z
+  local ty = t21 * x + t22 * y + t23 * z
+  local tz = t31 * x + t32 * y + t33 * z
 
   return tx, ty, tz
 end

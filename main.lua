@@ -65,6 +65,14 @@ function love.mousemoved(x, y, dx, dy, istouch)
   editor:mousemoved(x, y, dx, dy, istouch)
 end
 
+function love.mousepressed(x, y, button, istouch, presses)
+  editor:mousepressed(x, y, button, istouch, presses)
+end
+
+function love.mousereleased(x, y, button, istouch, presses)
+  editor:mousereleased(x, y, button, istouch, presses)
+end
+
 function love.threaderror(thread, errorstr)
   print("Thread error: " .. errorstr)
 end
