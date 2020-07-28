@@ -31,7 +31,9 @@ function M.dump(value, format, buffer, depth, stack)
   buffer = buffer or {}
   depth = depth or 0
 
-  if type(value) == "string" then
+  if type(value) == "nil" or type(value) == "boolean" or type(value) == "number" then
+    table.insert(buffer, tostring(value))
+  elseif type(value) == "string" then
     table.insert(buffer, string.format("%q", value))
   elseif type(value) == "table" then
     stack = stack or {}
@@ -51,7 +53,7 @@ function M.dump(value, format, buffer, depth, stack)
     local blank2 = false
     table.insert(buffer, "{")
 
-    for i, element in ipairs(value) do
+    for _, element in ipairs(value) do
       blank2 = type(element) == "table" and not stack[element]
 
       if first then
@@ -86,9 +88,16 @@ function M.dump(value, format, buffer, depth, stack)
       blank1 = blank2
     end
 
-    for name, element in pairs(value) do
-      local isArrayIndex = type(name) == "number" and name <= #value
-      local isMetamethodName = type(name) == "string" and string.sub(name, 1, 2) == "__"
+    for key, element in pairs(value) do
+      local isArrayIndex =
+        type(key) == "number" and
+        key == math.floor(key) and
+        key >= 1 and
+        key <= #value
+
+      local isMetamethodName =
+        type(key) == "string" and
+        string.sub(key, 1, 2) == "__"
 
       if not isArrayIndex and not isMetamethodName then
         blank2 = type(element) == "table" and not stack[element]
@@ -115,14 +124,14 @@ function M.dump(value, format, buffer, depth, stack)
           end
         end
 
-        if type(name) == "string" and
-            string.find(name, "^[%a_][%w_]*$") and
-            not keywords[name] then
+        if type(key) == "string" and
+            string.find(key, "^[%a_][%w_]*$") and
+            not keywords[key] then
 
-          table.insert(buffer, name)
+          table.insert(buffer, key)
         else
           table.insert(buffer, "[")
-          M.dump(name, format, buffer, depth + 1, stack)
+          M.dump(key, format, buffer, depth + 1, stack)
           table.insert(buffer, "]")
         end
 
@@ -153,7 +162,9 @@ function M.dump(value, format, buffer, depth, stack)
     stack[value] = nil
     assert(table.remove(stack) == value)
   else
-    table.insert(buffer, tostring(value))
+    table.insert(buffer, "(")
+    table.insert(buffer, type(value))
+    table.insert(buffer, ")")
   end
 
   return buffer
