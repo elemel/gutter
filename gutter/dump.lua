@@ -154,11 +154,15 @@ function M.dumpValue(value, format, buffer, depth, stack)
   end
 end
 
-function M.dump(value, format, buffer)
+function M.dump(value, format, buffer, depth, stack)
   format = format or "compact"
   assert(format == "compact" or format == "pretty", "Invalid format")
+
   buffer = buffer or {}
-  M.dumpValue(value, format, buffer, 0, {})
+  depth = depth or 0
+  stack = stack or {}
+
+  M.dumpValue(value, format, buffer, depth, stack)
   return buffer
 end
 
