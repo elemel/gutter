@@ -178,6 +178,8 @@ function Editor:init(config)
     },
   }
 
+  print(table.concat(dump(self.instructions)))
+  print()
   print(table.concat(dump(self.instructions, "pretty")))
 
   local minX = -2

@@ -24,7 +24,9 @@ local keywords = {
   ["while"] = true,
 }
 
-function M.dumpTable(buffer, t, pretty, depth, stack)
+function M.dumpTable(buffer, t, format, depth, stack)
+  local pretty = format == "pretty"
+
   if stack[t] then
     table.insert(buffer, "(")
     table.insert(buffer, tostring(stack[t]))
@@ -64,10 +66,10 @@ function M.dumpTable(buffer, t, pretty, depth, stack)
       end
     end
 
-    M.dumpValue(buffer, element, pretty, depth + 1, stack)
+    M.dumpValue(buffer, element, format, depth + 1, stack)
 
     if pretty then
-        table.insert(buffer, ",\n")
+      table.insert(buffer, ",\n")
     end
 
     first = false
@@ -110,7 +112,7 @@ function M.dumpTable(buffer, t, pretty, depth, stack)
         table.insert(buffer, name)
       else
         table.insert(buffer, "[")
-        M.dumpValue(buffer, name, pretty, depth + 1, stack)
+        M.dumpValue(buffer, name, format, depth + 1, stack)
         table.insert(buffer, "]")
       end
 
@@ -120,7 +122,7 @@ function M.dumpTable(buffer, t, pretty, depth, stack)
         table.insert(buffer, "=")
       end
 
-      M.dumpValue(buffer, element, pretty, depth + 1, stack)
+      M.dumpValue(buffer, element, format, depth + 1, stack)
 
       if pretty then
           table.insert(buffer, ",\n")
@@ -142,11 +144,11 @@ function M.dumpTable(buffer, t, pretty, depth, stack)
   assert(table.remove(stack) == t)
 end
 
-function M.dumpValue(buffer, value, pretty, depth, stack)
+function M.dumpValue(buffer, value, format, depth, stack)
   if type(value) == "string" then
     table.insert(buffer, string.format("%q", value))
   elseif type(value) == "table" then
-    M.dumpTable(buffer, value, pretty, depth, stack)
+    M.dumpTable(buffer, value, format, depth, stack)
   else
     table.insert(buffer, tostring(value))
   end
@@ -156,7 +158,7 @@ function M.dump(value, format, buffer)
   format = format or "compact"
   assert(format == "compact" or format == "pretty", "Invalid format")
   buffer = buffer or {}
-  M.dumpValue(buffer, value, format == "pretty", 0, {})
+  M.dumpValue(buffer, value, format, 0, {})
   return buffer
 end
 
