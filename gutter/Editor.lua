@@ -1,3 +1,4 @@
+local dumpModule = require("gutter.dump")
 local gutterMath = require("gutter.math")
 local quaternion = require("gutter.quaternion")
 local Slab = require("Slab")
@@ -5,6 +6,7 @@ local Slab = require("Slab")
 local atan2 = math.atan2
 local clamp = gutterMath.clamp
 local distance2 = gutterMath.distance2
+local dump = dumpModule.dump
 local floor = math.floor
 local format = string.format
 local fromEulerAngles = quaternion.fromEulerAngles
@@ -175,6 +177,8 @@ function Editor:init(config)
       },
     },
   }
+
+  print(table.concat(dump(self.instructions)))
 
   local minX = -2
   local minY = -2
