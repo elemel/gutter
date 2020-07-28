@@ -202,6 +202,12 @@ function Editor:init(config)
   self.viewportTransform = love.math.newTransform()
   self.cameraTransform = love.math.newTransform()
   self.worldToScreenTransform = love.math.newTransform()
+
+  self.colors = {
+    red = {1, 0.5, 0.25, 1},
+    green = {0.25, 1, 0.25, 1},
+    blue = {0.25, 0.75, 1, 1},
+  }
 end
 
 local combo = {value = 1, items = {'A', 'B', 'C'}}
@@ -295,7 +301,7 @@ function Editor:update(dt)
       Rounding = 0,
     })
 
-    Slab.Text("Instructions", {Color = {1, 1, 1}})
+    Slab.Text("INSTRUCTIONS")
     Slab.Separator()
 
     do
@@ -348,7 +354,9 @@ function Editor:update(dt)
     for i = #self.instructions, 1, -1 do
       local instruction = self.instructions[i]
 
-      if Slab.TextSelectable(capitalize(instruction.operation) .. " #" .. i, {IsSelected = (self.selection == i)}) then
+      local color = instruction.operation == "subtraction" and self.colors.red or self.colors.green
+
+      if Slab.TextSelectable(capitalize(instruction.operation) .. " #" .. i, {Color = color, IsSelected = (self.selection == i)}) then
         if self.selection == i then
           self.selection = nil
         else
@@ -420,7 +428,7 @@ function Editor:update(dt)
       Rounding = 0,
     })
 
-    Slab.Text("Properties", {Color = {1, 1, 1}})
+    Slab.Text("PROPERTIES")
     Slab.Separator()
 
     if self.selection then
@@ -469,7 +477,7 @@ function Editor:update(dt)
       Slab.Separator()
 
       do
-        Slab.Text("Position")
+        Slab.Text("POSITION")
         Slab.BeginLayout("position", {Columns = 2, ExpandW = true})
         local position = instruction.position
         local x, y, z = unpack(position)
@@ -477,7 +485,7 @@ function Editor:update(dt)
 
         do
           Slab.SetLayoutColumn(1)
-          Slab.Text("X")
+          Slab.Text("X", {Color = self.colors.red})
 
           Slab.SetLayoutColumn(2)
 
@@ -493,7 +501,7 @@ function Editor:update(dt)
 
         do
           Slab.SetLayoutColumn(1)
-          Slab.Text("Y")
+          Slab.Text("Y", {Color = self.colors.green})
 
           Slab.SetLayoutColumn(2)
 
@@ -509,7 +517,7 @@ function Editor:update(dt)
 
         do
           Slab.SetLayoutColumn(1)
-          Slab.Text("Z")
+          Slab.Text("Z", {Color = self.colors.blue})
 
           Slab.SetLayoutColumn(2)
 
@@ -529,14 +537,14 @@ function Editor:update(dt)
       Slab.Separator()
 
       do
-        Slab.Text("Orientation")
+        Slab.Text("ORIENTATION")
         Slab.BeginLayout("orientation", {Columns = 2, ExpandW = true})
         local orientation = instruction.orientation
         local qx, qy, qz, qw = unpack(orientation)
 
         do
           Slab.SetLayoutColumn(1)
-          Slab.Text("QX")
+          Slab.Text("QX", {Color = self.colors.red})
 
           Slab.SetLayoutColumn(2)
 
@@ -555,7 +563,7 @@ function Editor:update(dt)
 
         do
           Slab.SetLayoutColumn(1)
-          Slab.Text("QY")
+          Slab.Text("QY", {Color = self.colors.green})
 
           Slab.SetLayoutColumn(2)
 
@@ -574,7 +582,7 @@ function Editor:update(dt)
 
         do
           Slab.SetLayoutColumn(1)
-          Slab.Text("QZ")
+          Slab.Text("QZ", {Color = self.colors.blue})
 
           Slab.SetLayoutColumn(2)
 
@@ -616,14 +624,14 @@ function Editor:update(dt)
       Slab.Separator()
 
       do
-        Slab.Text("Color")
+        Slab.Text("COLOR")
         Slab.BeginLayout("color", {Columns = 2, ExpandW = true})
         local color = instruction.color
         local red, green, blue, alpha = unpack(color)
 
         do
           Slab.SetLayoutColumn(1)
-          Slab.Text("Red")
+          Slab.Text("Red", {Color = self.colors.red})
 
           Slab.SetLayoutColumn(2)
 
@@ -638,7 +646,7 @@ function Editor:update(dt)
 
         do
           Slab.SetLayoutColumn(1)
-          Slab.Text("Green")
+          Slab.Text("Green", {Color = self.colors.green})
 
           Slab.SetLayoutColumn(2)
 
@@ -653,7 +661,7 @@ function Editor:update(dt)
 
         do
           Slab.SetLayoutColumn(1)
-          Slab.Text("Blue")
+          Slab.Text("Blue", {Color = self.colors.blue})
 
           Slab.SetLayoutColumn(2)
 
@@ -687,7 +695,7 @@ function Editor:update(dt)
       Slab.Separator()
 
       do
-        Slab.Text("Shape")
+        Slab.Text("SHAPE")
         Slab.BeginLayout("shape", {Columns = 2, ExpandW = true})
         local shape = instruction.shape
         local width, height, depth, rounding = unpack(shape)
@@ -695,7 +703,7 @@ function Editor:update(dt)
 
         do
           Slab.SetLayoutColumn(1)
-          Slab.Text("Width")
+          Slab.Text("Width", {Color = self.colors.red})
 
           Slab.SetLayoutColumn(2)
 
@@ -711,7 +719,7 @@ function Editor:update(dt)
 
         do
           Slab.SetLayoutColumn(1)
-          Slab.Text("Height")
+          Slab.Text("Height", {Color = self.colors.green})
 
           Slab.SetLayoutColumn(2)
 
@@ -727,7 +735,7 @@ function Editor:update(dt)
 
         do
           Slab.SetLayoutColumn(1)
-          Slab.Text("Depth")
+          Slab.Text("Depth", {Color = self.colors.blue})
 
           Slab.SetLayoutColumn(2)
 
@@ -762,7 +770,7 @@ function Editor:update(dt)
       Slab.Separator()
 
       do
-        Slab.Text("Noise")
+        Slab.Text("NOISE")
         Slab.BeginLayout("noise", {Columns = 2, ExpandW = true})
         local noise = instruction.noise
         local step = 1 / 32
@@ -924,6 +932,8 @@ function Editor:draw()
 
   for i, instruction in ipairs(self.instructions) do
     if i == self.selection then
+      -- TODO: Only draw wireframe lines for front faces
+
       local instructionTransform =
         self.worldToScreenTransform *
         setTranslation3(love.math.newTransform(), unpack(instruction.position)) *
@@ -957,20 +967,24 @@ function Editor:draw()
       love.graphics.line(extendLine(x7, y7, x8, y8, 1))
 
       love.graphics.setLineWidth(1)
-      love.graphics.setColor(1, 1, 1, 1)
 
+      love.graphics.setColor(self.colors.red)
       love.graphics.line(x1, y1, x2, y2)
-      love.graphics.line(x1, y1, x3, y3)
-      love.graphics.line(x1, y1, x5, y5)
-      love.graphics.line(x2, y2, x4, y4)
-      love.graphics.line(x2, y2, x6, y6)
       love.graphics.line(x3, y3, x4, y4)
-      love.graphics.line(x3, y3, x7, y7)
-      love.graphics.line(x4, y4, x8, y8)
       love.graphics.line(x5, y5, x6, y6)
+      love.graphics.line(x7, y7, x8, y8)
+
+      love.graphics.setColor(self.colors.green)
+      love.graphics.line(x1, y1, x3, y3)
+      love.graphics.line(x2, y2, x4, y4)
       love.graphics.line(x5, y5, x7, y7)
       love.graphics.line(x6, y6, x8, y8)
-      love.graphics.line(x7, y7, x8, y8)
+
+      love.graphics.setColor(self.colors.blue)
+      love.graphics.line(x1, y1, x5, y5)
+      love.graphics.line(x2, y2, x6, y6)
+      love.graphics.line(x3, y3, x7, y7)
+      love.graphics.line(x4, y4, x8, y8)
     end
   end
 
