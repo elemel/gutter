@@ -152,12 +152,12 @@ function M.dumpValue(buffer, value, pretty, depth, stack)
   end
 end
 
-function M.dump(value, format)
+function M.dump(value, format, buffer)
   format = format or "compact"
-  assert(format == "compact" or format == "pretty")
-  local buffer = {}
+  assert(format == "compact" or format == "pretty", "Invalid format")
+  buffer = buffer or {}
   M.dumpValue(buffer, value, format == "pretty", 0, {})
-  return table.concat(buffer, "")
+  return buffer
 end
 
 return M
