@@ -2,6 +2,7 @@ local gutterMath = require("gutter.math")
 local quaternion = require("gutter.quaternion")
 local Slab = require("Slab")
 
+local atan2 = math.atan2
 local clamp = gutterMath.clamp
 local distance2 = gutterMath.distance2
 local floor = math.floor
@@ -979,10 +980,13 @@ end
 
 function Editor:mousemoved(x, y, dx, dy, istouch)
   if self.controller == "translation" and self.selection then
+    -- TODO: Use camera and viewport transforms kept in sync elsewhere
+
     local width, height = love.graphics.getDimensions()
     local scale = 0.25
 
     local viewportTransform = love.math.newTransform():translate(0.5 * width, 0.5 * height):scale(height)
+
     local cameraTransform = setRotation3(love.math.newTransform(), 0, 1, 0, self.angle):apply(love.math.newTransform():setMatrix(
       scale, 0, 0, 0,
       0, scale, 0, 0,
@@ -1008,36 +1012,37 @@ function Editor:mousemoved(x, y, dx, dy, istouch)
 
     self:remesh()
   elseif self.controller == "rotation" and self.selection then
-    if x == self.startScreenX and y == self.startScreenY then
-      instruction.orientation = {unpack(self.startOrientation)}
-    else
-      local width, height = love.graphics.getDimensions()
-      local scale = 0.25
+    -- TODO: Use camera and viewport transforms kept in sync elsewhere
 
-      local viewportTransform = love.math.newTransform():translate(0.5 * width, 0.5 * height):scale(height)
-      local cameraTransform = setRotation3(love.math.newTransform(), 0, 1, 0, self.angle):apply(love.math.newTransform():setMatrix(
-        scale, 0, 0, 0,
-        0, scale, 0, 0,
-        0, 0, scale, 0,
-        0, 0, 0, 1))
+    local width, height = love.graphics.getDimensions()
+    local scale = 0.25
 
-      local worldToScreenTransform = love.math.newTransform():apply(viewportTransform):apply(cameraTransform)
-      local screenToWorldTransform = worldToScreenTransform:inverse()
+    local viewportTransform = love.math.newTransform():translate(0.5 * width, 0.5 * height):scale(height)
 
-      local screenAxisAngleX = self.startScreenY - y
-      local screenAxisAngleY = x - self.startScreenX
+    local cameraTransform = setRotation3(love.math.newTransform(), 0, 1, 0, self.angle):apply(love.math.newTransform():setMatrix(
+      scale, 0, 0, 0,
+      0, scale, 0, 0,
+      0, 0, scale, 0,
+      0, 0, 0, 1))
 
-      local axisX, axisY, axisZ, angle = normalize3(transformVector3(screenToWorldTransform, screenAxisAngleX, screenAxisAngleY, 0))
-      angle = math.pi * angle
+    local worldToScreenTransform = love.math.newTransform():apply(viewportTransform):apply(cameraTransform)
+    local screenToWorldTransform = worldToScreenTransform:inverse()
 
-      local instruction = self.instructions[self.selection]
-      local qx1, qy1, qz1, qw1 = unpack(self.startOrientation)
+    local axisX, axisY, axisZ = normalize3(transformVector3(screenToWorldTransform, 0, 0, 1))
 
-      local qx2, qy2, qz2, qw2 = quaternion.fromAxisAngle(axisX, axisY, axisZ, angle)
+    local instruction = self.instructions[self.selection]
 
-      instruction.orientation = {quaternion.product(qx2, qy2, qz2, qw2, qx1, qy1, qz1, qw1)}
-    end
+    -- TODO: Use pivot based on selection or camera
+    local pivotX, pivotY = transformPoint3(worldToScreenTransform, unpack(instruction.position))
+    local angle1 = atan2(self.startScreenY - pivotY, self.startScreenX - pivotX)
+    local angle2 = atan2(y - pivotY, x - pivotX)
+    local angle = angle2 - angle1
 
+    local qx1, qy1, qz1, qw1 = unpack(self.startOrientation)
+
+    local qx2, qy2, qz2, qw2 = quaternion.fromAxisAngle(axisX, axisY, axisZ, angle)
+
+    instruction.orientation = {quaternion.product(qx2, qy2, qz2, qw2, qx1, qy1, qz1, qw1)}
     self:remesh()
   end
 end
