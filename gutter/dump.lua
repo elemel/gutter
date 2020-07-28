@@ -58,7 +58,7 @@ function M.dump(value, format, buffer, depth, stack)
         if pretty then
           table.insert(buffer, "\n")
 
-          for j = 1, depth + 1 do
+          for _ = 1, depth + 1 do
             table.insert(buffer, "  ")
           end
         end
@@ -68,7 +68,7 @@ function M.dump(value, format, buffer, depth, stack)
             table.insert(buffer, "\n")
           end
 
-          for j = 1, depth + 1 do
+          for _ = 1, depth + 1 do
             table.insert(buffer, "  ")
           end
         else
@@ -97,7 +97,7 @@ function M.dump(value, format, buffer, depth, stack)
           if pretty then
             table.insert(buffer, "\n")
 
-            for j = 1, depth + 1 do
+            for _ = 1, depth + 1 do
               table.insert(buffer, "  ")
             end
           end
@@ -107,7 +107,7 @@ function M.dump(value, format, buffer, depth, stack)
               table.insert(buffer, "\n")
             end
 
-            for j = 1, depth + 1 do
+            for _ = 1, depth + 1 do
               table.insert(buffer, "  ")
             end
           else
@@ -144,7 +144,7 @@ function M.dump(value, format, buffer, depth, stack)
     end
 
     if not first and pretty then
-      for j = 1, depth do
+      for _ = 1, depth do
         table.insert(buffer, "  ")
       end
     end
