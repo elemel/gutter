@@ -118,9 +118,10 @@ function Editor:init(config)
     local info = love.filesystem.getInfo(config.model)
 
     if info == nil then
-      print("No such file: " .. config.model)
+      self:log("error", "No such file: " .. config.model)
     else
       self.model = loadModel(config.model)
+      self:log("info", "Loaded model: " .. config.model)
     end
   end
 
@@ -829,8 +830,20 @@ function Editor:update(dt)
       Rounding = 0,
     })
 
+    if self.statusMessage then
+      Slab.Text(self.statusMessage)
+    end
+
     Slab.EndWindow()
   end
+end
+
+function Editor:log(level, message)
+  self.statusTimestamp = os.date('%Y-%m-%d %H:%M:%S')
+  self.statusLevel = level
+  self.statusMessage = message
+
+  print(self.statusTimestamp .. " [" .. self.statusLevel .. "] " ..  self.statusMessage)
 end
 
 function extendLine(x1, y1, x2, y2, r)
@@ -955,17 +968,17 @@ function Editor:keypressed(key, scancode, isrepeat)
     love.graphics.captureScreenshot(filename)
 
     local directory = love.filesystem.getSaveDirectory()
-    print("Captured screenshot: " .. directory .. "/" .. filename)
+    self:log("info", "Captured screenshot: " .. directory .. "/" .. filename)
   end
 
   if key == "s" and (love.keyboard.isDown("lgui") or love.keyboard.isDown("lgui")) then
     if not self.modelFilename then
-      print("No model filename")
+      self:log("error", "No model filename")
     else
       saveModel(self.model, self.modelFilename)
 
       local directory = love.filesystem.getSaveDirectory()
-      print("Saved model: " .. directory .. "/" .. self.modelFilename)
+      self:log("info", "Saved model: " .. directory .. "/" .. self.modelFilename)
     end
   end
 end
