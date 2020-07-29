@@ -5,6 +5,7 @@ local Slab = require("Slab")
 
 local atan2 = math.atan2
 local clamp = gutterMath.clamp
+local concat = table.concat
 local distance2 = gutterMath.distance2
 local dump = lton.dump
 local floor = math.floor
@@ -38,6 +39,11 @@ local function loadModel(filename)
   return f()
 end
 
+local function saveModel(model, filename)
+  local contents = concat(dump(model, "pretty"))
+  love.filesystem.write(filename, contents)
+end
+
 function Editor.new(instance, ...)
   instance = instance or {}
   local instance = setmetatable(instance, Editor)
@@ -46,6 +52,7 @@ function Editor.new(instance, ...)
 end
 
 function Editor:init(config)
+  self.modelFilename = config.model
   self.mesher = config.mesher
 
   if self.mesher == "surface-splatting" then
@@ -940,13 +947,26 @@ function Editor:draw()
 end
 
 function Editor:keypressed(key, scancode, isrepeat)
-  if key == "1" then
+  -- TODO: Support e.g. control key on non-Mac
+
+  if key == "p" and (love.keyboard.isDown("lgui") or love.keyboard.isDown("lgui")) then
     local timestamp = os.date('%Y-%m-%d-%H-%M-%S')
     local filename = "screenshot-" .. timestamp .. ".png"
     love.graphics.captureScreenshot(filename)
 
     local directory = love.filesystem.getSaveDirectory()
     print("Captured screenshot: " .. directory .. "/" .. filename)
+  end
+
+  if key == "s" and (love.keyboard.isDown("lgui") or love.keyboard.isDown("lgui")) then
+    if not self.modelFilename then
+      print("No model filename")
+    else
+      saveModel(self.model, self.modelFilename)
+
+      local directory = love.filesystem.getSaveDirectory()
+      print("Saved model: " .. directory .. "/" .. self.modelFilename)
+    end
   end
 end
 
