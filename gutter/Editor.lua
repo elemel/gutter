@@ -939,6 +939,17 @@ function Editor:draw()
   Slab.Draw()
 end
 
+function Editor:keypressed(key, scancode, isrepeat)
+  if key == "1" then
+    local timestamp = os.date('%Y-%m-%d-%H-%M-%S')
+    local filename = "screenshot-" .. timestamp .. ".png"
+    love.graphics.captureScreenshot(filename)
+
+    local directory = love.filesystem.getSaveDirectory()
+    print("Captured screenshot: " .. directory .. "/" .. filename)
+  end
+end
+
 function Editor:mousemoved(x, y, dx, dy, istouch)
   if self.controller == "translation" and self.selection then
     -- TODO: Use camera and viewport transforms kept in sync elsewhere

@@ -3,7 +3,7 @@ local Editor = require("gutter.Editor")
 local Slab = require("Slab")
 
 function love.load(arg)
-  local parser = argparse("love DIRECTORY", "Mesh and draw a CSG model")
+  local parser = argparse("love <directory>", "Mesh and draw a CSG model")
 
   parser:flag("--fullscreen", "Enable fullscreen mode")
   parser:flag("--high-dpi", "Enable high DPI mode")
@@ -55,14 +55,7 @@ function love.draw()
 end
 
 function love.keypressed(key, scancode, isrepeat)
-  if key == "1" then
-    local timestamp = os.date('%Y-%m-%d-%H-%M-%S')
-    local filename = "screenshot-" .. timestamp .. ".png"
-    love.graphics.captureScreenshot(filename)
-
-    local directory = love.filesystem.getSaveDirectory()
-    print("Captured screenshot: " .. directory .. "/" .. filename)
-  end
+  editor:keypressed(key, scancode, isrepeat)
 end
 
 function love.mousemoved(x, y, dx, dy, istouch)
