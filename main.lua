@@ -11,12 +11,8 @@ function love.load(arg)
   parser:option("--mesher", "Meshing algorithm"):args(1)
   parser:option("--msaa", "Antialiasing samples"):args(1):convert(tonumber)
 
-  parser:argument("model", "Model name"):args("?")
+  parser:argument("model", "Model filename"):args("?")
   local parsedArgs = parser:parse(arg)
-
-  if parsedArgs.model then
-    local info = love.filesystem.getInfo(parsedArgs.model)
-  end
 
   parsedArgs.mesher = parsedArgs.mesher or "surface-splatting"
 

@@ -31,6 +31,13 @@ end
 local Editor = {}
 Editor.__index = Editor
 
+local function loadModel(filename)
+  local contents, size = love.filesystem.read(filename)
+  local f = assert(loadstring("return " .. contents))
+  setfenv(f, {})
+  return f()
+end
+
 function Editor.new(instance, ...)
   instance = instance or {}
   local instance = setmetatable(instance, Editor)
@@ -100,87 +107,21 @@ function Editor:init(config)
     ]])
   end
 
-  self.instructions = {
-    {
-      operation = "union",
-      blending = 0,
+  if config.model then
+    local info = love.filesystem.getInfo(config.model)
 
-      position = {-0.5, -0.25, 0},
-      orientation = {0, 0, 0, 1},
+    if info == nil then
+      print("No such file: " .. config.model)
+    else
+      self.model = loadModel(config.model)
+    end
+  end
 
-      color = {0.5, 1, 0.25, 1},
-      shape = {1, 1, 1, 1},
+  if not self.model then
+    self.model = require("resources.models.example")
+  end
 
-      noise = {
-        octaves = 0,
-        amplitude = 1,
-        frequency = 1,
-        gain = 0.5,
-        lacunarity = 1,
-      },
-    },
-
-    {
-      operation = "union",
-      blending = 0.5,
-
-      position = {0.5, 0.25, 0},
-      orientation = {0, 0, 0, 1},
-
-      color = {0.25, 0.75, 1, 1},
-      shape = {1.5, 1.5, 1.5, 1},
-
-      noise = {
-        octaves = 3,
-        amplitude = 0.5,
-        frequency = 1,
-        gain = 0.5,
-        lacunarity = 1,
-      },
-    },
-
-    {
-      operation = "subtraction",
-      blending = 0.25,
-
-      position = {0, -0.25, 0.5},
-      orientation = {0, 0, 0, 1},
-
-      color = {1, 0.5, 0.25, 1},
-      shape = {1, 1, 1, 1},
-
-      noise = {
-        octaves = 0,
-        amplitude = 1,
-        frequency = 1,
-        gain = 0.5,
-        lacunarity = 1,
-      },
-    },
-
-    {
-      operation = "union",
-      blending = 0,
-
-      position = {0, -0.375, 0.75},
-      orientation = {fromEulerAngles("xzy", 0.125 * pi, 0.375 * pi, -0.0625 * pi)},
-
-      color = {1, 0.75, 0.25, 1},
-      shape = {0.5, 0.25, 1, 0},
-
-      noise = {
-        octaves = 0,
-        amplitude = 1,
-        frequency = 1,
-        gain = 0.5,
-        lacunarity = 1,
-      },
-    },
-  }
-
-  print(table.concat(dump(self.instructions)))
-  print()
-  print(table.concat(dump(self.instructions, "pretty")))
+  self.instructions = self.model.instructions
 
   local minX = -2
   local minY = -2
