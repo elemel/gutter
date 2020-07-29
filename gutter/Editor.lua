@@ -1,12 +1,12 @@
-local dumpModule = require("gutter.dump")
 local gutterMath = require("gutter.math")
+local lton = require("lton")
 local quaternion = require("gutter.quaternion")
 local Slab = require("Slab")
 
 local atan2 = math.atan2
 local clamp = gutterMath.clamp
 local distance2 = gutterMath.distance2
-local dump = dumpModule.dump
+local dump = lton.dump
 local floor = math.floor
 local format = string.format
 local fromEulerAngles = quaternion.fromEulerAngles

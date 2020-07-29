@@ -4,11 +4,19 @@ local Slab = require("Slab")
 
 function love.load(arg)
   local parser = argparse("love DIRECTORY", "Mesh and draw a CSG model")
+
   parser:flag("--fullscreen", "Enable fullscreen mode")
   parser:flag("--high-dpi", "Enable high DPI mode")
+
   parser:option("--mesher", "Meshing algorithm"):args(1)
   parser:option("--msaa", "Antialiasing samples"):args(1):convert(tonumber)
+
+  parser:argument("model", "Model name"):args("?")
   local parsedArgs = parser:parse(arg)
+
+  if parsedArgs.model then
+    local info = love.filesystem.getInfo(parsedArgs.model)
+  end
 
   parsedArgs.mesher = parsedArgs.mesher or "surface-splatting"
 
