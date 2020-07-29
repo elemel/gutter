@@ -114,6 +114,8 @@ function Editor:init(config)
     ]])
   end
 
+  self:log("info", "Using save directory: " .. love.filesystem.getSaveDirectory())
+
   if config.model then
     local info = love.filesystem.getInfo(config.model)
 
@@ -203,6 +205,7 @@ function Editor:update(dt)
 
       mesh = love.graphics.newMesh(vertexFormat, output.vertices, "triangles")
       mesh:setVertexMap(output.vertexMap)
+      self:log("debug", "Updated mesh with " .. #output.vertices / 4 .. " quads")
     else
       local vertexFormat = {
         {"VertexPosition", "float", 3},
@@ -211,6 +214,7 @@ function Editor:update(dt)
       }
 
       mesh = love.graphics.newMesh(vertexFormat, output.vertices, "triangles")
+      self:log("debug", "Updated mesh with " .. #output.vertices / 3 .. " triangles")
     end
   end
 
@@ -967,8 +971,7 @@ function Editor:keypressed(key, scancode, isrepeat)
     local filename = "screenshot-" .. timestamp .. ".png"
     love.graphics.captureScreenshot(filename)
 
-    local directory = love.filesystem.getSaveDirectory()
-    self:log("info", "Captured screenshot: " .. directory .. "/" .. filename)
+    self:log("info", "Captured screenshot: " .. filename)
   end
 
   if key == "s" and (love.keyboard.isDown("lgui") or love.keyboard.isDown("lgui")) then
@@ -976,9 +979,7 @@ function Editor:keypressed(key, scancode, isrepeat)
       self:log("error", "No model filename")
     else
       saveModel(self.model, self.modelFilename)
-
-      local directory = love.filesystem.getSaveDirectory()
-      self:log("info", "Saved model: " .. directory .. "/" .. self.modelFilename)
+      self:log("info", "Saved model: " .. self.modelFilename)
     end
   end
 end
