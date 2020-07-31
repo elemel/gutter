@@ -834,7 +834,7 @@ function Editor:log(level, message)
   self.statusLevel = level
   self.statusMessage = message
 
-  print(self.statusTimestamp .. " [" .. self.statusLevel .. "] " ..  self.statusMessage)
+  io.stderr:write(self.statusTimestamp .. " [" .. self.statusLevel .. "] " ..  self.statusMessage .. "\n")
 end
 
 function extendLine(x1, y1, x2, y2, r)
