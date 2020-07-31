@@ -2,6 +2,7 @@ local gutterMath = require("gutter.math")
 local gutterTable = require("gutter.table")
 local lton = require("lton")
 local quaternion = require("gutter.quaternion")
+local MoveController = require("gutter.MoveController")
 local RotateController = require("gutter.RotateController")
 local ScaleController = require("gutter.ScaleController")
 local Slab = require("Slab")
@@ -990,40 +991,6 @@ function Editor:mousemoved(x, y, dx, dy, istouch)
     self.controller:mousemoved(x, y, dx, dy, istouch)
     return
   end
-
-  if self.controllerName == "translation" and self.selection then
-    -- TODO: Use camera and viewport transforms kept in sync elsewhere
-
-    local width, height = love.graphics.getDimensions()
-    local scale = 0.25
-
-    local viewportTransform = love.math.newTransform():translate(0.5 * width, 0.5 * height):scale(height)
-
-    local cameraTransform = setRotation3(love.math.newTransform(), 0, 1, 0, self.angle):apply(love.math.newTransform():setMatrix(
-      scale, 0, 0, 0,
-      0, scale, 0, 0,
-      0, 0, scale, 0,
-      0, 0, 0, 1))
-
-    local worldToScreenTransform = love.math.newTransform():apply(viewportTransform):apply(cameraTransform)
-    local screenToWorldTransform = worldToScreenTransform:inverse()
-
-    local worldX1, worldY1, worldZ1 = transformPoint3(screenToWorldTransform, 0, 0, 0)
-    local worldX2, worldY2, worldZ2 = transformPoint3(screenToWorldTransform, dx, dy, 0)
-
-    local worldDx = worldX2 - worldX1
-    local worldDy = worldY2 - worldY1
-    local worldDz = worldZ2 - worldZ1
-
-    local instruction = self.instructions[self.selection]
-    local position = instruction.position
-
-    position[1] = position[1] + worldDx
-    position[2] = position[2] + worldDy
-    position[3] = position[3] + worldDz
-
-    self:remesh()
-  end
 end
 
 function Editor:mousepressed(x, y, button, istouch, presses)
@@ -1036,7 +1003,7 @@ function Editor:mousepressed(x, y, button, istouch, presses)
 
   if 200 < x and x <= width - 200 and 50 < y and y <= height - 50 then
     if button == 1 then
-      self.controllerName = "translation"
+      self.controller = MoveController.new(self)
     elseif button == 2 and self.selection then
       if love.keyboard.isDown("lalt") or love.keyboard.isDown("ralt") then
         self.controller = ScaleController.new(self)
@@ -1052,8 +1019,6 @@ function Editor:mousereleased(x, y, button, istouch, presses)
     self.controller:mousereleased(x, y, button, istouch, presses)
     return
   end
-
-  self.controllerName = nil
 end
 
 function Editor:wheelmoved(x, y)
