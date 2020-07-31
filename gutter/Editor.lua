@@ -2,6 +2,7 @@ local gutterMath = require("gutter.math")
 local gutterTable = require("gutter.table")
 local lton = require("lton")
 local quaternion = require("gutter.quaternion")
+local RotateController = require("gutter.RotateController")
 local Slab = require("Slab")
 
 local atan2 = math.atan2
@@ -972,7 +973,12 @@ function Editor:keypressed(key, scancode, isrepeat)
 end
 
 function Editor:mousemoved(x, y, dx, dy, istouch)
-  if self.controller == "translation" and self.selection then
+  if self.controller and self.controller.mousemoved then
+    self.controller:mousemoved(x, y, dx, dy, istouch)
+    return
+  end
+
+  if self.controllerName == "translation" and self.selection then
     -- TODO: Use camera and viewport transforms kept in sync elsewhere
 
     local width, height = love.graphics.getDimensions()
@@ -1004,65 +1010,41 @@ function Editor:mousemoved(x, y, dx, dy, istouch)
     position[3] = position[3] + worldDz
 
     self:remesh()
-  elseif self.controller == "rotation" and self.selection then
-    -- TODO: Use camera and viewport transforms kept in sync elsewhere
-
-    local width, height = love.graphics.getDimensions()
-    local scale = 0.25
-
-    local viewportTransform = love.math.newTransform():translate(0.5 * width, 0.5 * height):scale(height)
-
-    local cameraTransform = setRotation3(love.math.newTransform(), 0, 1, 0, self.angle):apply(love.math.newTransform():setMatrix(
-      scale, 0, 0, 0,
-      0, scale, 0, 0,
-      0, 0, scale, 0,
-      0, 0, 0, 1))
-
-    local worldToScreenTransform = love.math.newTransform():apply(viewportTransform):apply(cameraTransform)
-    local screenToWorldTransform = worldToScreenTransform:inverse()
-
-    local axisX, axisY, axisZ = normalize3(transformVector3(screenToWorldTransform, 0, 0, 1))
-
-    local instruction = self.instructions[self.selection]
-
-    -- TODO: Use pivot based on selection or camera
-    local pivotX, pivotY = transformPoint3(worldToScreenTransform, unpack(instruction.position))
-    local angle1 = atan2(self.startScreenY - pivotY, self.startScreenX - pivotX)
-    local angle2 = atan2(y - pivotY, x - pivotX)
-    local angle = angle2 - angle1
-
-    local qx1, qy1, qz1, qw1 = unpack(self.startOrientation)
-
-    local qx2, qy2, qz2, qw2 = quaternion.fromAxisAngle(axisX, axisY, axisZ, angle)
-
-    instruction.orientation = {quaternion.product(qx2, qy2, qz2, qw2, qx1, qy1, qz1, qw1)}
-    self:remesh()
   end
 end
 
 function Editor:mousepressed(x, y, button, istouch, presses)
+  if self.controller and self.controller.mousepressed then
+    self.controller:mousepressed(x, y, button, istouch, presses)
+    return
+  end
+
   local width, height = love.graphics.getDimensions()
 
   if 200 < x and x <= width - 200 and 50 < y and y <= height - 50 then
     if button == 1 then
-      self.controller = "translation"
+      self.controllerName = "translation"
     elseif button == 2 and self.selection then
-      self.controller = "rotation"
-
-      self.startScreenX = x
-      self.startScreenY = y
-
-      local instruction = self.instructions[self.selection]
-      self.startOrientation = {unpack(instruction.orientation)}
+      self.controller = RotateController.new(self, x, y)
     end
   end
 end
 
 function Editor:mousereleased(x, y, button, istouch, presses)
-  self.controller = nil
+  if self.controller and self.controller.mousereleased then
+    self.controller:mousereleased(x, y, button, istouch, presses)
+    return
+  end
+
+  self.controllerName = nil
 end
 
 function Editor:wheelmoved(x, y)
+  if self.controller and self.controller.wheelmoved then
+    self.controller:wheelmoved(x, y)
+    return
+  end
+
   self.angle = self.angle - x / 16 * pi
 end
 
