@@ -1,4 +1,5 @@
 local gutterMath = require("gutter.math")
+local gutterTable = require("gutter.table")
 local lton = require("lton")
 local quaternion = require("gutter.quaternion")
 local Slab = require("Slab")
@@ -8,6 +9,7 @@ local clamp = gutterMath.clamp
 local concat = table.concat
 local distance2 = gutterMath.distance2
 local dump = lton.dump
+local find = gutterTable.find
 local floor = math.floor
 local format = string.format
 local fromEulerAngles = quaternion.fromEulerAngles
@@ -167,16 +169,6 @@ local combo = {value = 1, items = {'A', 'B', 'C'}}
 local operations = {"subtraction", "union"}
 local selectableOperations = {"Subtraction", "Union"}
 
-local function index(t, v)
-  for i, v2 in ipairs(t) do
-    if v2 == v then
-      return i
-    end
-  end
-
-  return nil
-end
-
 function Editor:update(dt)
   Slab.Update(dt)
 
@@ -310,7 +302,7 @@ function Editor:update(dt)
 
       local color = instruction.operation == "subtraction" and self.colors.red or self.colors.green
 
-      if Slab.TextSelectable(selectableOperations[index(operations, instruction.operation)] .. " #" .. i, {Color = color, IsSelected = (self.selection == i)}) then
+      if Slab.TextSelectable(selectableOperations[find(operations, instruction.operation)] .. " #" .. i, {Color = color, IsSelected = (self.selection == i)}) then
         if self.selection == i then
           self.selection = nil
         else
@@ -396,7 +388,7 @@ function Editor:update(dt)
           Slab.Text("Operation")
 
           Slab.SetLayoutColumn(2)
-          local selectedOperation = selectableOperations[index(operations, instruction.operation)]
+          local selectedOperation = selectableOperations[find(operations, instruction.operation)]
 
           if Slab.BeginComboBox("operation", {Selected = selectedOperation}) then
             for i, v in ipairs(selectableOperations) do
