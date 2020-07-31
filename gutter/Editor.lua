@@ -24,11 +24,6 @@ local transformVector3 = gutterMath.transformVector3
 local translate3 = gutterMath.translate3
 local upper = string.upper
 
-local function capitalize(s)
-  s = s:gsub("^%l", upper)
-  return s
-end
-
 local Editor = {}
 Editor.__index = Editor
 
@@ -315,7 +310,7 @@ function Editor:update(dt)
 
       local color = instruction.operation == "subtraction" and self.colors.red or self.colors.green
 
-      if Slab.TextSelectable(capitalize(instruction.operation) .. " #" .. i, {Color = color, IsSelected = (self.selection == i)}) then
+      if Slab.TextSelectable(selectableOperations[index(operations, instruction.operation)] .. " #" .. i, {Color = color, IsSelected = (self.selection == i)}) then
         if self.selection == i then
           self.selection = nil
         else
