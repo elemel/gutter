@@ -58,6 +58,10 @@ function love.keypressed(key, scancode, isrepeat)
   editor:keypressed(key, scancode, isrepeat)
 end
 
+function love.keyreleased(key, scancode)
+  editor:keyreleased(key, scancode)
+end
+
 function love.mousemoved(x, y, dx, dy, istouch)
   editor:mousemoved(x, y, dx, dy, istouch)
 end

@@ -3,6 +3,7 @@ local gutterTable = require("gutter.table")
 local lton = require("lton")
 local quaternion = require("gutter.quaternion")
 local RotateController = require("gutter.RotateController")
+local ScaleController = require("gutter.ScaleController")
 local Slab = require("Slab")
 
 local atan2 = math.atan2
@@ -952,6 +953,11 @@ function Editor:draw()
 end
 
 function Editor:keypressed(key, scancode, isrepeat)
+  if self.controller and self.controller.keypressed then
+    self.controller:keypressed(key, scancode, isrepeat)
+    return
+  end
+
   -- TODO: Support e.g. control key on non-Mac
 
   if key == "p" and (love.keyboard.isDown("lgui") or love.keyboard.isDown("lgui")) then
@@ -969,6 +975,13 @@ function Editor:keypressed(key, scancode, isrepeat)
       saveModel(self.model, self.modelFilename)
       self:log("info", "Saved model: " .. self.modelFilename)
     end
+  end
+end
+
+function Editor:keyreleased(key, scancode)
+  if self.controller and self.controller.keyreleased then
+    self.controller:keyreleased(key, scancode)
+    return
   end
 end
 
@@ -1025,7 +1038,11 @@ function Editor:mousepressed(x, y, button, istouch, presses)
     if button == 1 then
       self.controllerName = "translation"
     elseif button == 2 and self.selection then
-      self.controller = RotateController.new(self, x, y)
+      if love.keyboard.isDown("lalt") or love.keyboard.isDown("ralt") then
+        self.controller = ScaleController.new(self)
+      else
+        self.controller = RotateController.new(self)
+      end
     end
   end
 end

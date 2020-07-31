@@ -1,7 +1,6 @@
 local gutterMath = require("gutter.math")
-local quaternion = require("gutter.quaternion")
 
-local atan2 = math.atan2
+local distance2 = gutterMath.distance2
 local normalize3 = gutterMath.normalize3
 local setRotation3 = gutterMath.setRotation3
 local transformPoint3 = gutterMath.transformPoint3
@@ -19,7 +18,9 @@ function M.new(editor)
 
   local selection = assert(editor.selection)
   local instruction = assert(editor.instructions[selection])
+
   instance.startOrientation = {unpack(instruction.orientation)}
+  instance.startShape = {unpack(instruction.shape)}
 
   return instance
 end
@@ -29,6 +30,12 @@ function M:destroy()
 end
 
 function M:mousemoved(x, y, dx, dy, istouch)
+  self:updateInstruction()
+end
+
+function M:updateInstruction()
+  local x, y = love.mouse.getPosition()
+
   if self.editor.selection then
     -- TODO: Use camera and viewport transforms kept in sync elsewhere
 
@@ -46,21 +53,18 @@ function M:mousemoved(x, y, dx, dy, istouch)
     local worldToScreenTransform = love.math.newTransform():apply(viewportTransform):apply(cameraTransform)
     local screenToWorldTransform = worldToScreenTransform:inverse()
 
-    local axisX, axisY, axisZ = normalize3(transformVector3(screenToWorldTransform, 0, 0, 1))
-
     local instruction = self.editor.instructions[self.editor.selection]
 
-    -- TODO: Use pivot based on selection or camera
+    local width, height, depth, rounding = unpack(self.startShape)
+
     local pivotX, pivotY = transformPoint3(worldToScreenTransform, unpack(instruction.position))
-    local angle1 = atan2(self.startScreenY - pivotY, self.startScreenX - pivotX)
-    local angle2 = atan2(y - pivotY, x - pivotX)
-    local angle = angle2 - angle1
+    local startDistance = distance2(pivotX, pivotY, self.startScreenX, self.startScreenY)
+    local distance = distance2(pivotX, pivotY, x, y)
+    local scale = distance / startDistance
 
-    local qx1, qy1, qz1, qw1 = unpack(self.startOrientation)
+    instruction.orientation = {unpack(self.startOrientation)}
+    instruction.shape = {scale * width, scale * height, scale * depth, rounding}
 
-    local qx2, qy2, qz2, qw2 = quaternion.fromAxisAngle(axisX, axisY, axisZ, angle)
-
-    instruction.orientation = {quaternion.product(qx2, qy2, qz2, qw2, qx1, qy1, qz1, qw1)}
     self.editor:remesh()
   end
 end
