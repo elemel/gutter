@@ -3,6 +3,7 @@ local gutterTable = require("gutter.table")
 local lton = require("lton")
 local quaternion = require("gutter.quaternion")
 local MoveController = require("gutter.editor.controllers.MoveController")
+local NewInstructionCommand = require("gutter.editor.commands.NewInstructionCommand")
 local RotateController = require("gutter.editor.controllers.RotateController")
 local ScaleController = require("gutter.editor.controllers.ScaleController")
 local Slab = require("Slab")
@@ -170,6 +171,9 @@ function Editor:init(config)
     green = {0.25, 1, 0.25, 1},
     blue = {0.25, 0.75, 1, 1},
   }
+
+  self.commandHistory = {}
+  self.commandFuture = {}
 end
 
 local combo = {value = 1, items = {'A', 'B', 'C'}}
@@ -217,11 +221,55 @@ function Editor:update(dt)
 
   local toolsHeight = 50
   local statusHeight = 50
+  local menuHeight = 0
+
+  do
+    if Slab.BeginMainMenuBar() then
+      if Slab.BeginMenu("File") then
+        -- Slab.MenuItem("New")
+        -- Slab.MenuItem("Open")
+        -- Slab.MenuItem("Save")
+        -- Slab.MenuItem("Save As")
+
+        -- Slab.Separator()
+
+        if Slab.MenuItem("Quit") then
+            love.event.quit()
+        end
+
+        Slab.EndMenu()
+      end
+
+      if Slab.BeginMenu("Edit") then
+        if #self.commandHistory >= 1 then
+          local command = self.commandHistory[#self.commandHistory]
+
+          if Slab.MenuItem("Undo " .. command.title) then
+            self:undoCommand()
+          end
+        end
+
+        if #self.commandFuture >= 1 then
+          local command = self.commandFuture[#self.commandFuture]
+
+          if Slab.MenuItem("Redo " .. command.title) then
+            self:redoCommand()
+          end
+        end
+
+        Slab.EndMenu()
+      end
+
+      _, menuHeight = Slab.GetWindowSize()
+      Slab.EndMainMenuBar()
+    end
+  end
+
 
   do
     Slab.BeginWindow("tools", {
       X = 0,
-      Y = 0,
+      Y = menuHeight,
 
       W = width - 4,
       H = toolsHeight - 4,
@@ -241,10 +289,10 @@ function Editor:update(dt)
   do
     Slab.BeginWindow("instructions", {
       X = 0,
-      Y = toolsHeight,
+      Y = menuHeight + toolsHeight,
 
       W = 200 - 4,
-      H = height - toolsHeight - statusHeight - 4,
+      H = height - menuHeight - toolsHeight - statusHeight - 4,
 
       AllowMove = false,
       AllowResize = false,
@@ -263,26 +311,7 @@ function Editor:update(dt)
       Slab.SetLayoutColumn(1)
 
       if Slab.Button("New", {W = 94}) then
-        table.insert(self.instructions, {
-          operation = "union",
-          blending = 0,
-
-          position = {0, 0, 0},
-          orientation = {0, 0, 0, 1},
-
-          color = {0.5, 0.5, 0.5, 1},
-          shape = {1, 1, 1, 1},
-
-          noise = {
-            octaves = 0,
-            amplitude = 1,
-            frequency = 1,
-            gain = 0.5,
-            lacunarity = 1,
-          },
-        })
-
-        self.selection = #self.instructions
+        self:doCommand(NewInstructionCommand.new(self))
         self:remesh()
       end
 
@@ -368,10 +397,10 @@ function Editor:update(dt)
   do
     Slab.BeginWindow("properties", {
       X = width - 200,
-      Y = toolsHeight,
+      Y = menuHeight + toolsHeight,
 
       W = 200 - 4,
-      H = height - toolsHeight - statusHeight - 4,
+      H = height - menuHeight - toolsHeight - statusHeight - 4,
 
       AllowMove = false,
       AllowResize = false,
@@ -965,8 +994,12 @@ function Editor:keypressed(key, scancode, isrepeat)
   end
 
   -- TODO: Support e.g. control key on non-Mac
+  local altDown = love.keyboard.isDown("lalt") or love.keyboard.isDown("ralt")
+  local ctrlDown = love.keyboard.isDown("lctrl") or love.keyboard.isDown("rctrl")
+  local shiftDown = love.keyboard.isDown("lshift") or love.keyboard.isDown("rshift")
+  local guiDown = love.keyboard.isDown("lgui") or love.keyboard.isDown("lgui")
 
-  if key == "p" and (love.keyboard.isDown("lgui") or love.keyboard.isDown("lgui")) then
+  if guiDown and key == "p" then
     local timestamp = os.date('%Y-%m-%d-%H-%M-%S')
     local filename = "screenshot-" .. timestamp .. ".png"
     love.graphics.captureScreenshot(filename)
@@ -974,12 +1007,28 @@ function Editor:keypressed(key, scancode, isrepeat)
     self:log("info", "Captured screenshot: " .. filename)
   end
 
-  if key == "s" and (love.keyboard.isDown("lgui") or love.keyboard.isDown("lgui")) then
+  if guiDown and key == "s" then
     if not self.modelFilename then
       self:log("error", "No model filename")
     else
       saveModel(self.model, self.modelFilename)
       self:log("info", "Saved model: " .. self.modelFilename)
+    end
+  end
+
+  if guiDown and key == "z" then
+    if shiftDown then
+      if #self.commandFuture >= 1 then
+        self:redoCommand()
+      else
+        self:log("warning", "Nothing to redo")
+      end
+    else
+      if #self.commandHistory >= 1 then
+        self:undoCommand()
+      else
+        self:log("warning", "Nothing to undo")
+      end
     end
   end
 end
@@ -1007,7 +1056,7 @@ function Editor:mousepressed(x, y, button, istouch, presses)
   local width, height = love.graphics.getDimensions()
 
   if 200 < x and x <= width - 200 and 50 < y and y <= height - 50 then
-    if button == 1 then
+    if button == 1 and self.selection then
       self.controller = MoveController.new(self)
     elseif button == 2 and self.selection then
       if love.keyboard.isDown("lalt") or love.keyboard.isDown("ralt") then
@@ -1071,6 +1120,36 @@ function Editor:remesh()
 
     size = 2 * size
   end
+end
+
+function Editor:doCommand(command)
+  command:redo()
+  table.insert(self.commandHistory, command)
+  self.commandFuture = {}
+end
+
+function Editor:undoCommand()
+  local command = table.remove(self.commandHistory)
+
+  if not command then
+    self:log("error", "Nothing to undo")
+    return
+  end
+
+  command:undo()
+  table.insert(self.commandFuture, command)
+end
+
+function Editor:redoCommand()
+  local command = table.remove(self.commandFuture)
+
+  if not command then
+    self:log("error", "Nothing to redo")
+    return
+  end
+
+  command:redo()
+  table.insert(self.commandHistory, command)
 end
 
 return Editor
