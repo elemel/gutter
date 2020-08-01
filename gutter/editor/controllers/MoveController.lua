@@ -63,7 +63,6 @@ function M:mousemoved(x, y, dx, dy, istouch)
 end
 
 function M:mousereleased(x, y, button, istouch, presses)
-  print("mousereleased", x, y, button, istouch, presses)
   self.editor:doCommand(MoveInstructionCommand.new(self.editor, self.oldPosition, self.newPosition))
   self:destroy()
 end
