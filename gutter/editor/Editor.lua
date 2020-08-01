@@ -2,9 +2,9 @@ local gutterMath = require("gutter.math")
 local gutterTable = require("gutter.table")
 local lton = require("lton")
 local quaternion = require("gutter.quaternion")
-local MoveController = require("gutter.MoveController")
-local RotateController = require("gutter.RotateController")
-local ScaleController = require("gutter.ScaleController")
+local MoveController = require("gutter.editor.MoveController")
+local RotateController = require("gutter.editor.RotateController")
+local ScaleController = require("gutter.editor.ScaleController")
 local Slab = require("Slab")
 
 local atan2 = math.atan2

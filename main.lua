@@ -1,5 +1,5 @@
 local argparse = require("argparse")
-local Editor = require("gutter.Editor")
+local Editor = require("gutter.editor.Editor")
 local Slab = require("Slab")
 
 function love.load(arg)
