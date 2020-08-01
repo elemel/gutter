@@ -1,4 +1,5 @@
 local gutterMath = require("gutter.math")
+local MoveInstructionCommand = require("gutter.editor.commands.MoveInstructionCommand")
 local quaternion = require("gutter.quaternion")
 
 local atan2 = math.atan2
@@ -19,7 +20,8 @@ function M.new(editor)
 
   local selection = assert(editor.selection)
   local instruction = assert(editor.instructions[selection])
-  instance.startPosition = {unpack(instruction.position)}
+  instance.oldPosition = {unpack(instruction.position)}
+  instance.newPosition = {unpack(instruction.position)}
 
   return instance
 end
@@ -49,17 +51,20 @@ function M:mousemoved(x, y, dx, dy, istouch)
     local screenDx = x - self.startScreenX
     local screenDy = y - self.startScreenY
 
+    local x, y, z = unpack(self.oldPosition)
     local worldDx, worldDy, worldDz = transformVector3(screenToWorldTransform, screenDx, screenDy, 0)
 
     local instruction = self.editor.instructions[self.editor.selection]
-    local x, y, z = unpack(self.startPosition)
     instruction.position = {x + worldDx, y + worldDy, z + worldDz}
+    self.newPosition = {x + worldDx, y + worldDy, z + worldDz}
 
     self.editor:remesh()
   end
 end
 
 function M:mousereleased(x, y, button, istouch, presses)
+  print("mousereleased", x, y, button, istouch, presses)
+  self.editor:doCommand(MoveInstructionCommand.new(self.editor, self.oldPosition, self.newPosition))
   self:destroy()
 end
 
