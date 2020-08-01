@@ -156,6 +156,11 @@ function Editor:init(config)
 
   self:remesh()
 
+  self.camera = {
+    position = {0, 0, 0},
+    rotation = {0, 0, 0, 1},
+  }
+
   self.viewportTransform = love.math.newTransform()
   self.cameraTransform = love.math.newTransform()
   self.worldToScreenTransform = love.math.newTransform()
