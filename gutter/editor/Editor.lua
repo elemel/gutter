@@ -1,3 +1,4 @@
+local DeleteInstructionCommand = require("gutter.editor.commands.DeleteInstructionCommand")
 local gutterMath = require("gutter.math")
 local gutterTable = require("gutter.table")
 local lton = require("lton")
@@ -312,21 +313,12 @@ function Editor:update(dt)
 
       if Slab.Button("New", {W = 94}) then
         self:doCommand(NewInstructionCommand.new(self))
-        self:remesh()
       end
 
       Slab.SetLayoutColumn(2)
 
       if Slab.Button("Delete", {W = 94, Disabled = self.selection == nil}) then
-        table.remove(self.instructions, self.selection)
-
-        if #self.instructions == 0 then
-          self.selection = nil
-        else
-          self.selection = min(self.selection, #self.instructions)
-        end
-
-        self:remesh()
+        self:doCommand(DeleteInstructionCommand.new(self))
       end
 
       Slab.EndLayout()
