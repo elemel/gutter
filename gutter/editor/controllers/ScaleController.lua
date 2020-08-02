@@ -2,6 +2,7 @@ local gutterMath = require("gutter.math")
 
 local distance2 = gutterMath.distance2
 local normalize3 = gutterMath.normalize3
+local ScaleInstructionCommand = require("gutter.editor.commands.ScaleInstructionCommand")
 local setRotation3 = gutterMath.setRotation3
 local transformPoint3 = gutterMath.transformPoint3
 local transformVector3 = gutterMath.transformVector3
@@ -19,8 +20,8 @@ function M.new(editor)
   local selection = assert(editor.selection)
   local instruction = assert(editor.instructions[selection])
 
-  instance.startOrientation = {unpack(instruction.orientation)}
-  instance.startShape = {unpack(instruction.shape)}
+  instance.oldShape = {unpack(instruction.shape)}
+  instance.newShape = {unpack(instruction.shape)}
 
   return instance
 end
@@ -55,21 +56,22 @@ function M:updateInstruction()
 
     local instruction = self.editor.instructions[self.editor.selection]
 
-    local width, height, depth, rounding = unpack(self.startShape)
+    local width, height, depth, rounding = unpack(self.oldShape)
 
     local pivotX, pivotY = transformPoint3(worldToScreenTransform, unpack(instruction.position))
     local startDistance = distance2(pivotX, pivotY, self.startScreenX, self.startScreenY)
     local distance = distance2(pivotX, pivotY, x, y)
     local scale = distance / startDistance
 
-    instruction.orientation = {unpack(self.startOrientation)}
     instruction.shape = {scale * width, scale * height, scale * depth, rounding}
+    self.newShape = {unpack(instruction.shape)}
 
     self.editor:remesh()
   end
 end
 
 function M:mousereleased(x, y, button, istouch, presses)
+  self.editor:doCommand(ScaleInstructionCommand.new(self.editor, self.oldShape, self.newShape))
   self:destroy()
 end
 
