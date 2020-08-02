@@ -1,4 +1,5 @@
 local gutterMath = require("gutter.math")
+local RotateInstructionCommand = require("gutter.editor.commands.RotateInstructionCommand")
 local quaternion = require("gutter.quaternion")
 
 local atan2 = math.atan2
@@ -19,7 +20,7 @@ function M.new(editor)
 
   local selection = assert(editor.selection)
   local instruction = assert(editor.instructions[selection])
-  instance.startOrientation = {unpack(instruction.orientation)}
+  instance.oldOrientation = {unpack(instruction.orientation)}
 
   return instance
 end
@@ -56,16 +57,18 @@ function M:mousemoved(x, y, dx, dy, istouch)
     local angle2 = atan2(y - pivotY, x - pivotX)
     local angle = angle2 - angle1
 
-    local qx1, qy1, qz1, qw1 = unpack(self.startOrientation)
+    local qx1, qy1, qz1, qw1 = unpack(self.oldOrientation)
 
     local qx2, qy2, qz2, qw2 = quaternion.fromAxisAngle(axisX, axisY, axisZ, angle)
 
     instruction.orientation = {quaternion.product(qx2, qy2, qz2, qw2, qx1, qy1, qz1, qw1)}
+    self.newOrientation = {unpack(instruction.orientation)}
     self.editor:remesh()
   end
 end
 
 function M:mousereleased(x, y, button, istouch, presses)
+  self.editor:doCommand(RotateInstructionCommand.new(self.editor, self.oldOrientation, self.newOrientation))
   self:destroy()
 end
 
