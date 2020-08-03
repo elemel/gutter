@@ -10,14 +10,6 @@ return {
         1,
       },
 
-      noise = {
-        amplitude = 1,
-        frequency = 1,
-        gain = 0.5,
-        lacunarity = 1,
-        octaves = 0,
-      },
-
       operation = "union",
 
       orientation = {
@@ -49,14 +41,6 @@ return {
         0.75,
         1,
         1,
-      },
-
-      noise = {
-        amplitude = 0.5,
-        frequency = 1,
-        gain = 0.5,
-        lacunarity = 1,
-        octaves = 3,
       },
 
       operation = "union",
@@ -92,14 +76,6 @@ return {
         1,
       },
 
-      noise = {
-        amplitude = 1,
-        frequency = 1,
-        gain = 0.5,
-        lacunarity = 1,
-        octaves = 0,
-      },
-
       operation = "subtraction",
 
       orientation = {
@@ -131,14 +107,6 @@ return {
         0.75,
         0.25,
         1,
-      },
-
-      noise = {
-        amplitude = 1,
-        frequency = 1,
-        gain = 0.5,
-        lacunarity = 1,
-        octaves = 0,
       },
 
       operation = "union",

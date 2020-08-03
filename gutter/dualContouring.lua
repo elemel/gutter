@@ -15,7 +15,6 @@ local min = math.min
 local mix = gutterMath.mix
 local mix3 = gutterMath.mix3
 local mix4 = gutterMath.mix4
-local noise = loveMath.noise
 local normalize3 = gutterMath.normalize3
 local perp = gutterMath.perp
 local pi = math.pi
@@ -129,19 +128,6 @@ function M.applyInstructions(instructions, grid)
     local radius = rounding * maxRadius
     local blendRange = instruction.blending * maxRadius
 
-    local noiseConfig = instruction.noise
-    local noiseOctaves = noiseConfig.octaves
-    local noiseAmplitude = noiseConfig.amplitude * maxRadius
-    local noiseFrequency = noiseConfig.frequency / noiseAmplitude
-    local noiseGain = noiseConfig.gain
-    local noiseLacunarity = noiseConfig.lacunarity / noiseGain
-
-    if noiseAmplitude == 0 then
-      noiseOctaves = 0
-    elseif noiseGain == 0 then
-      noiseOctaves = 1
-    end
-
     for vertexZ, layer in ipairs(vertices) do
       local z = mix(minZ, maxZ, (vertexZ - 1) / sizeX)
 
@@ -158,17 +144,6 @@ function M.applyInstructions(instructions, grid)
         local instructionDistance = box(
           instructionX, instructionY, instructionZ,
           0.5 * width - radius, 0.5 * height - radius, 0.5 * depth - radius) - radius
-
-          if noiseOctaves > 0 then
-            instructionDistance = instructionDistance + noiseAmplitude * (2 * fbm3(
-              noiseFrequency * x,
-              noiseFrequency * y,
-              noiseFrequency * z,
-              noise,
-              noiseOctaves,
-              noiseLacunarity,
-              noiseGain) - 1)
-          end
 
           if instruction.operation == "union" then
             vertex.distance, vertex.red, vertex.green, vertex.blue, vertex.alpha =

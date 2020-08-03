@@ -17,7 +17,6 @@ local min = math.min
 local mix = gutterMath.mix
 local mix3 = gutterMath.mix3
 local mix4 = gutterMath.mix4
-local noise = loveMath.noise
 local normalize3 = gutterMath.normalize3
 local perp = gutterMath.perp
 local smoothSubtractionColor = csg.smoothSubtractionColor
@@ -96,36 +95,12 @@ function M.getInstructionDistanceAndBlendRangeForPoint(instruction, x, y, z)
   local radius = rounding * maxRadius
   local blendRange = instruction.blending * maxRadius
 
-  local noiseConfig = instruction.noise
-  local noiseOctaves = noiseConfig.octaves
-  local noiseAmplitude = noiseConfig.amplitude * maxRadius
-  local noiseFrequency = noiseConfig.frequency / noiseAmplitude
-  local noiseGain = noiseConfig.gain
-  local noiseLacunarity = noiseConfig.lacunarity / noiseGain
-
-  if noiseAmplitude == 0 then
-    noiseOctaves = 0
-  elseif noiseGain == 0 then
-    noiseOctaves = 1
-  end
-
   local instructionX, instructionY, instructionZ = inverseRotate(
     qx, qy, qz, qw, x - positionX, y - positionY, z - positionZ)
 
   local instructionDistance = box(
     instructionX, instructionY, instructionZ,
     0.5 * width - radius, 0.5 * height - radius, 0.5 * depth - radius) - radius
-
-  if noiseOctaves > 0 then
-    instructionDistance = instructionDistance + noiseAmplitude * (2 * fbm3(
-      noiseFrequency * instructionX,
-      noiseFrequency * instructionY,
-      noiseFrequency * instructionZ,
-      noise,
-      noiseOctaves,
-      noiseLacunarity,
-      noiseGain) - 1)
-  end
 
   return instructionDistance, blendRange
 end
@@ -139,19 +114,6 @@ function M.applyInstructionToGrid(instruction, grid)
   local maxRadius = 0.5 * min(width, height, depth)
   local radius = rounding * maxRadius
   local blendRange = instruction.blending * maxRadius
-
-  local noiseConfig = instruction.noise
-  local noiseOctaves = noiseConfig.octaves
-  local noiseAmplitude = noiseConfig.amplitude * maxRadius
-  local noiseFrequency = noiseConfig.frequency / noiseAmplitude
-  local noiseGain = noiseConfig.gain
-  local noiseLacunarity = noiseConfig.lacunarity / noiseGain
-
-  if noiseAmplitude == 0 then
-    noiseOctaves = 0
-  elseif noiseGain == 0 then
-    noiseOctaves = 1
-  end
 
   local sizeX = grid.sizeX
   local sizeY = grid.sizeY
@@ -174,17 +136,6 @@ function M.applyInstructionToGrid(instruction, grid)
         local instructionDistance = box(
           instructionX, instructionY, instructionZ,
           0.5 * width - radius, 0.5 * height - radius, 0.5 * depth - radius) - radius
-
-        if noiseOctaves > 0 then
-          instructionDistance = instructionDistance + noiseAmplitude * (2 * fbm3(
-            noiseFrequency * instructionX,
-            noiseFrequency * instructionY,
-            noiseFrequency * instructionZ,
-            noise,
-            noiseOctaves,
-            noiseLacunarity,
-            noiseGain) - 1)
-        end
 
         if instruction.operation == "union" then
           vertex.distance, vertex.red, vertex.green, vertex.blue, vertex.alpha =

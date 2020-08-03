@@ -18,14 +18,6 @@ function M:redo()
 
     color = {0.5, 0.5, 0.5, 1},
     shape = {1, 1, 1, 1},
-
-    noise = {
-      octaves = 0,
-      amplitude = 1,
-      frequency = 1,
-      gain = 0.5,
-      lacunarity = 1,
-    },
   })
 
   self.editor.selection = #self.editor.instructions
