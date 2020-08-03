@@ -20,7 +20,9 @@ function M.new(editor)
 
   local selection = assert(editor.selection)
   local instruction = assert(editor.instructions[selection])
+
   instance.oldOrientation = {unpack(instruction.orientation)}
+  instance.newOrientation = {unpack(instruction.orientation)}
 
   return instance
 end

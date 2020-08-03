@@ -168,9 +168,18 @@ function Editor:init(config)
   self.worldToScreenTransform = love.math.newTransform()
 
   self.colors = {
-    red = {1, 0.5, 0.25, 1},
-    green = {0.25, 1, 0.25, 1},
     blue = {0.25, 0.75, 1, 1},
+    green = {0.25, 1, 0.25, 1},
+    red = {1, 0.5, 0.25, 1},
+    white = {1, 1, 1, 1},
+    yellow = {1, 0.75, 0.25, 1},
+  }
+
+  self.logColors = {
+    debug = self.colors.green,
+    error = self.colors.red,
+    info = self.colors.white,
+    warn = self.colors.yellow,
   }
 
   self.commandHistory = {}
@@ -205,7 +214,7 @@ function Editor:update(dt)
 
       mesh = love.graphics.newMesh(vertexFormat, output.vertices, "triangles")
       mesh:setVertexMap(output.vertexMap)
-      self:log("debug", "Updated mesh with " .. #output.vertices / 4 .. " quads")
+      self:log("debug", "Updated mesh with " .. #output.vertices .. " vertices and " .. #output.vertexMap .. " indices")
     else
       local vertexFormat = {
         {"VertexPosition", "float", 3},
@@ -214,7 +223,7 @@ function Editor:update(dt)
       }
 
       mesh = love.graphics.newMesh(vertexFormat, output.vertices, "triangles")
-      self:log("debug", "Updated mesh with " .. #output.vertices / 3 .. " triangles")
+      self:log("debug", "Updated mesh with " .. #output.vertices .. " vertices")
     end
   end
 
@@ -851,7 +860,8 @@ function Editor:update(dt)
     })
 
     if self.statusMessage then
-      Slab.Text(self.statusMessage)
+      local color = self.logColors[self.statusLevel]
+      Slab.Text(self.statusMessage, {Color = color})
     end
 
     Slab.EndWindow()
@@ -1013,13 +1023,13 @@ function Editor:keypressed(key, scancode, isrepeat)
       if #self.commandFuture >= 1 then
         self:redoCommand()
       else
-        self:log("warning", "Nothing to redo")
+        self:log("warn", "Nothing to redo")
       end
     else
       if #self.commandHistory >= 1 then
         self:undoCommand()
       else
-        self:log("warning", "Nothing to undo")
+        self:log("warn", "Nothing to undo")
       end
     end
   end
@@ -1087,30 +1097,52 @@ function Editor:remesh()
   local maxY = 2
   local maxZ = 2
 
-  local size = 16
+  if self.mesher == "dual-contouring" then
+    local size = 16
 
-  while size <= 64 do
-    self.workerInputVersion = self.workerInputVersion + 1
+    while size <= 64 do
+      self.workerInputVersion = self.workerInputVersion + 1
 
-    self.workerInputChannel:push({
-      version = self.workerInputVersion,
-      mesher = self.mesher,
-      instructions = self.instructions,
+      self.workerInputChannel:push({
+        version = self.workerInputVersion,
+        mesher = self.mesher,
+        instructions = self.instructions,
 
-      minX = minX,
-      minY = minY,
-      minZ = minZ,
+        minX = minX,
+        minY = minY,
+        minZ = minZ,
 
-      maxX = maxX,
-      maxY = maxY,
-      maxZ = maxZ,
+        maxX = maxX,
+        maxY = maxY,
+        maxZ = maxZ,
 
-      sizeX = size,
-      sizeY = size,
-      sizeZ = size,
-    })
+        sizeX = size,
+        sizeY = size,
+        sizeZ = size,
+      })
 
-    size = 2 * size
+      size = 2 * size
+    end
+  else
+    for maxDepth = 4, 7 do
+      self.workerInputVersion = self.workerInputVersion + 1
+
+      self.workerInputChannel:push({
+        version = self.workerInputVersion,
+        mesher = self.mesher,
+        instructions = self.instructions,
+
+        minX = minX,
+        minY = minY,
+        minZ = minZ,
+
+        maxX = maxX,
+        maxY = maxY,
+        maxZ = maxZ,
+
+        maxDepth = maxDepth,
+      })
+    end
   end
 end
 

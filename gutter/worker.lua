@@ -33,8 +33,8 @@ local function main(arg)
 
       local gridSize = {input.sizeX, input.sizeY, input.sizeZ}
 
-      vertices, vertexMap = surfaceSplatting.newMeshFromInstructions(
-        input.instructions, bounds, gridSize)
+      vertices, vertexMap = surfaceSplatting.newMeshFromInstructions2(
+        input.instructions, bounds, input.maxDepth)
     end
 
     outputChannel:push({
