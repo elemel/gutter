@@ -6,6 +6,7 @@ local quaternion = require("gutter.quaternion")
 
 local abs = math.abs
 local box = csg.box
+local clamp = gutterMath.clamp
 local cross = gutterMath.cross
 local distance3 = gutterMath.distance3
 local dump = lton.dump
@@ -232,108 +233,54 @@ function M.newMeshFromInstructions(instructions, bounds, maxCallDepth, callDepth
   for cellZ = 1, sizeZ do
     for cellY = 1, sizeY do
       for cellX = 1, sizeX do
-        local insideCount = 0
-        local insideDistance = 0
-
-        local insideX = 0
-        local insideY = 0
-        local insideZ = 0
-
-        local insideRed = 0
-        local insideGreen = 0
-        local insideBlue = 0
-        local insideAlpha = 0
-
-        local outsideCount = 0
-        local outsideDistance = 0
-
-        local outsideX = 0
-        local outsideY = 0
-        local outsideZ = 0
-
-        local outsideRed = 0
-        local outsideGreen = 0
-        local outsideBlue = 0
-        local outsideAlpha = 0
+        local sign = 0
 
         for vertexZ = 0, 1 do
           for vertexY = 0, 1 do
             for vertexX = 0, 1 do
               local vertex = gridVertices[cellZ + vertexZ][cellY + vertexY][cellX + vertexX]
-
-              if vertex.distance < 0 then
-                insideCount = insideCount + 1
-                insideDistance = insideDistance + vertex.distance
-
-                insideX = insideX + vertexX
-                insideY = insideY + vertexY
-                insideZ = insideZ + vertexZ
-
-                insideRed = insideRed + vertex.red
-                insideGreen = insideGreen + vertex.green
-                insideBlue = insideBlue + vertex.blue
-                insideAlpha = insideAlpha + vertex.alpha
-              else
-                outsideCount = outsideCount + 1
-                outsideDistance = outsideDistance + vertex.distance
-
-                outsideX = outsideX + vertexX
-                outsideY = outsideY + vertexY
-                outsideZ = outsideZ + vertexZ
-
-                outsideRed = outsideRed + vertex.red
-                outsideGreen = outsideGreen + vertex.green
-                outsideBlue = outsideBlue + vertex.blue
-                outsideAlpha = outsideAlpha + vertex.alpha
-              end
+              sign = sign + (vertex.distance < 0 and -1 or 1)
             end
           end
         end
 
-        if insideCount >= 1 and outsideCount >= 1 then
-          insideDistance = insideDistance / insideCount
+        if sign ~= -8 and sign ~= 8 then
+          local distance = 0
 
-          insideX = insideX / insideCount
-          insideY = insideY / insideCount
-          insideZ = insideZ / insideCount
+          local red = 0
+          local green = 0
+          local blue = 0
+          local alpha = 0
 
-          insideRed = insideRed / insideCount
-          insideGreen = insideGreen / insideCount
-          insideBlue = insideBlue / insideCount
-          insideAlpha = insideAlpha / insideCount
+          local gradientX = 0
+          local gradientY = 0
+          local gradientZ = 0
 
-          outsideDistance = outsideDistance / outsideCount
+          for vertexZ = 0, 1 do
+            for vertexY = 0, 1 do
+              for vertexX = 0, 1 do
+                local vertex = gridVertices[cellZ + vertexZ][cellY + vertexY][cellX + vertexX]
 
-          outsideX = outsideX / outsideCount
-          outsideY = outsideY / outsideCount
-          outsideZ = outsideZ / outsideCount
+                distance = distance + vertex.distance / 8
 
-          outsideRed = outsideRed / outsideCount
-          outsideGreen = outsideGreen / outsideCount
-          outsideBlue = outsideBlue / outsideCount
-          outsideAlpha = outsideAlpha / outsideCount
+                red = red + vertex.red / 8
+                green = green + vertex.green / 8
+                blue = blue + vertex.blue / 8
+                alpha = alpha + vertex.alpha / 8
 
-          local fractionX, fractionY, fractionZ = mix3(insideX, insideY, insideZ, outsideX, outsideY, outsideZ, -insideDistance / (outsideDistance - insideDistance))
+                gradientX = gradientX + (2 * vertexX - 1) * vertex.distance
+                gradientY = gradientY + (2 * vertexY - 1) * vertex.distance
+                gradientZ = gradientZ + (2 * vertexZ - 1) * vertex.distance
+              end
+            end
+          end
 
-          local x = mix(minX, maxX, (cellX - 1 + fractionX) / sizeX)
-          local y = mix(minY, maxY, (cellY - 1 + fractionY) / sizeY)
-          local z = mix(minZ, maxZ, (cellZ - 1 + fractionZ) / sizeZ)
+          distance = clamp(distance, -0.5, 0.5)
+          local normalX, normalY, normalZ = normalize3(gradientX, gradientY, gradientZ)
 
-          local distance000 = gridVertices[cellZ + 0][cellY + 0][cellX + 0].distance
-          local distance001 = gridVertices[cellZ + 0][cellY + 0][cellX + 1].distance
-          local distance010 = gridVertices[cellZ + 0][cellY + 1][cellX + 0].distance
-          local distance011 = gridVertices[cellZ + 0][cellY + 1][cellX + 1].distance
-          local distance100 = gridVertices[cellZ + 1][cellY + 0][cellX + 0].distance
-          local distance101 = gridVertices[cellZ + 1][cellY + 0][cellX + 1].distance
-          local distance110 = gridVertices[cellZ + 1][cellY + 1][cellX + 0].distance
-          local distance111 = gridVertices[cellZ + 1][cellY + 1][cellX + 1].distance
-
-          local gradX = mix(mix(distance001 - distance000, distance011 - distance010, fractionY), mix(distance101 - distance100, distance111 - distance110, fractionY), fractionZ)
-          local gradY = mix(mix(distance010 - distance000, distance011 - distance001, fractionX), mix(distance110 - distance100, distance111 - distance101, fractionX), fractionZ)
-          local gradZ = mix(mix(distance100 - distance000, distance101 - distance001, fractionX), mix(distance110 - distance010, distance111 - distance011, fractionX), fractionY)
-
-          local normalX, normalY, normalZ = normalize3(gradX, gradY, gradZ)
-          local red, green, blue, alpha = mix4(insideRed, insideGreen, insideBlue, insideAlpha, outsideRed, outsideGreen, outsideBlue, outsideAlpha, -insideDistance / (outsideDistance - insideDistance))
+          local x = mix(minX, maxX, (cellX - 0.5) / sizeX) - distance * normalX
+          local y = mix(minY, maxY, (cellY - 0.5) / sizeY) - distance * normalY
+          local z = mix(minZ, maxZ, (cellZ - 0.5) / sizeZ) - distance * normalZ
 
           local disk = {x, y, z, normalX, normalY, normalZ, red, green, blue, alpha}
           table.insert(disks, disk)
