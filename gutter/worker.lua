@@ -12,7 +12,7 @@ local function main(arg)
       break
     end
 
-    local vertices, vertexMap
+    local vertices, vertexMap, disks
 
     if input.mesher == "dual-contouring" then
       local grid = dualContouring.newGrid(
@@ -33,7 +33,7 @@ local function main(arg)
 
       local gridSize = {input.sizeX, input.sizeY, input.sizeZ}
 
-      vertices, vertexMap = surfaceSplatting.newMeshFromInstructions2(
+      vertices, vertexMap, disks = surfaceSplatting.newMeshFromInstructions2(
         input.instructions, bounds, input.maxDepth)
     end
 
@@ -41,6 +41,7 @@ local function main(arg)
       version = input.version,
       vertices = vertices,
       vertexMap = vertexMap,
+      disks = disks,
     })
   end
 end

@@ -9,6 +9,13 @@ local RotateController = require("gutter.editor.controllers.RotateController")
 local ScaleController = require("gutter.editor.controllers.ScaleController")
 local Slab = require("Slab")
 
+local ffi = require("ffi")
+
+ffi.cdef([[
+    typedef void (* PFNGLENABLEPROC) (int cap);
+    void *SDL_GL_GetProcAddress(const char *proc);
+  ]])
+
 local atan2 = math.atan2
 local clamp = gutterMath.clamp
 local concat = table.concat
@@ -116,6 +123,37 @@ function Editor:init(config)
     ]])
   end
 
+  self.pointShader = love.graphics.newShader([[
+    varying vec3 VaryingPosition;
+    varying vec3 VaryingNormal;
+
+    vec4 effect(vec4 color, Image tex, vec2 texture_coords, vec2 screen_coords)
+    {
+      if (dot(gl_PointCoord - 0.5, gl_PointCoord - 0.5) > 0.5 * 0.5) {
+        discard;
+      }
+
+      vec3 normal = normalize(VaryingNormal);
+      vec3 sunLighting = max(0, dot(normalize(vec3(-2, -8, 4)), normal)) * 3 * vec3(1, 0.5, 0.25);
+      vec3 skyLighting = vec3(0.25, 0.5, 1) * (0.5 - 0.5 * normal.y);
+      vec3 lighting = sunLighting + skyLighting;
+      return vec4(lighting, 1) * color;
+    }
+  ]], [[
+    uniform mat4 ModelMatrix;
+    attribute vec3 VertexNormal;
+    varying vec3 VaryingPosition;
+    varying vec3 VaryingNormal;
+
+    vec4 position(mat4 transform_projection, vec4 vertex_position)
+    {
+      VaryingPosition = vec3(ModelMatrix * vertex_position);
+      VaryingNormal = mat3(ModelMatrix) * VertexNormal;
+      gl_PointSize = 13;
+      return transform_projection * ModelMatrix * vertex_position;
+    }
+  ]])
+
   self:log("info", "Using save directory: " .. love.filesystem.getSaveDirectory())
 
   if config.model then
@@ -205,16 +243,22 @@ function Editor:update(dt)
     end
 
     if self.mesher == "surface-splatting" then
+      -- local vertexFormat = {
+      --   {"VertexPosition", "float", 3},
+      --   {"VertexNormal", "float", 3},
+      --   {"VertexTexCoord", "float", 2},
+      --   {"VertexColor", "byte", 4},
+      -- }
+
       local vertexFormat = {
         {"VertexPosition", "float", 3},
         {"VertexNormal", "float", 3},
-        {"VertexTexCoord", "float", 2},
         {"VertexColor", "byte", 4},
       }
 
-      mesh = love.graphics.newMesh(vertexFormat, output.vertices, "triangles")
-      mesh:setVertexMap(output.vertexMap)
-      self:log("debug", "Updated mesh with " .. #output.vertices .. " vertices and " .. #output.vertexMap .. " indices")
+      mesh = love.graphics.newMesh(vertexFormat, output.disks, "points")
+      -- mesh:setVertexMap(output.vertexMap)
+      self:log("debug", "Updated mesh with " .. #output.disks .. " points")
     else
       local vertexFormat = {
         {"VertexPosition", "float", 3},
@@ -816,15 +860,17 @@ function Editor:draw()
 
   if self.mesher == "surface-splatting" then
     if mesh then
+      ffi.cast("PFNGLENABLEPROC",ffi.C.SDL_GL_GetProcAddress("glEnable"))(0x8642)
       love.graphics.setColor(1, 1, 1, 1)
-      love.graphics.setShader(self.shader)
-      self.shader:send("ModelMatrix", transform)
+      love.graphics.setShader(self.pointShader)
+      self.pointShader:send("ModelMatrix", transform)
       love.graphics.setMeshCullMode("back")
       love.graphics.setDepthMode("less", true)
       love.graphics.draw(mesh)
       love.graphics.setDepthMode()
       love.graphics.setMeshCullMode("none")
       love.graphics.setShader(nil)
+      ffi.cast("PFNGLENABLEPROC",ffi.C.SDL_GL_GetProcAddress("glDisable"))(0x8642)
     end
   else
     love.graphics.setColor(1, 1, 1, 1)
@@ -996,7 +1042,7 @@ function Editor:wheelmoved(x, y)
     return
   end
 
-  self.angle = self.angle - x / 16 * pi
+  self.angle = self.angle - x / 256 * pi
 end
 
 function Editor:remesh()
@@ -1037,7 +1083,7 @@ function Editor:remesh()
       size = 2 * size
     end
   else
-    for maxDepth = 4, 7 do
+    for maxDepth = 1, 6 do
       self.workerInputVersion = self.workerInputVersion + 1
 
       self.workerInputChannel:push({

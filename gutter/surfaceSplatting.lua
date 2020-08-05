@@ -359,10 +359,11 @@ function M.newMeshFromInstructions(instructions, bounds, gridSize)
   return vertices, vertexMap
 end
 
-function M.newMeshFromInstructions2(instructions, bounds, maxCallDepth, callDepth, vertices, vertexMap)
+function M.newMeshFromInstructions2(instructions, bounds, maxCallDepth, callDepth, vertices, vertexMap, disks)
   callDepth = callDepth or 0
   vertices = vertices or {}
   vertexMap = vertexMap or {}
+  disks = disks or {}
 
   local minX = bounds.minX
   local minY = bounds.minY
@@ -394,7 +395,7 @@ function M.newMeshFromInstructions2(instructions, bounds, maxCallDepth, callDept
   end
 
   if #filteredInstructions == 0 then
-    return vertices, vertexMap
+    return vertices, vertexMap, disks
   end
 
   if callDepth < maxCallDepth then
@@ -409,15 +410,16 @@ function M.newMeshFromInstructions2(instructions, bounds, maxCallDepth, callDept
             maxX = mix(minX, maxX, x / 2),
             maxY = mix(minY, maxY, y / 2),
             maxZ = mix(minZ, maxZ, z / 2),
-          }, maxCallDepth, callDepth + 1, vertices, vertexMap)
+          }, maxCallDepth, callDepth + 1, vertices, vertexMap, disks)
         end
       end
     end
 
-    return vertices, vertexMap
+    return vertices, vertexMap, disks
   end
 
   local grid = M.newGrid({2, 2, 2}, bounds)
+  local localDisks = {}
 
   local sizeX = grid.sizeX
   local sizeY = grid.sizeY
@@ -428,7 +430,6 @@ function M.newMeshFromInstructions2(instructions, bounds, maxCallDepth, callDept
   end
 
   local gridVertices = grid.vertices
-  local disks = {}
 
   for cellZ = 1, sizeZ do
     for cellY = 1, sizeY do
@@ -537,6 +538,7 @@ function M.newMeshFromInstructions2(instructions, bounds, maxCallDepth, callDept
           local red, green, blue, alpha = mix4(insideRed, insideGreen, insideBlue, insideAlpha, outsideRed, outsideGreen, outsideBlue, outsideAlpha, -insideDistance / (outsideDistance - insideDistance))
 
           local disk = {x, y, z, normalX, normalY, normalZ, red, green, blue, alpha}
+          table.insert(localDisks, disk)
           table.insert(disks, disk)
         end
       end
@@ -547,7 +549,7 @@ function M.newMeshFromInstructions2(instructions, bounds, maxCallDepth, callDept
   local radiusY = (maxY - minY) / sizeY
   local radiusZ = (maxZ - minZ) / sizeZ
 
-  for _, disk in ipairs(disks) do
+  for _, disk in ipairs(localDisks) do
     local x, y, z, normalX, normalY, normalZ, red, green, blue, alpha = unpack(disk)
 
     local tangentX, tangentY, tangentZ = perp(normalX, normalY, normalZ)
@@ -602,7 +604,7 @@ function M.newMeshFromInstructions2(instructions, bounds, maxCallDepth, callDept
     table.insert(vertexMap, #vertices)
   end
 
-  return vertices, vertexMap
+  return vertices, vertexMap, disks
 end
 
 -- function M.debugDrawDiskBases(disks)
