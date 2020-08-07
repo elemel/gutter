@@ -153,8 +153,6 @@ function Editor:init(config)
 
   love.thread.newThread("gutter/worker.lua"):start()
   love.thread.newThread("gutter/worker.lua"):start()
-  love.thread.newThread("gutter/worker.lua"):start()
-  love.thread.newThread("gutter/worker.lua"):start()
 
   self:remesh()
 
@@ -1013,7 +1011,7 @@ function Editor:remesh()
   if self.mesher == "dual-contouring" then
     local size = 16
 
-    while size <= 64 do
+    while size <= 128 do
       self.workerInputVersion = self.workerInputVersion + 1
 
       self.workerInputChannel:push({

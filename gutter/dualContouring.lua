@@ -3,8 +3,10 @@ local gutterMath = require("gutter.math")
 local loveMath = require("love.math")
 local quaternion = require("gutter.quaternion")
 
+local abs = math.abs
 local acos = math.acos
 local box = csg.box
+local clamp = gutterMath.clamp
 local cos = math.cos
 local cross = gutterMath.cross
 local dot3 = gutterMath.dot3
@@ -186,127 +188,76 @@ function M.updateCells(grid)
       for cellX = 1, sizeX do
         local cell = cells[cellZ][cellY][cellX]
 
-        local insideCount = 0
-        local insideDistance = 0
+        local totalX = 0
+        local totalY = 0
+        local totalZ = 0
 
-        local insideX = 0
-        local insideY = 0
-        local insideZ = 0
+        local totalRed = 0
+        local totalGreen = 0
+        local totalBlue = 0
+        local totalAlpha = 0
 
-        local insideRed = 0
-        local insideGreen = 0
-        local insideBlue = 0
-        local insideAlpha = 0
-
-        local outsideCount = 0
-        local outsideDistance = 0
-
-        local outsideX = 0
-        local outsideY = 0
-        local outsideZ = 0
-
-        local outsideRed = 0
-        local outsideGreen = 0
-        local outsideBlue = 0
-        local outsideAlpha = 0
+        local count = 0
 
         for vertexZ = 0, 1 do
           for vertexY = 0, 1 do
             for vertexX = 0, 1 do
               local vertex = vertices[cellZ + vertexZ][cellY + vertexY][cellX + vertexX]
 
-              if vertex.distance < 0 then
-                insideCount = insideCount + 1
-                insideDistance = insideDistance + vertex.distance
+              for vertexZ2 = 0, 1 do
+                for vertexY2 = 0, 1 do
+                  for vertexX2 = 0, 1 do
+                    local vertex2 = vertices[cellZ + vertexZ2][cellY + vertexY2][cellX + vertexX2]
 
-                insideX = insideX + vertexX
-                insideY = insideY + vertexY
-                insideZ = insideZ + vertexZ
+                    if (vertex.distance < 0) ~= (vertex2.distance < 0) then
+                      local t = abs(vertex.distance) / (abs(vertex.distance) + abs(vertex2.distance))
 
-                insideRed = insideRed + vertex.red
-                insideGreen = insideGreen + vertex.green
-                insideBlue = insideBlue + vertex.blue
-                insideAlpha = insideAlpha + vertex.alpha
-              else
-                outsideCount = outsideCount + 1
-                outsideDistance = outsideDistance + vertex.distance
+                      totalX = totalX + mix(vertex.x, vertex2.x, t)
+                      totalY = totalY + mix(vertex.y, vertex2.y, t)
+                      totalZ = totalZ + mix(vertex.z, vertex2.z, t)
 
-                outsideX = outsideX + vertexX
-                outsideY = outsideY + vertexY
-                outsideZ = outsideZ + vertexZ
+                      totalRed = totalRed + mix(vertex.red, vertex2.red, t)
+                      totalGreen = totalGreen + mix(vertex.green, vertex2.green, t)
+                      totalBlue = totalBlue + mix(vertex.blue, vertex2.blue, t)
+                      totalAlpha = totalAlpha + mix(vertex.alpha, vertex2.alpha, t)
 
-                outsideRed = outsideRed + vertex.red
-                outsideGreen = outsideGreen + vertex.green
-                outsideBlue = outsideBlue + vertex.blue
-                outsideAlpha = outsideAlpha + vertex.alpha
+                      count = count + 1
+                    end
+                  end
+                end
               end
             end
           end
         end
 
-        if insideCount >= 1 and outsideCount >= 1 then
-          insideDistance = insideDistance / insideCount
+        if count >= 1 then
+          cell.x = totalX / count
+          cell.y = totalY / count
+          cell.z = totalZ / count
 
-          insideX = insideX / insideCount
-          insideY = insideY / insideCount
-          insideZ = insideZ / insideCount
+          local gradientX = 0
+          local gradientY = 0
+          local gradientZ = 0
 
-          insideRed = insideRed / insideCount
-          insideGreen = insideGreen / insideCount
-          insideBlue = insideBlue / insideCount
-          insideAlpha = insideAlpha / insideCount
+          for vertexZ = 0, 1 do
+            for vertexY = 0, 1 do
+              for vertexX = 0, 1 do
+                local vertex = grid.vertices[cellZ + vertexZ][cellY + vertexY][cellX + vertexX]
 
-          outsideDistance = outsideDistance / outsideCount
-
-          outsideX = outsideX / outsideCount
-          outsideY = outsideY / outsideCount
-          outsideZ = outsideZ / outsideCount
-
-          outsideRed = outsideRed / outsideCount
-          outsideGreen = outsideGreen / outsideCount
-          outsideBlue = outsideBlue / outsideCount
-          outsideAlpha = outsideAlpha / outsideCount
-
-          local x, y, z = mix3(
-            insideX, insideY, insideZ,
-            outsideX, outsideY, outsideZ,
-            -insideDistance / (outsideDistance - insideDistance))
-
-          cell.x = mix(minX, maxX, (cellX - 1 + x) / sizeX)
-          cell.y = mix(minY, maxY, (cellY - 1 + y) / sizeY)
-          cell.z = mix(minZ, maxZ, (cellZ - 1 + z) / sizeZ)
-
-          local distance000 = vertices[cellZ + 0][cellY + 0][cellX + 0].distance
-          local distance001 = vertices[cellZ + 0][cellY + 0][cellX + 1].distance
-          local distance010 = vertices[cellZ + 0][cellY + 1][cellX + 0].distance
-          local distance011 = vertices[cellZ + 0][cellY + 1][cellX + 1].distance
-          local distance100 = vertices[cellZ + 1][cellY + 0][cellX + 0].distance
-          local distance101 = vertices[cellZ + 1][cellY + 0][cellX + 1].distance
-          local distance110 = vertices[cellZ + 1][cellY + 1][cellX + 0].distance
-          local distance111 = vertices[cellZ + 1][cellY + 1][cellX + 1].distance
-
-          local gradientX = mix(
-            mix(distance001 - distance000, distance011 - distance010, y),
-            mix(distance101 - distance100, distance111 - distance110, y),
-            z)
-
-          local gradientY = mix(
-            mix(distance010 - distance000, distance011 - distance001, x),
-            mix(distance110 - distance100, distance111 - distance101, x),
-            z)
-
-          local gradientZ = mix(
-            mix(distance100 - distance000, distance101 - distance001, x),
-            mix(distance110 - distance010, distance111 - distance011, x),
-            y)
+                gradientX = gradientX + (2 * vertexX - 1) * vertex.distance
+                gradientY = gradientY + (2 * vertexY - 1) * vertex.distance
+                gradientZ = gradientZ + (2 * vertexZ - 1) * vertex.distance
+              end
+            end
+          end
 
           cell.normalX, cell.normalY, cell.normalZ = normalize3(
             gradientX, gradientY, gradientZ)
 
-          cell.red, cell.green, cell.blue, cell.alpha = mix4(
-            insideRed, insideGreen, insideBlue, insideAlpha,
-            outsideRed, outsideGreen, outsideBlue, outsideAlpha,
-            -insideDistance / (outsideDistance - insideDistance))
+          cell.red = totalRed / count
+          cell.green = totalGreen / count
+          cell.blue = totalBlue / count
+          cell.alpha = totalAlpha / count
         end
       end
     end
@@ -435,7 +386,8 @@ function M.newMeshFromInstructions(instructions, grid)
   M.updateCells(grid)
   local triangles = M.generateTriangles(grid)
 
-  local maxAlignmentAngle = 1 / 16 * pi
+  -- local maxAlignmentAngle = 1 / 16 * pi
+  local maxAlignmentAngle = 0.5 * pi
   local minAlignment = cos(maxAlignmentAngle)
 
   for i = 1, #triangles, 3 do
