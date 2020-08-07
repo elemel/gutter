@@ -52,6 +52,10 @@ function M.newGrid(sizeX, sizeY, sizeZ, minX, minY, minZ, maxX, maxY, maxZ)
 
       for x = 1, sizeX + 1 do
         row[x] = {
+          x = mix(minX, maxX, (x - 1) / sizeX),
+          y = mix(minY, maxY, (y - 1) / sizeY),
+          z = mix(minZ, maxZ, (z - 1) / sizeZ),
+
           distance = huge,
 
           red = 0,
@@ -129,17 +133,11 @@ function M.applyInstructions(instructions, grid)
     local blendRange = instruction.blending * maxRadius
 
     for vertexZ, layer in ipairs(vertices) do
-      local z = mix(minZ, maxZ, (vertexZ - 1) / sizeX)
-
       for vertexY, row in ipairs(layer) do
-        local y = mix(minY, maxY, (vertexY - 1) / sizeY)
-
         for vertexX, vertex in ipairs(row) do
-          local x = mix(minX, maxX, (vertexX - 1) / sizeZ)
-
           local instructionX, instructionY, instructionZ = inverseRotate(
             qx, qy, qz, qw,
-            x - positionX, y - positionY, z - positionZ)
+            vertex.x - positionX, vertex.y - positionY, vertex.z - positionZ)
 
         local instructionDistance = box(
           instructionX, instructionY, instructionZ,
