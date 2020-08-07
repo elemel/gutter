@@ -351,25 +351,4 @@ function M.newMeshFromInstructions(instructions, bounds, maxCallDepth, callDepth
   return vertices, vertexMap
 end
 
--- function M.debugDrawDiskBases(disks)
---   local vectorScale = 0.25
-
---   for _, disk in ipairs(disks) do
---     local x, y, z, normalX, normalY, normalZ, red, green, blue, alpha = unpack(disk)
-
---     if z < 0 then
---       love.graphics.setColor(0, 0.5, 1, 1)
---       love.graphics.line(x, y, x + vectorScale * normalX, y + vectorScale * normalY)
-
---       local tangentX, tangentY, tangentZ = perp(normalX, normalY, normalZ)
---       love.graphics.setColor(1, 0.25, 0, 1)
---       love.graphics.line(x, y, x + vectorScale * tangentX, y + vectorScale * tangentY)
-
---       local bitangentX, bitangentY, bitangentZ = cross(tangentX, tangentY, tangentZ, normalY, normalY, normalZ)
---       love.graphics.setColor(0, 1, 0, 1)
---       love.graphics.line(x, y, x + vectorScale * bitangentX, y + vectorScale * bitangentY)
---     end
---   end
--- end
-
 return M
