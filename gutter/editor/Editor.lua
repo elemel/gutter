@@ -153,6 +153,8 @@ function Editor:init(config)
 
   love.thread.newThread("gutter/worker.lua"):start()
   love.thread.newThread("gutter/worker.lua"):start()
+  love.thread.newThread("gutter/worker.lua"):start()
+  love.thread.newThread("gutter/worker.lua"):start()
 
   self:remesh()
 
@@ -825,15 +827,17 @@ function Editor:draw()
       love.graphics.setShader(nil)
     end
   else
-    love.graphics.setColor(1, 1, 1, 1)
-    love.graphics.setShader(self.shader)
-    self.shader:send("ModelMatrix", transform)
-    love.graphics.setMeshCullMode("back")
-    love.graphics.setDepthMode("less", true)
-    love.graphics.draw(mesh)
-    love.graphics.setDepthMode()
-    love.graphics.setMeshCullMode("none")
-    love.graphics.setShader(nil)
+    if mesh then
+      love.graphics.setColor(1, 1, 1, 1)
+      love.graphics.setShader(self.shader)
+      self.shader:send("ModelMatrix", transform)
+      love.graphics.setMeshCullMode("back")
+      love.graphics.setDepthMode("less", true)
+      love.graphics.draw(mesh)
+      love.graphics.setDepthMode()
+      love.graphics.setMeshCullMode("none")
+      love.graphics.setShader(nil)
+    end
   end
 
   love.graphics.pop()
@@ -1009,9 +1013,7 @@ function Editor:remesh()
   local maxZ = 2
 
   if self.mesher == "dual-contouring" then
-    local size = 16
-
-    while size <= 128 do
+    for maxDepth = 4, 6 do
       self.workerInputVersion = self.workerInputVersion + 1
 
       self.workerInputChannel:push({
@@ -1027,15 +1029,11 @@ function Editor:remesh()
         maxY = maxY,
         maxZ = maxZ,
 
-        sizeX = size,
-        sizeY = size,
-        sizeZ = size,
+        maxDepth = maxDepth,
       })
-
-      size = 2 * size
     end
   else
-    for maxDepth = 4, 7 do
+    for maxDepth = 4, 6 do
       self.workerInputVersion = self.workerInputVersion + 1
 
       self.workerInputChannel:push({

@@ -15,12 +15,6 @@ local function main(arg)
     local vertices, vertexMap
 
     if input.mesher == "dual-contouring" then
-      local grid = dualContouring.newGrid(
-        input.sizeX, input.sizeY, input.sizeZ,
-        input.minX, input.minY, input.minZ, input.maxX, input.maxY, input.maxZ)
-
-      vertices = dualContouring.newMeshFromInstructions(input.instructions, grid)
-    else
       local bounds = {
         minX = input.minX,
         minY = input.minY,
@@ -31,7 +25,18 @@ local function main(arg)
         maxZ = input.maxZ,
       }
 
-      local gridSize = {input.sizeX, input.sizeY, input.sizeZ}
+      vertices = dualContouring.newMeshFromInstructions(input.instructions, bounds, input.maxDepth)
+      dualContouring.fixTriangleNormals(vertices)
+    else
+      local bounds = {
+        minX = input.minX,
+        minY = input.minY,
+        minZ = input.minZ,
+
+        maxX = input.maxX,
+        maxY = input.maxY,
+        maxZ = input.maxZ,
+      }
 
       vertices, vertexMap = surfaceSplatting.newMeshFromInstructions(
         input.instructions, bounds, input.maxDepth)

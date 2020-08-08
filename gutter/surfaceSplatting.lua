@@ -11,6 +11,7 @@ local cross = gutterMath.cross
 local distance3 = gutterMath.distance3
 local dump = lton.dump
 local fbm3 = gutterMath.fbm3
+local getInstructionDistanceAndBlendRangeForPoint = csg.getInstructionDistanceAndBlendRangeForPoint
 local huge = math.huge
 local inverseRotate = quaternion.inverseRotate
 local max = math.max
@@ -84,26 +85,6 @@ function M.newGrid(size, bounds)
   grid.vertices = vertices
 
   return grid
-end
-
-function M.getInstructionDistanceAndBlendRangeForPoint(instruction, x, y, z)
-  local positionX, positionY, positionZ = unpack(instruction.position)
-  local qx, qy, qz, qw = unpack(instruction.orientation)
-
-  local instructionRed, instructionGreen, instructionBlue, instructionAlpha = unpack(instruction.color)
-  local width, height, depth, rounding = unpack(instruction.shape)
-  local maxRadius = 0.5 * min(width, height, depth)
-  local radius = rounding * maxRadius
-  local blendRange = instruction.blending * maxRadius
-
-  local instructionX, instructionY, instructionZ = inverseRotate(
-    qx, qy, qz, qw, x - positionX, y - positionY, z - positionZ)
-
-  local instructionDistance = box(
-    instructionX, instructionY, instructionZ,
-    0.5 * width - radius, 0.5 * height - radius, 0.5 * depth - radius) - radius
-
-  return instructionDistance, blendRange
 end
 
 function M.applyInstructionToGrid(instruction, grid)
@@ -181,7 +162,7 @@ function M.newMeshFromInstructions(instructions, bounds, maxCallDepth, callDepth
   local maxDistance = distance3(midX, midY, midZ, bounds.maxX, bounds.maxY, bounds.maxZ)
 
   for i = #instructions, 1, -1 do
-    local distance, blendRange = M.getInstructionDistanceAndBlendRangeForPoint(instructions[i], midX, midY, midZ)
+    local distance, blendRange = getInstructionDistanceAndBlendRangeForPoint(instructions[i], midX, midY, midZ)
 
     if distance - blendRange < maxDistance + maxBlendRange then
       table.insert(filteredInstructions, 1, instructions[i])

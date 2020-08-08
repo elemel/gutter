@@ -9,10 +9,13 @@ local box = csg.box
 local clamp = gutterMath.clamp
 local cos = math.cos
 local cross = gutterMath.cross
+local distance3 = gutterMath.distance3
 local dot3 = gutterMath.dot3
 local fbm3 = gutterMath.fbm3
+local getInstructionDistanceAndBlendRangeForPoint = csg.getInstructionDistanceAndBlendRangeForPoint
 local huge = math.huge
 local inverseRotate = quaternion.inverseRotate
+local max = math.max
 local min = math.min
 local mix = gutterMath.mix
 local mix3 = gutterMath.mix3
@@ -29,7 +32,17 @@ local transformPoint3 = gutterMath.transformPoint3
 
 local M = {}
 
-function M.newGrid(sizeX, sizeY, sizeZ, minX, minY, minZ, maxX, maxY, maxZ)
+function M.newGrid(size, bounds)
+  local sizeX, sizeY, sizeZ = unpack(size)
+
+  local minX = bounds.minX
+  local minY = bounds.minY
+  local minZ = bounds.minZ
+
+  local maxX = bounds.maxX
+  local maxY = bounds.maxY
+  local maxZ = bounds.maxZ
+
   local grid = {
     sizeX = sizeX,
     sizeY = sizeY,
@@ -319,13 +332,12 @@ function M.generateTriangle(grid, insideX, insideY, insideZ, outsideX, outsideY,
   end
 end
 
-function M.generateTriangles(grid)
+function M.generateTriangles(grid, triangles)
   local sizeX = grid.sizeX
   local sizeY = grid.sizeY
   local sizeZ = grid.sizeZ
 
   local vertices = grid.vertices
-  local triangles = {}
 
   for edgeZ = 2, sizeZ do
     for edgeY = 2, sizeY do
@@ -381,13 +393,88 @@ function M.generateTriangles(grid)
   return triangles
 end
 
-function M.newMeshFromInstructions(instructions, grid)
+function M.newMeshFromInstructions(instructions, bounds, maxCallDepth, callDepth, triangles)
+  callDepth = callDepth or 0
+  triangles = triangles or {}
+
+  local minX = bounds.minX
+  local minY = bounds.minY
+  local minZ = bounds.minZ
+
+  local maxX = bounds.maxX
+  local maxY = bounds.maxY
+  local maxZ = bounds.maxZ
+
+  local midX = 0.5 * (bounds.minX + bounds.maxX)
+  local midY = 0.5 * (bounds.minY + bounds.maxY)
+  local midZ = 0.5 * (bounds.minZ + bounds.maxZ)
+
+  local filteredInstructions = {}
+  local maxBlendRange = 0
+  local maxDistance = distance3(midX, midY, midZ, bounds.maxX, bounds.maxY, bounds.maxZ)
+
+  for i = #instructions, 1, -1 do
+    local distance, blendRange = getInstructionDistanceAndBlendRangeForPoint(instructions[i], midX, midY, midZ)
+
+    if distance - blendRange < maxDistance + maxBlendRange then
+      table.insert(filteredInstructions, 1, instructions[i])
+      maxBlendRange = max(maxBlendRange, blendRange)
+    end
+  end
+
+  while #filteredInstructions > 0 and filteredInstructions[1].operation == "subtraction" do
+    table.remove(filteredInstructions, 1)
+  end
+
+  if #filteredInstructions == 0 then
+    return triangles
+  end
+
+  if callDepth < maxCallDepth then
+    for z = 1, 2 do
+      for y = 1, 2 do
+        for x = 1, 2 do
+          M.newMeshFromInstructions(filteredInstructions, {
+            minX = mix(minX, maxX, (x - 1) / 2),
+            minY = mix(minY, maxY, (y - 1) / 2),
+            minZ = mix(minZ, maxZ, (z - 1) / 2),
+
+            maxX = mix(minX, maxX, x / 2),
+            maxY = mix(minY, maxY, y / 2),
+            maxZ = mix(minZ, maxZ, z / 2),
+          }, maxCallDepth, callDepth + 1, triangles)
+        end
+      end
+    end
+
+    return triangles
+  end
+
+  local extendedBounds = {
+    minX = minX - 0.5 * (maxX - minX),
+    minY = minY - 0.5 * (maxY - minY),
+    minZ = minZ - 0.5 * (maxZ - minZ),
+
+    maxX = maxX,
+    maxY = maxY,
+    maxZ = maxZ,
+
+    -- maxX = maxX + 0.5 * (maxX - minX),
+    -- maxY = maxY + 0.5 * (maxY - minY),
+    -- maxZ = maxZ + 0.5 * (maxZ - minZ),
+  }
+
+  local grid = M.newGrid({3, 3, 3}, extendedBounds)
+
   M.applyInstructions(instructions, grid)
   M.updateCells(grid)
-  local triangles = M.generateTriangles(grid)
+  M.generateTriangles(grid, triangles)
 
-  -- local maxAlignmentAngle = 1 / 16 * pi
-  local maxAlignmentAngle = 0.5 * pi
+  return triangles
+end
+
+function M.fixTriangleNormals(triangles, maxAlignmentAngle)
+  maxAlignmentAngle = maxAlignmentAngle or 0.25 * pi
   local minAlignment = cos(maxAlignmentAngle)
 
   for i = 1, #triangles, 3 do
@@ -423,8 +510,6 @@ function M.newMeshFromInstructions(instructions, grid)
       end
     end
   end
-
-  return triangles
 end
 
 return M
