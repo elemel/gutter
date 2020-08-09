@@ -288,7 +288,7 @@ function Editor:update(dt)
   end
 
   do
-    Slab.BeginWindow("instructions", {
+    Slab.BeginWindow("entities", {
       X = 0,
       Y = menuHeight + toolsHeight,
 
@@ -304,7 +304,7 @@ function Editor:update(dt)
       Rounding = 0,
     })
 
-    Slab.Text("INSTRUCTIONS")
+    Slab.Text("ENTITIES")
     Slab.Separator()
 
     do
@@ -388,7 +388,7 @@ function Editor:update(dt)
   end
 
   do
-    Slab.BeginWindow("properties", {
+    Slab.BeginWindow("components", {
       X = width - 200,
       Y = menuHeight + toolsHeight,
 
@@ -404,7 +404,7 @@ function Editor:update(dt)
       Rounding = 0,
     })
 
-    Slab.Text("PROPERTIES")
+    Slab.Text("COMPONENTS")
     Slab.Separator()
 
     if self.selection then
