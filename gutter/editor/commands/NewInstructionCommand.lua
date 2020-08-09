@@ -10,14 +10,16 @@ end
 
 function M:redo()
   table.insert(self.editor.instructions, {
-    operation = "union",
-    blending = 0,
+    components = {
+      operation = "union",
+      blending = 0,
 
-    position = {0, 0, 0},
-    orientation = {0, 0, 0, 1},
+      position = {0, 0, 0},
+      orientation = {0, 0, 0, 1},
 
-    color = {0.5, 0.5, 0.5, 1},
-    shape = {1, 1, 1, 1},
+      color = {0.5, 0.5, 0.5, 1},
+      shape = {1, 1, 1, 1},
+    },
   })
 
   self.editor.selection = #self.editor.instructions

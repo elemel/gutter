@@ -31,6 +31,7 @@ local transformVector3 = gutterMath.transformVector3
 local translate3 = gutterMath.translate3
 local upper = string.upper
 
+
 local Editor = {}
 Editor.__index = Editor
 
