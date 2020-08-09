@@ -1096,12 +1096,14 @@ function Editor:loadModel(filename)
   local f = assert(loadstring("return " .. contents))
   setfenv(f, {})
   local model = f()
-  convertModel(model)
+  self:convertModel(model)
   return model
 end
 
 function Editor:saveModel(model, filename)
-  local contents = concat(dump(model, "pretty"))
+  local buffer = dump(model, "pretty")
+  table.insert(buffer, "\n")
+  local contents = concat(buffer)
   love.filesystem.write(filename, contents)
 end
 
