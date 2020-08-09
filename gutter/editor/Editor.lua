@@ -121,7 +121,6 @@ function Editor:init(config)
   if not self.model then
     self.model = require("resources.models.example")
     self:convertModel(self.model)
-    print(table.concat(dump(self.model)))
   end
 
   self.instructions = self.model.children
