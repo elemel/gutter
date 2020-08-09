@@ -90,7 +90,10 @@ function M.dump(value, format, order, buffer, depth, stack)
     table.insert(buffer, "{")
 
     for _, element in ipairs(value) do
-      blank2 = type(element) == "table" and not stack[element]
+      blank2 =
+        type(element) == "table" and
+        not stack[element] and
+        next(element) ~= nil
 
       if first then
         if pretty then
@@ -146,7 +149,10 @@ function M.dump(value, format, order, buffer, depth, stack)
 
     for _, key in ipairs(keys) do
       local element = value[key]
-      blank2 = type(element) == "table" and not stack[element]
+      blank2 =
+        type(element) == "table" and
+        not stack[element] and
+        next(element) ~= nil
 
       if first then
         if pretty then
