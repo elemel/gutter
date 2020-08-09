@@ -134,5 +134,5 @@ return {
   },
 
   components = {},
-  version = 1,
+  version = 2,
 }
