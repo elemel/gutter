@@ -1008,10 +1008,16 @@ function Editor:remesh()
     for maxDepth = 4, 6 do
       self.workerInputVersion = self.workerInputVersion + 1
 
+      local instructions = {}
+
+      for i, child in ipairs(self.model.children) do
+        table.insert(instructions, child.components)
+      end
+
       self.workerInputChannel:push({
         version = self.workerInputVersion,
         mesher = self.mesher,
-        instructions = self.instructions,
+        instructions = instructions,
 
         minX = minX,
         minY = minY,
