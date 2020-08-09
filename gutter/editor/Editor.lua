@@ -214,7 +214,7 @@ function Editor:update(dt)
 
       mesh = love.graphics.newMesh(vertexFormat, output.vertices, "triangles")
       mesh:setVertexMap(output.vertexMap)
-      self:log("debug", "Updated mesh with " .. #output.vertices .. " vertices and " .. #output.vertexMap .. " indices")
+      self:log("debug", "Updated mesh with " .. (#output.vertices / 4) .. " quads")
     else
       local vertexFormat = {
         {"VertexPosition", "float", 3},
@@ -223,7 +223,7 @@ function Editor:update(dt)
       }
 
       mesh = love.graphics.newMesh(vertexFormat, output.vertices, "triangles")
-      self:log("debug", "Updated mesh with " .. #output.vertices .. " vertices")
+      self:log("debug", "Updated mesh with " .. (#output.vertices / 3) .. " triangles")
     end
   end
 
