@@ -14,12 +14,12 @@ function M.new(editor, oldOrientation, newOrientation)
 end
 
 function M:redo()
-  self.instruction.orientation = {unpack(self.newOrientation)}
+  self.instruction.components.orientation = {unpack(self.newOrientation)}
   self.editor:remesh()
 end
 
 function M:undo()
-  self.instruction.orientation = {unpack(self.oldOrientation)}
+  self.instruction.components.orientation = {unpack(self.oldOrientation)}
   self.editor:remesh()
 end
 

@@ -14,12 +14,12 @@ function M.new(editor, oldPosition, newPosition)
 end
 
 function M:redo()
-  self.instruction.position = {unpack(self.newPosition)}
+  self.instruction.components.position = {unpack(self.newPosition)}
   self.editor:remesh()
 end
 
 function M:undo()
-  self.instruction.position = {unpack(self.oldPosition)}
+  self.instruction.components.position = {unpack(self.oldPosition)}
   self.editor:remesh()
 end
 

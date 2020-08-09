@@ -34,18 +34,6 @@ local upper = string.upper
 local Editor = {}
 Editor.__index = Editor
 
-local function loadModel(filename)
-  local contents, size = love.filesystem.read(filename)
-  local f = assert(loadstring("return " .. contents))
-  setfenv(f, {})
-  return f()
-end
-
-local function saveModel(model, filename)
-  local contents = concat(dump(model, "pretty"))
-  love.filesystem.write(filename, contents)
-end
-
 function Editor.new(instance, ...)
   instance = instance or {}
   local instance = setmetatable(instance, Editor)
@@ -124,7 +112,7 @@ function Editor:init(config)
     if info == nil then
       self:log("error", "No such file: " .. config.model)
     else
-      self.model = loadModel(config.model)
+      self.model = self:loadModel(config.model)
       self:log("info", "Loaded model: " .. config.model)
     end
   end
@@ -133,7 +121,7 @@ function Editor:init(config)
     self.model = require("resources.models.example")
   end
 
-  self.instructions = self.model.instructions
+  self.instructions = self.model.children
 
   local minX = -2
   local minY = -2
@@ -337,10 +325,11 @@ function Editor:update(dt)
 
     for i = #self.instructions, 1, -1 do
       local instruction = self.instructions[i]
+      local components = instruction.components
 
-      local color = instruction.operation == "subtraction" and self.colors.red or self.colors.green
+      local color = components.operation == "subtraction" and self.colors.red or self.colors.green
 
-      if Slab.TextSelectable(selectableOperations[find(operations, instruction.operation)] .. " #" .. i, {Color = color, IsSelected = (self.selection == i)}) then
+      if Slab.TextSelectable(selectableOperations[find(operations, components.operation)] .. " #" .. i, {Color = color, IsSelected = (self.selection == i)}) then
         if self.selection == i then
           self.selection = nil
         else
@@ -416,7 +405,8 @@ function Editor:update(dt)
     Slab.Separator()
 
     if self.selection then
-      local instruction = self.instructions[self.selection]
+      local instruction = self.model.children[self.selection]
+      local components = instruction.components
 
       do
         Slab.BeginLayout("operation", {Columns = 2, ExpandW = true})
@@ -426,12 +416,12 @@ function Editor:update(dt)
           Slab.Text("Operation")
 
           Slab.SetLayoutColumn(2)
-          local selectedOperation = selectableOperations[find(operations, instruction.operation)]
+          local selectedOperation = selectableOperations[find(operations, components.operation)]
 
           if Slab.BeginComboBox("operation", {Selected = selectedOperation}) then
             for i, v in ipairs(selectableOperations) do
               if Slab.TextSelectable(v) then
-                instruction.operation = operations[i]
+                components.operation = operations[i]
                 self:remesh()
               end
             end
@@ -446,11 +436,11 @@ function Editor:update(dt)
 
           Slab.SetLayoutColumn(2)
 
-          if Slab.InputNumberSlider("blending", instruction.blending, 0, 1, {
+          if Slab.InputNumberSlider("blending", components.blending, 0, 1, {
             Align = "left",
             ReturnOnText = true,
           }) then
-            instruction.blending = Slab.GetInputNumber()
+            components.blending = Slab.GetInputNumber()
             self:remesh()
           end
         end
@@ -463,7 +453,7 @@ function Editor:update(dt)
       do
         Slab.Text("POSITION")
         Slab.BeginLayout("position", {Columns = 2, ExpandW = true})
-        local position = instruction.position
+        local position = components.position
         local x, y, z = unpack(position)
         local step = 1 / 32
 
@@ -523,7 +513,7 @@ function Editor:update(dt)
       do
         Slab.Text("ORIENTATION")
         Slab.BeginLayout("orientation", {Columns = 2, ExpandW = true})
-        local orientation = instruction.orientation
+        local orientation = components.orientation
         local qx, qy, qz, qw = unpack(orientation)
 
         do
@@ -610,7 +600,7 @@ function Editor:update(dt)
       do
         Slab.Text("COLOR")
         Slab.BeginLayout("color", {Columns = 2, ExpandW = true})
-        local color = instruction.color
+        local color = components.color
         local red, green, blue, alpha = unpack(color)
 
         do
@@ -681,7 +671,7 @@ function Editor:update(dt)
       do
         Slab.Text("SHAPE")
         Slab.BeginLayout("shape", {Columns = 2, ExpandW = true})
-        local shape = instruction.shape
+        local shape = components.shape
         local width, height, depth, rounding = unpack(shape)
         local step = 1 / 32
 
@@ -844,14 +834,16 @@ function Editor:draw()
 
   for i, instruction in ipairs(self.instructions) do
     if i == self.selection then
+      local components = instruction.components
+
       -- TODO: Only draw wireframe lines for front faces
 
       local instructionTransform =
         self.worldToScreenTransform *
-        setTranslation3(love.math.newTransform(), unpack(instruction.position)) *
-        quaternion.toTransform(unpack(instruction.orientation))
+        setTranslation3(love.math.newTransform(), unpack(components.position)) *
+        quaternion.toTransform(unpack(components.orientation))
 
-      local width, height, depth, rounding = unpack(instruction.shape)
+      local width, height, depth, rounding = unpack(components.shape)
 
       local x1, y1, z1 = round3(transformPoint3(instructionTransform, -0.5 * width, -0.5 * height, -0.5 * depth))
       local x2, y2, z2 = round3(transformPoint3(instructionTransform, 0.5 * width, -0.5 * height, -0.5 * depth))
@@ -928,7 +920,7 @@ function Editor:keypressed(key, scancode, isrepeat)
     if not self.modelFilename then
       self:log("error", "No model filename")
     else
-      saveModel(self.model, self.modelFilename)
+      self:saveModel(self.model, self.modelFilename)
       self:log("info", "Saved model: " .. self.modelFilename)
     end
   end
@@ -1036,10 +1028,16 @@ function Editor:remesh()
     for maxDepth = 4, 6 do
       self.workerInputVersion = self.workerInputVersion + 1
 
+      local instructions = {}
+
+      for i, child in ipairs(self.model.children) do
+        table.insert(instructions, child.components)
+      end
+
       self.workerInputChannel:push({
         version = self.workerInputVersion,
         mesher = self.mesher,
-        instructions = self.instructions,
+        instructions = instructions,
 
         minX = minX,
         minY = minY,
@@ -1083,6 +1081,43 @@ function Editor:redoCommand()
 
   command:redo()
   table.insert(self.commandHistory, command)
+end
+
+function Editor:loadModel(filename)
+  local contents, size = love.filesystem.read(filename)
+  local f = assert(loadstring("return " .. contents))
+  setfenv(f, {})
+  local model = f()
+  model.version = model.version or 1
+  local oldVersion = model.version
+
+  if model.version == 1 then
+    model.children = model.instructions or {}
+    model.instructions = {}
+
+    model.version = 2
+  end
+
+  if model.version == 2 then
+    for i, components in ipairs(model.children) do
+      model.children[i] = {
+        components = components,
+      }
+    end
+
+    model.version = 3
+  end
+
+  if model.version ~= oldVersion then
+    self:log("debug", "Converted model to version " .. model.version)
+  end
+
+  return model
+end
+
+function Editor:saveModel(model, filename)
+  local contents = concat(dump(model, "pretty"))
+  love.filesystem.write(filename, contents)
 end
 
 return Editor

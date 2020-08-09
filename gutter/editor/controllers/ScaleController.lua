@@ -20,8 +20,8 @@ function M.new(editor)
   local selection = assert(editor.selection)
   local instruction = assert(editor.instructions[selection])
 
-  instance.oldShape = {unpack(instruction.shape)}
-  instance.newShape = {unpack(instruction.shape)}
+  instance.oldShape = {unpack(instruction.components.shape)}
+  instance.newShape = {unpack(instruction.components.shape)}
 
   return instance
 end
@@ -58,13 +58,13 @@ function M:updateInstruction()
 
     local width, height, depth, rounding = unpack(self.oldShape)
 
-    local pivotX, pivotY = transformPoint3(worldToScreenTransform, unpack(instruction.position))
+    local pivotX, pivotY = transformPoint3(worldToScreenTransform, unpack(instruction.components.position))
     local startDistance = distance2(pivotX, pivotY, self.startScreenX, self.startScreenY)
     local distance = distance2(pivotX, pivotY, x, y)
     local scale = distance / startDistance
 
-    instruction.shape = {scale * width, scale * height, scale * depth, rounding}
-    self.newShape = {unpack(instruction.shape)}
+    instruction.components.shape = {scale * width, scale * height, scale * depth, rounding}
+    self.newShape = {unpack(instruction.components.shape)}
 
     self.editor:remesh()
   end

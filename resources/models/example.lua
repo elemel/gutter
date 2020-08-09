@@ -1,7 +1,5 @@
 return {
-  version = 1,
-
-  instructions = {
+  children = {
     {
       blending = 0,
 
@@ -133,5 +131,8 @@ return {
         0,
       },
     },
-  }
+  },
+
+  components = {},
+  version = 1,
 }

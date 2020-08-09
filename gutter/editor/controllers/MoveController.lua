@@ -20,8 +20,8 @@ function M.new(editor)
 
   local selection = assert(editor.selection)
   local instruction = assert(editor.instructions[selection])
-  instance.oldPosition = {unpack(instruction.position)}
-  instance.newPosition = {unpack(instruction.position)}
+  instance.oldPosition = {unpack(instruction.components.position)}
+  instance.newPosition = {unpack(instruction.components.position)}
 
   return instance
 end
@@ -55,7 +55,7 @@ function M:mousemoved(x, y, dx, dy, istouch)
     local worldDx, worldDy, worldDz = transformVector3(screenToWorldTransform, screenDx, screenDy, 0)
 
     local instruction = self.editor.instructions[self.editor.selection]
-    instruction.position = {x + worldDx, y + worldDy, z + worldDz}
+    instruction.components.position = {x + worldDx, y + worldDy, z + worldDz}
     self.newPosition = {x + worldDx, y + worldDy, z + worldDz}
 
     self.editor:remesh()

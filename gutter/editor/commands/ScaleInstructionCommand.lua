@@ -14,12 +14,12 @@ function M.new(editor, oldShape, newShape)
 end
 
 function M:redo()
-  self.instruction.shape = {unpack(self.newShape)}
+  self.instruction.components.shape = {unpack(self.newShape)}
   self.editor:remesh()
 end
 
 function M:undo()
-  self.instruction.shape = {unpack(self.oldShape)}
+  self.instruction.components.shape = {unpack(self.oldShape)}
   self.editor:remesh()
 end
 

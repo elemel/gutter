@@ -21,8 +21,8 @@ function M.new(editor)
   local selection = assert(editor.selection)
   local instruction = assert(editor.instructions[selection])
 
-  instance.oldOrientation = {unpack(instruction.orientation)}
-  instance.newOrientation = {unpack(instruction.orientation)}
+  instance.oldOrientation = {unpack(instruction.components.orientation)}
+  instance.newOrientation = {unpack(instruction.components.orientation)}
 
   return instance
 end
@@ -54,7 +54,7 @@ function M:mousemoved(x, y, dx, dy, istouch)
     local instruction = self.editor.instructions[self.editor.selection]
 
     -- TODO: Use pivot based on selection or camera
-    local pivotX, pivotY = transformPoint3(worldToScreenTransform, unpack(instruction.position))
+    local pivotX, pivotY = transformPoint3(worldToScreenTransform, unpack(instruction.components.position))
     local angle1 = atan2(self.startScreenY - pivotY, self.startScreenX - pivotX)
     local angle2 = atan2(y - pivotY, x - pivotX)
     local angle = angle2 - angle1
@@ -63,8 +63,8 @@ function M:mousemoved(x, y, dx, dy, istouch)
 
     local qx2, qy2, qz2, qw2 = quaternion.fromAxisAngle(axisX, axisY, axisZ, angle)
 
-    instruction.orientation = {quaternion.product(qx2, qy2, qz2, qw2, qx1, qy1, qz1, qw1)}
-    self.newOrientation = {unpack(instruction.orientation)}
+    instruction.components.orientation = {quaternion.product(qx2, qy2, qz2, qw2, qx1, qy1, qz1, qw1)}
+    self.newOrientation = {unpack(instruction.components.orientation)}
     self.editor:remesh()
   end
 end
