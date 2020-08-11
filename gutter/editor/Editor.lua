@@ -120,7 +120,7 @@ function Editor:init(config)
 
   if not self.model then
     self.model = require("resources.models.example")
-    self:convertModel(self.model)
+    self:upgradeModel(self.model)
   end
 
   self.instructions = self.model.children
@@ -1099,7 +1099,7 @@ function Editor:loadModel(filename)
   local f = assert(loadstring("return " .. contents))
   setfenv(f, {})
   local model = f()
-  self:convertModel(model)
+  self:upgradeModel(model)
   return model
 end
 
@@ -1110,7 +1110,7 @@ function Editor:saveModel(model, filename)
   love.filesystem.write(filename, contents)
 end
 
-function Editor:convertModel(model)
+function Editor:upgradeModel(model)
   model.version = model.version or 1
   local oldVersion = model.version
 
@@ -1132,7 +1132,7 @@ function Editor:convertModel(model)
   end
 
   if model.version ~= oldVersion then
-    self:log("debug", "Converted model to version " .. model.version)
+    self:log("debug", "Upgraded model from version " .. oldVersion .. " to version " .. model.version)
   end
 end
 
