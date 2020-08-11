@@ -53,7 +53,7 @@ function Editor:init(config)
 
       vec4 effect(vec4 color, Image tex, vec2 texture_coords, vec2 screen_coords)
       {
-        if (dot(texture_coords, texture_coords) > 1) {
+        if (dot(2 * texture_coords - 1, 2 * texture_coords - 1) > 1) {
           discard;
         }
 
@@ -198,7 +198,7 @@ function Editor:update(dt)
       local vertexFormat = {
         {"VertexPosition", "float", 3},
         {"VertexNormal", "float", 3},
-        {"VertexTexCoord", "float", 2},
+        {"VertexTexCoord", "byte", 4},
         {"VertexColor", "byte", 4},
       }
 

@@ -286,7 +286,7 @@ function M.newMeshFromInstructions(instructions, bounds, maxCallDepth, callDepth
       z - radiusZ * tangentZ - radiusZ * bitangentZ,
 
       normalX, normalY, normalZ,
-      -1, -1,
+      0, 0, 0, 1,
       red, green, blue, alpha,
     })
 
@@ -296,7 +296,7 @@ function M.newMeshFromInstructions(instructions, bounds, maxCallDepth, callDepth
       z + radiusZ * tangentZ - radiusZ * bitangentZ,
 
       normalX, normalY, normalZ,
-      1, -1,
+      1, 0, 0, 1,
       red, green, blue, alpha,
     })
 
@@ -306,7 +306,7 @@ function M.newMeshFromInstructions(instructions, bounds, maxCallDepth, callDepth
       z + radiusZ * tangentZ + radiusZ * bitangentZ,
 
       normalX, normalY, normalZ,
-      1, 1,
+      1, 1, 0, 1,
       red, green, blue, alpha,
     })
 
@@ -316,7 +316,7 @@ function M.newMeshFromInstructions(instructions, bounds, maxCallDepth, callDepth
       z - radiusZ * tangentZ + radiusZ * bitangentZ,
 
       normalX, normalY, normalZ,
-      -1, 1,
+      0, 1, 0, 1,
       red, green, blue, alpha,
     })
 
