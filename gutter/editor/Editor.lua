@@ -174,6 +174,8 @@ function Editor:init(config)
 
   self.commandHistory = {}
   self.commandFuture = {}
+
+  self.font = love.graphics.newFont(12)
 end
 
 local combo = {value = 1, items = {'A', 'B', 'C'}}
@@ -221,7 +223,10 @@ function Editor:update(dt)
 
   local toolsHeight = 50
   local statusHeight = 50
+  local fontHeight = 12
   local menuHeight = 0
+
+  Slab.PushFont(self.font)
 
   do
     if Slab.BeginMainMenuBar() then
@@ -292,7 +297,7 @@ function Editor:update(dt)
       Y = menuHeight + toolsHeight,
 
       W = 200 - 4,
-      H = height - menuHeight - toolsHeight - statusHeight - 4,
+      H = height - menuHeight - toolsHeight - statusHeight - 4 - fontHeight,
 
       AllowMove = false,
       AllowResize = false,
@@ -301,10 +306,8 @@ function Editor:update(dt)
       Border = 4,
       ResetLayout = true,
       Rounding = 0,
+      Title = "Entities",
     })
-
-    Slab.Text("ENTITIES")
-    Slab.Separator()
 
     do
       Slab.BeginLayout("newAndDelete", {Columns = 2})
@@ -392,7 +395,7 @@ function Editor:update(dt)
       Y = menuHeight + toolsHeight,
 
       W = 200 - 4,
-      H = height - menuHeight - toolsHeight - statusHeight - 4,
+      H = height - menuHeight - toolsHeight - statusHeight - 4 - fontHeight,
 
       AllowMove = false,
       AllowResize = false,
@@ -401,10 +404,8 @@ function Editor:update(dt)
       Border = 4,
       ResetLayout = true,
       Rounding = 0,
+      Title = "Components",
     })
-
-    Slab.Text("COMPONENTS")
-    Slab.Separator()
 
     if self.selection then
       local instruction = self.model.children[self.selection]
@@ -771,6 +772,8 @@ function Editor:update(dt)
 
     Slab.EndWindow()
   end
+
+  Slab.PopFont()
 end
 
 function Editor:log(level, message)
