@@ -1112,6 +1112,7 @@ end
 
 function Editor:upgradeModel(model)
   model.version = model.version or 1
+
   local oldVersion = model.version
 
   if model.version == 1 then
@@ -1129,6 +1130,10 @@ function Editor:upgradeModel(model)
     end
 
     model.version = 3
+  end
+
+  if model.version ~= 3 then
+    error("Model version " .. model.version .. " is not supported")
   end
 
   if model.version ~= oldVersion then
