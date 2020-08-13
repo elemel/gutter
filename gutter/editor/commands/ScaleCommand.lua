@@ -1,6 +1,6 @@
 local M = {}
 M.__index = M
-M.title = "Scale Instruction"
+M.title = "Scale"
 
 function M.new(editor, oldShape, newShape)
   local instance = setmetatable({}, M)
@@ -9,17 +9,17 @@ function M.new(editor, oldShape, newShape)
   instance.newShape = {unpack(newShape)}
 
   local selection = assert(editor.selection)
-  instance.instruction = assert(editor.instructions[selection])
+  instance.entity = assert(editor.model.children[selection])
   return instance
 end
 
 function M:redo()
-  self.instruction.components.shape = {unpack(self.newShape)}
+  self.entity.components.shape = {unpack(self.newShape)}
   self.editor:remesh()
 end
 
 function M:undo()
-  self.instruction.components.shape = {unpack(self.oldShape)}
+  self.entity.components.shape = {unpack(self.oldShape)}
   self.editor:remesh()
 end
 

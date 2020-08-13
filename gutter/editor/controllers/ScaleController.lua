@@ -2,7 +2,7 @@ local gutterMath = require("gutter.math")
 
 local distance2 = gutterMath.distance2
 local normalize3 = gutterMath.normalize3
-local ScaleInstructionCommand = require("gutter.editor.commands.ScaleInstructionCommand")
+local ScaleCommand = require("gutter.editor.commands.ScaleCommand")
 local setRotation3 = gutterMath.setRotation3
 local transformPoint3 = gutterMath.transformPoint3
 local transformVector3 = gutterMath.transformVector3
@@ -18,10 +18,10 @@ function M.new(editor)
   instance.startScreenX, instance.startScreenY = love.mouse.getPosition()
 
   local selection = assert(editor.selection)
-  local instruction = assert(editor.instructions[selection])
+  local entity = assert(editor.model.children[selection])
 
-  instance.oldShape = {unpack(instruction.components.shape)}
-  instance.newShape = {unpack(instruction.components.shape)}
+  instance.oldShape = {unpack(entity.components.shape)}
+  instance.newShape = {unpack(entity.components.shape)}
 
   return instance
 end
@@ -31,14 +31,10 @@ function M:destroy()
 end
 
 function M:mousemoved(x, y, dx, dy, istouch)
-  self:updateInstruction()
-end
-
-function M:updateInstruction()
-  local x, y = love.mouse.getPosition()
-
   if self.editor.selection then
     -- TODO: Use camera and viewport transforms kept in sync elsewhere
+
+    local x, y = love.mouse.getPosition()
 
     local width, height = love.graphics.getDimensions()
     local scale = 0.25
@@ -54,24 +50,24 @@ function M:updateInstruction()
     local worldToScreenTransform = love.math.newTransform():apply(viewportTransform):apply(cameraTransform)
     local screenToWorldTransform = worldToScreenTransform:inverse()
 
-    local instruction = self.editor.instructions[self.editor.selection]
+    local entity = self.editor.model.children[self.editor.selection]
 
     local width, height, depth, rounding = unpack(self.oldShape)
 
-    local pivotX, pivotY = transformPoint3(worldToScreenTransform, unpack(instruction.components.position))
+    local pivotX, pivotY = transformPoint3(worldToScreenTransform, unpack(entity.components.position))
     local startDistance = distance2(pivotX, pivotY, self.startScreenX, self.startScreenY)
     local distance = distance2(pivotX, pivotY, x, y)
     local scale = distance / startDistance
 
-    instruction.components.shape = {scale * width, scale * height, scale * depth, rounding}
-    self.newShape = {unpack(instruction.components.shape)}
+    entity.components.shape = {scale * width, scale * height, scale * depth, rounding}
+    self.newShape = {unpack(entity.components.shape)}
 
     self.editor:remesh()
   end
 end
 
 function M:mousereleased(x, y, button, istouch, presses)
-  self.editor:doCommand(ScaleInstructionCommand.new(self.editor, self.oldShape, self.newShape))
+  self.editor:doCommand(ScaleCommand.new(self.editor, self.oldShape, self.newShape))
   self:destroy()
 end
 
