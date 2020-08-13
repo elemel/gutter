@@ -1,6 +1,6 @@
 local M = {}
 M.__index = M
-M.title = "Rotate Instruction"
+M.title = "Rotate"
 
 function M.new(editor, oldOrientation, newOrientation)
   local instance = setmetatable({}, M)
@@ -9,17 +9,17 @@ function M.new(editor, oldOrientation, newOrientation)
   instance.newOrientation = {unpack(newOrientation)}
 
   local selection = assert(editor.selection)
-  instance.instruction = assert(editor.instructions[selection])
+  instance.entity = assert(editor.model.children[selection])
   return instance
 end
 
 function M:redo()
-  self.instruction.components.orientation = {unpack(self.newOrientation)}
+  self.entity.components.orientation = {unpack(self.newOrientation)}
   self.editor:remesh()
 end
 
 function M:undo()
-  self.instruction.components.orientation = {unpack(self.oldOrientation)}
+  self.entity.components.orientation = {unpack(self.oldOrientation)}
   self.editor:remesh()
 end
 

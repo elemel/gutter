@@ -1,5 +1,5 @@
 local gutterMath = require("gutter.math")
-local RotateInstructionCommand = require("gutter.editor.commands.RotateInstructionCommand")
+local RotateCommand = require("gutter.editor.commands.RotateCommand")
 local quaternion = require("gutter.quaternion")
 
 local atan2 = math.atan2
@@ -19,10 +19,10 @@ function M.new(editor)
   instance.startScreenX, instance.startScreenY = love.mouse.getPosition()
 
   local selection = assert(editor.selection)
-  local instruction = assert(editor.instructions[selection])
+  local entity = assert(editor.model.children[selection])
 
-  instance.oldOrientation = {unpack(instruction.components.orientation)}
-  instance.newOrientation = {unpack(instruction.components.orientation)}
+  instance.oldOrientation = {unpack(entity.components.orientation)}
+  instance.newOrientation = {unpack(entity.components.orientation)}
 
   return instance
 end
@@ -51,10 +51,10 @@ function M:mousemoved(x, y, dx, dy, istouch)
 
     local axisX, axisY, axisZ = normalize3(transformVector3(screenToWorldTransform, 0, 0, 1))
 
-    local instruction = self.editor.instructions[self.editor.selection]
+    local entity = self.editor.model.children[self.editor.selection]
 
     -- TODO: Use pivot based on selection or camera
-    local pivotX, pivotY = transformPoint3(worldToScreenTransform, unpack(instruction.components.position))
+    local pivotX, pivotY = transformPoint3(worldToScreenTransform, unpack(entity.components.position))
     local angle1 = atan2(self.startScreenY - pivotY, self.startScreenX - pivotX)
     local angle2 = atan2(y - pivotY, x - pivotX)
     local angle = angle2 - angle1
@@ -63,14 +63,14 @@ function M:mousemoved(x, y, dx, dy, istouch)
 
     local qx2, qy2, qz2, qw2 = quaternion.fromAxisAngle(axisX, axisY, axisZ, angle)
 
-    instruction.components.orientation = {quaternion.product(qx2, qy2, qz2, qw2, qx1, qy1, qz1, qw1)}
-    self.newOrientation = {unpack(instruction.components.orientation)}
+    entity.components.orientation = {quaternion.product(qx2, qy2, qz2, qw2, qx1, qy1, qz1, qw1)}
+    self.newOrientation = {unpack(entity.components.orientation)}
     self.editor:remesh()
   end
 end
 
 function M:mousereleased(x, y, button, istouch, presses)
-  self.editor:doCommand(RotateInstructionCommand.new(self.editor, self.oldOrientation, self.newOrientation))
+  self.editor:doCommand(RotateCommand.new(self.editor, self.oldOrientation, self.newOrientation))
   self:destroy()
 end
 
