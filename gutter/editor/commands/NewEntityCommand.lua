@@ -1,6 +1,6 @@
 local M = {}
 M.__index = M
-M.title = "New Instruction"
+M.title = "New Entity"
 
 function M.new(editor)
   local instance = setmetatable({}, M)
@@ -9,7 +9,7 @@ function M.new(editor)
 end
 
 function M:redo()
-  table.insert(self.editor.instructions, {
+  table.insert(self.editor.model.children, {
     components = {
       operation = "union",
       blending = 0,
@@ -22,12 +22,12 @@ function M:redo()
     },
   })
 
-  self.editor.selection = #self.editor.instructions
+  self.editor.selection = #self.editor.model.children
   self.editor:remesh()
 end
 
 function M:undo()
-  table.remove(self.editor.instructions)
+  table.remove(self.editor.model.children)
   self.editor.selection = nil -- TODO: Update selection
   self.editor:remesh()
 end

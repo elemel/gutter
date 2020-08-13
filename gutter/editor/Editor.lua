@@ -1,10 +1,10 @@
-local DeleteInstructionCommand = require("gutter.editor.commands.DeleteInstructionCommand")
+local DeleteEntityCommand = require("gutter.editor.commands.DeleteEntityCommand")
 local gutterMath = require("gutter.math")
 local gutterTable = require("gutter.table")
 local lton = require("lton")
 local quaternion = require("gutter.quaternion")
 local MoveController = require("gutter.editor.controllers.MoveController")
-local NewInstructionCommand = require("gutter.editor.commands.NewInstructionCommand")
+local NewEntityCommand = require("gutter.editor.commands.NewEntityCommand")
 local RotateController = require("gutter.editor.controllers.RotateController")
 local ScaleController = require("gutter.editor.controllers.ScaleController")
 local Slab = require("Slab")
@@ -314,13 +314,13 @@ function Editor:update(dt)
       Slab.SetLayoutColumn(1)
 
       if Slab.Button("New", {W = 94}) then
-        self:doCommand(NewInstructionCommand.new(self))
+        self:doCommand(NewEntityCommand.new(self))
       end
 
       Slab.SetLayoutColumn(2)
 
       if Slab.Button("Delete", {W = 94, Disabled = self.selection == nil}) then
-        self:doCommand(DeleteInstructionCommand.new(self))
+        self:doCommand(DeleteEntityCommand.new(self))
       end
 
       Slab.EndLayout()
