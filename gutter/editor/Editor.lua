@@ -123,8 +123,6 @@ function Editor:init(config)
     self:upgradeModel(self.model)
   end
 
-  self.instructions = self.model.children
-
   local minX = -2
   local minY = -2
   local minZ = -2
@@ -328,9 +326,9 @@ function Editor:update(dt)
 
     Slab.Separator()
 
-    for i = #self.instructions, 1, -1 do
-      local instruction = self.instructions[i]
-      local components = instruction.components
+    for i = #self.model.children, 1, -1 do
+      local entity = self.model.children[i]
+      local components = entity.components
 
       local color = components.operation == "subtraction" and self.colors.red or self.colors.green
 
@@ -349,26 +347,26 @@ function Editor:update(dt)
       Slab.BeginLayout("order", {Columns = 2})
       Slab.SetLayoutColumn(1)
 
-      if Slab.Button("Up", {Disabled = self.selection == nil or self.selection == #self.instructions, W = 94}) then
-        self.instructions[self.selection], self.instructions[self.selection + 1] = self.instructions[self.selection + 1], self.instructions[self.selection]
+      if Slab.Button("Up", {Disabled = self.selection == nil or self.selection == #self.model.children, W = 94}) then
+        self.model.children[self.selection], self.model.children[self.selection + 1] = self.model.children[self.selection + 1], self.model.children[self.selection]
         self.selection = self.selection + 1
         self:remesh()
       end
 
       Slab.SetLayoutColumn(2)
 
-      if Slab.Button("Top", {Disabled = self.selection == nil or self.selection == #self.instructions, W = 94}) then
-        local instruction = self.instructions[self.selection]
-        table.remove(self.instructions, self.selection)
-        table.insert(self.instructions, instruction)
-        self.selection = #self.instructions
+      if Slab.Button("Top", {Disabled = self.selection == nil or self.selection == #self.model.children, W = 94}) then
+        local entity = self.model.children[self.selection]
+        table.remove(self.model.children, self.selection)
+        table.insert(self.model.children, entity)
+        self.selection = #self.model.children
         self:remesh()
       end
 
       Slab.SetLayoutColumn(1)
 
       if Slab.Button("Down", {Disabled = self.selection == nil or self.selection == 1, W = 94}) then
-        self.instructions[self.selection], self.instructions[self.selection - 1] = self.instructions[self.selection - 1], self.instructions[self.selection]
+        self.model.children[self.selection], self.model.children[self.selection - 1] = self.model.children[self.selection - 1], self.model.children[self.selection]
         self.selection = self.selection - 1
         self:remesh()
       end
@@ -376,9 +374,9 @@ function Editor:update(dt)
       Slab.SetLayoutColumn(2)
 
       if Slab.Button("Bottom", {Disabled = self.selection == nil or self.selection == 1, W = 94}) then
-        local instruction = self.instructions[self.selection]
-        table.remove(self.instructions, self.selection)
-        table.insert(self.instructions, 1, instruction)
+        local entity = self.model.children[self.selection]
+        table.remove(self.model.children, self.selection)
+        table.insert(self.model.children, 1, entity)
         self.selection = 1
         self:remesh()
       end
@@ -837,9 +835,9 @@ function Editor:draw()
 
   love.graphics.pop()
 
-  for i, instruction in ipairs(self.instructions) do
+  for i, entity in ipairs(self.model.children) do
     if i == self.selection then
-      local components = instruction.components
+      local components = entity.components
 
       -- TODO: Only draw wireframe lines for front faces
 
