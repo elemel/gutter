@@ -1001,10 +1001,10 @@ end
 function Editor:remesh()
   self.workerInputChannel:clear()
 
-  local instructions = {}
+  clear(self.instructions)
 
   for i, child in ipairs(self.model.children) do
-    table.insert(instructions, child.components)
+    table.insert(self.instructions, child.components)
   end
 
   local minX = -2
@@ -1022,7 +1022,7 @@ function Editor:remesh()
       self.workerInputChannel:push({
         version = self.workerInputVersion,
         mesher = self.mesher,
-        instructions = instructions,
+        instructions = self.instructions,
 
         minX = minX,
         minY = minY,
@@ -1042,7 +1042,7 @@ function Editor:remesh()
       self.workerInputChannel:push({
         version = self.workerInputVersion,
         mesher = self.mesher,
-        instructions = instructions,
+        instructions = self.instructions,
 
         minX = minX,
         minY = minY,
