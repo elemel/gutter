@@ -1,5 +1,5 @@
 local gutterMath = require("gutter.math")
-local MoveInstructionCommand = require("gutter.editor.commands.MoveInstructionCommand")
+local MoveCommand = require("gutter.editor.commands.MoveCommand")
 local quaternion = require("gutter.quaternion")
 
 local atan2 = math.atan2
@@ -19,9 +19,9 @@ function M.new(editor)
   instance.startScreenX, instance.startScreenY = love.mouse.getPosition()
 
   local selection = assert(editor.selection)
-  local instruction = assert(editor.instructions[selection])
-  instance.oldPosition = {unpack(instruction.components.position)}
-  instance.newPosition = {unpack(instruction.components.position)}
+  local entity = assert(editor.model.children[selection])
+  instance.oldPosition = {unpack(entity.components.position)}
+  instance.newPosition = {unpack(entity.components.position)}
 
   return instance
 end
@@ -54,8 +54,8 @@ function M:mousemoved(x, y, dx, dy, istouch)
     local x, y, z = unpack(self.oldPosition)
     local worldDx, worldDy, worldDz = transformVector3(screenToWorldTransform, screenDx, screenDy, 0)
 
-    local instruction = self.editor.instructions[self.editor.selection]
-    instruction.components.position = {x + worldDx, y + worldDy, z + worldDz}
+    local entity = self.editor.model.children[self.editor.selection]
+    entity.components.position = {x + worldDx, y + worldDy, z + worldDz}
     self.newPosition = {x + worldDx, y + worldDy, z + worldDz}
 
     self.editor:remesh()
@@ -63,7 +63,7 @@ function M:mousemoved(x, y, dx, dy, istouch)
 end
 
 function M:mousereleased(x, y, button, istouch, presses)
-  self.editor:doCommand(MoveInstructionCommand.new(self.editor, self.oldPosition, self.newPosition))
+  self.editor:doCommand(MoveCommand.new(self.editor, self.oldPosition, self.newPosition))
   self:destroy()
 end
 

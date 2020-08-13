@@ -1,6 +1,6 @@
 local M = {}
 M.__index = M
-M.title = "Move Instruction"
+M.title = "Move"
 
 function M.new(editor, oldPosition, newPosition)
   local instance = setmetatable({}, M)
@@ -9,17 +9,17 @@ function M.new(editor, oldPosition, newPosition)
   instance.newPosition = {unpack(newPosition)}
 
   local selection = assert(editor.selection)
-  instance.instruction = assert(editor.instructions[selection])
+  instance.entity = assert(editor.model.children[selection])
   return instance
 end
 
 function M:redo()
-  self.instruction.components.position = {unpack(self.newPosition)}
+  self.entity.components.position = {unpack(self.newPosition)}
   self.editor:remesh()
 end
 
 function M:undo()
-  self.instruction.components.position = {unpack(self.oldPosition)}
+  self.entity.components.position = {unpack(self.oldPosition)}
   self.editor:remesh()
 end
 

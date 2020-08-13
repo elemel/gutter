@@ -11,6 +11,7 @@ local Slab = require("Slab")
 
 local atan2 = math.atan2
 local clamp = gutterMath.clamp
+local clear = gutterTable.clear
 local concat = table.concat
 local distance2 = gutterMath.distance2
 local dump = lton.dump
@@ -144,6 +145,7 @@ function Editor:init(config)
   love.thread.newThread("gutter/worker.lua"):start()
   love.thread.newThread("gutter/worker.lua"):start()
 
+  self.instructions = {}
   self:remesh()
 
   self.camera = {
@@ -999,6 +1001,12 @@ end
 function Editor:remesh()
   self.workerInputChannel:clear()
 
+  local instructions = {}
+
+  for i, child in ipairs(self.model.children) do
+    table.insert(instructions, child.components)
+  end
+
   local minX = -2
   local minY = -2
   local minZ = -2
@@ -1010,12 +1018,6 @@ function Editor:remesh()
   if self.mesher == "dual-contouring" then
     for maxDepth = 4, 6 do
       self.workerInputVersion = self.workerInputVersion + 1
-
-      local instructions = {}
-
-      for i, child in ipairs(self.model.children) do
-        table.insert(instructions, child.components)
-      end
 
       self.workerInputChannel:push({
         version = self.workerInputVersion,
@@ -1036,12 +1038,6 @@ function Editor:remesh()
   else
     for maxDepth = 4, 6 do
       self.workerInputVersion = self.workerInputVersion + 1
-
-      local instructions = {}
-
-      for i, child in ipairs(self.model.children) do
-        table.insert(instructions, child.components)
-      end
 
       self.workerInputChannel:push({
         version = self.workerInputVersion,
