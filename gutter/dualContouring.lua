@@ -180,7 +180,7 @@ function M.applyInstructions(instructions, grid)
   end
 end
 
-function M.updateCells(grid)
+function M.updateCells(instructions, grid)
   local sizeX = grid.sizeX
   local sizeY = grid.sizeY
   local sizeZ = grid.sizeZ
@@ -192,6 +192,10 @@ function M.updateCells(grid)
   local maxX = grid.maxX
   local maxY = grid.maxY
   local maxZ = grid.maxZ
+
+  local dx = 0.25 * (maxX - minX) / sizeX
+  local dy = 0.25 * (maxY - minY) / sizeY
+  local dz = 0.25 * (maxZ - minZ) / sizeZ
 
   local vertices = grid.vertices
   local cells = grid.cells
@@ -248,21 +252,27 @@ function M.updateCells(grid)
           cell.y = totalY / count
           cell.z = totalZ / count
 
-          local gradientX = 0
-          local gradientY = 0
-          local gradientZ = 0
+          cell.x = totalX / count
+          cell.y = totalY / count
+          cell.z = totalZ / count
 
-          for vertexZ = 0, 1 do
-            for vertexY = 0, 1 do
-              for vertexX = 0, 1 do
-                local vertex = grid.vertices[cellZ + vertexZ][cellY + vertexY][cellX + vertexX]
+          -- local gradientX = 0
+          -- local gradientY = 0
+          -- local gradientZ = 0
 
-                gradientX = gradientX + (2 * vertexX - 1) * vertex.distance
-                gradientY = gradientY + (2 * vertexY - 1) * vertex.distance
-                gradientZ = gradientZ + (2 * vertexZ - 1) * vertex.distance
-              end
-            end
-          end
+          -- for vertexZ = 0, 1 do
+          --   for vertexY = 0, 1 do
+          --     for vertexX = 0, 1 do
+          --       local vertex = grid.vertices[cellZ + vertexZ][cellY + vertexY][cellX + vertexX]
+
+          --       gradientX = gradientX + (2 * vertexX - 1) * vertex.distance
+          --       gradientY = gradientY + (2 * vertexY - 1) * vertex.distance
+          --       gradientZ = gradientZ + (2 * vertexZ - 1) * vertex.distance
+          --     end
+          --   end
+          -- end
+
+          local gradientX, gradientY, gradientZ = csg.getDistanceGradientFromPoint(instructions, cell.x, cell.y, cell.z, dx, dy, dz)
 
           cell.normalX, cell.normalY, cell.normalZ = normalize3(
             gradientX, gradientY, gradientZ)
@@ -467,7 +477,7 @@ function M.newMeshFromInstructions(instructions, bounds, maxCallDepth, callDepth
   local grid = M.newGrid({3, 3, 3}, extendedBounds)
 
   M.applyInstructions(instructions, grid)
-  M.updateCells(grid)
+  M.updateCells(instructions, grid)
   M.generateTriangles(grid, triangles)
 
   return triangles

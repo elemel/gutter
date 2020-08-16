@@ -1,6 +1,8 @@
 return {
   children = {
     {
+      title = "Green",
+
       components = {
         blending = 0,
 
@@ -36,6 +38,8 @@ return {
     },
 
     {
+      title = "Blue",
+
       components = {
         blending = 0.5,
 
@@ -71,6 +75,8 @@ return {
     },
 
     {
+      title = "Red",
+
       components = {
         blending = 0.25,
 
@@ -106,6 +112,8 @@ return {
     },
 
     {
+      title = "Yellow",
+
       components = {
         blending = 0,
 

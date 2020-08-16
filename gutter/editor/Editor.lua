@@ -331,7 +331,7 @@ function Editor:update(dt)
     function addEntityToTree(i, entity)
       local components = entity.components
 
-      local label = selectableOperations[find(operations, components.operation)] .. " #" .. i
+      local label = entity.title or selectableOperations[find(operations, components.operation)] .. " #" .. i
       local open = Slab.BeginTree("entity" .. i, {IsLeaf = true, IsSelected = (self.selection == i), Label = label, OpenWithHighlight = false})
 
       if Slab.IsControlClicked() then

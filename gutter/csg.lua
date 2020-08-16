@@ -3,6 +3,7 @@ local quaternion = require("gutter.quaternion")
 
 local abs = math.abs
 local clamp = gutterMath.clamp
+local huge = math.huge
 local inverseRotate = quaternion.inverseRotate
 local length3 = gutterMath.length3
 local max = math.max
@@ -86,19 +87,19 @@ function M.applyInstructionsToPoint(instructions, x, y, z)
       qx, qy, qz, qw,
       x - positionX, y - positionY, z - positionZ)
 
-    local instructionDistance = box(
+    local instructionDistance = M.box(
       instructionX, instructionY, instructionZ,
       0.5 * width - radius, 0.5 * height - radius, 0.5 * depth - radius) - radius
 
     if instruction.operation == "union" then
       distance, red, green, blue, alpha =
-        smoothUnionColor(
+        M.smoothUnionColor(
           distance, red, green, blue, alpha,
           instructionDistance, instructionRed, instructionGreen, instructionBlue, instructionAlpha,
           blendRange)
     elseif instruction.operation == "subtraction" then
       distance, red, green, blue, alpha =
-        smoothSubtractionColor(
+        M.smoothSubtractionColor(
           instructionDistance, instructionRed, instructionGreen, instructionBlue, instructionAlpha,
           distance, red, green, blue, alpha,
           blendRange)
@@ -106,6 +107,29 @@ function M.applyInstructionsToPoint(instructions, x, y, z)
       assert("Invalid operation")
     end
   end
+
+  return distance, red, green, blue, alpha
+end
+
+function M.getDistanceFromPoint(instructions, x, y, z)
+  local distance = M.applyInstructionsToPoint(instructions, x, y, z)
+  return distance
+end
+
+function M.getDistanceGradientFromPoint(instructions, x, y, z, dx, dy, dz)
+  local dfx = (
+    M.getDistanceFromPoint(instructions, x + dx, y, z) -
+    M.getDistanceFromPoint(instructions, x - dx, y, z))
+
+  local dfy = (
+    M.getDistanceFromPoint(instructions, x, y + dy, z) -
+    M.getDistanceFromPoint(instructions, x, y - dy, z))
+
+  local dfz = (
+    M.getDistanceFromPoint(instructions, x, y, z + dz) -
+    M.getDistanceFromPoint(instructions, x, y, z - dz))
+
+  return dfx / (2 * dx), dfy / (2 * dy), dfz / (2 * dz)
 end
 
 return M
