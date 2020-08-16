@@ -328,19 +328,44 @@ function Editor:update(dt)
 
     Slab.Separator()
 
-    for i = #self.model.children, 1, -1 do
-      local entity = self.model.children[i]
+    function addEntityToTree(i, entity)
       local components = entity.components
 
-      local color = components.operation == "subtraction" and self.colors.red or self.colors.green
+      local label = selectableOperations[find(operations, components.operation)] .. " #" .. i
+      local open = Slab.BeginTree("entity" .. i, {IsLeaf = true, IsSelected = (self.selection == i), Label = label, OpenWithHighlight = false})
 
-      if Slab.TextSelectable(selectableOperations[find(operations, components.operation)] .. " #" .. i, {Color = color, IsSelected = (self.selection == i)}) then
+      if Slab.IsControlClicked() then
         if self.selection == i then
           self.selection = nil
         else
           self.selection = i
         end
       end
+
+      if open then
+        -- if Slab.BeginTree("entity" .. i .. "b", {OpenWithHighlight = false}) then
+        --   Slab.EndTree()
+        -- end
+
+        Slab.EndTree()
+      end
+    end
+
+    Slab.BeginTree("Camera", {IsLeaf = true})
+
+    if Slab.BeginTree("Lights", {OpenWithHighlight = false}) then
+      Slab.BeginTree("Sun Light", {IsLeaf = true})
+      Slab.BeginTree("Sky Light", {IsLeaf = true})
+      Slab.EndTree()
+    end
+
+    if Slab.BeginTree("Model", {OpenWithHighlight = false}) then
+      for i = #self.model.children, 1, -1 do
+        local entity = self.model.children[i]
+        addEntityToTree(i, entity)
+      end
+
+      Slab.EndTree()
     end
 
     Slab.Separator()
