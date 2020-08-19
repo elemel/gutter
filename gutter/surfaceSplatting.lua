@@ -274,50 +274,70 @@ function M.newMeshFromInstructions(instructions, bounds, maxCallDepth, callDepth
   local radiusY = (maxY - minY) / sizeY
   local radiusZ = (maxZ - minZ) / sizeZ
 
+  local dx = 0.125 * radiusX
+  local dy = 0.125 * radiusY
+  local dz = 0.125 * radiusZ
+
   for _, disk in ipairs(disks) do
     local x, y, z, normalX, normalY, normalZ, red, green, blue, alpha = unpack(disk)
 
     local tangentX, tangentY, tangentZ = perp(normalX, normalY, normalZ)
     local bitangentX, bitangentY, bitangentZ = cross(tangentX, tangentY, tangentZ, normalX, normalY, normalZ)
 
-    table.insert(vertices, {
-      x - radiusX * tangentX - radiusX * bitangentX,
-      y - radiusY * tangentY - radiusY * bitangentY,
-      z - radiusZ * tangentZ - radiusZ * bitangentZ,
+    local x1 = x - radiusX * tangentX - radiusX * bitangentX
+    local y1 = y - radiusY * tangentY - radiusY * bitangentY
+    local z1 = z - radiusZ * tangentZ - radiusZ * bitangentZ
 
-      normalX, normalY, normalZ,
+    local normalX1, normalY1, normalZ1 = normalize3(csg.getDistanceGradientFromPoint(instructions, x1, y1, z1, dx, dy, dz))
+    local _, red1, green1, blue1, alpha1 = csg.applyInstructionsToPoint(instructions, x1, y1, z1)
+
+    table.insert(vertices, {
+      x1, y1, z1,
+      normalX1, normalY1, normalZ1,
       0, 0, 0, 1,
-      red, green, blue, alpha,
+      red1, green1, blue1, alpha1,
     })
 
-    table.insert(vertices, {
-      x + radiusX * tangentX - radiusX * bitangentX,
-      y + radiusY * tangentY - radiusY * bitangentY,
-      z + radiusZ * tangentZ - radiusZ * bitangentZ,
+    local x2 = x + radiusX * tangentX - radiusX * bitangentX
+    local y2 = y + radiusY * tangentY - radiusY * bitangentY
+    local z2 = z + radiusZ * tangentZ - radiusZ * bitangentZ
 
-      normalX, normalY, normalZ,
+    local normalX2, normalY2, normalZ2 = normalize3(csg.getDistanceGradientFromPoint(instructions, x2, y2, z2, dx, dy, dz))
+    local _, red2, green2, blue2, alpha2 = csg.applyInstructionsToPoint(instructions, x2, y2, z2)
+
+    table.insert(vertices, {
+      x2, y2, z2,
+      normalX2, normalY2, normalZ2,
       1, 0, 0, 1,
-      red, green, blue, alpha,
+      red2, green2, blue2, alpha2,
     })
 
-    table.insert(vertices, {
-      x + radiusX * tangentX + radiusX * bitangentX,
-      y + radiusY * tangentY + radiusY * bitangentY,
-      z + radiusZ * tangentZ + radiusZ * bitangentZ,
+    local x3 = x + radiusX * tangentX + radiusX * bitangentX
+    local y3 = y + radiusY * tangentY + radiusY * bitangentY
+    local z3 = z + radiusZ * tangentZ + radiusZ * bitangentZ
 
-      normalX, normalY, normalZ,
+    local normalX3, normalY3, normalZ3 = normalize3(csg.getDistanceGradientFromPoint(instructions, x3, y3, z3, dx, dy, dz))
+    local _, red3, green3, blue3, alpha3 = csg.applyInstructionsToPoint(instructions, x3, y3, z3)
+
+    table.insert(vertices, {
+      x3, y3, z3,
+      normalX3, normalY3, normalZ3,
       1, 1, 0, 1,
-      red, green, blue, alpha,
+      red3, green3, blue3, alpha3,
     })
 
-    table.insert(vertices, {
-      x - radiusX * tangentX + radiusX * bitangentX,
-      y - radiusY * tangentY + radiusY * bitangentY,
-      z - radiusZ * tangentZ + radiusZ * bitangentZ,
+    local x4 = x - radiusX * tangentX + radiusX * bitangentX
+    local y4 = y - radiusY * tangentY + radiusY * bitangentY
+    local z4 = z - radiusZ * tangentZ + radiusZ * bitangentZ
 
-      normalX, normalY, normalZ,
+    local normalX4, normalY4, normalZ4 = normalize3(csg.getDistanceGradientFromPoint(instructions, x4, y4, z4, dx, dy, dz))
+    local _, red4, green4, blue4, alpha4 = csg.applyInstructionsToPoint(instructions, x4, y4, z4)
+
+    table.insert(vertices, {
+      x4, y4, z4,
+      normalX4, normalY4, normalZ4,
       0, 1, 0, 1,
-      red, green, blue, alpha,
+      red4, green4, blue4, alpha4,
     })
 
     table.insert(vertexMap, #vertices - 3)
