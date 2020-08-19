@@ -49,6 +49,7 @@ function Editor:init(config)
 
   if self.mesher == "surface-splatting" then
     self.shader = love.graphics.newShader([[
+      uniform vec3 CameraForward;
       varying vec3 VaryingPosition;
       varying vec3 VaryingNormal;
 
@@ -59,10 +60,11 @@ function Editor:init(config)
         }
 
         vec3 normal = normalize(VaryingNormal);
-        vec3 sunLighting = max(0, dot(normalize(vec3(-2, -8, 4)), normal)) * 3 * vec3(1, 0.5, 0.25);
-        vec3 skyLighting = vec3(0.25, 0.5, 1) * (0.5 - 0.5 * normal.y);
+        vec3 sunLighting = max(0, dot(normalize(vec3(-2, -8, 4)), normal)) * 4 * vec3(1, 0.5, 0.25);
+        vec3 skyLighting = 0.5 * vec3(0.25, 0.5, 1) * (0.625 - 0.375 * normal.y);
         vec3 lighting = sunLighting + skyLighting;
-        return vec4(lighting, 1) * color;
+        float fresnel = 0.25 * pow(clamp(1 - dot(CameraForward, normal), 0, 1), 4);
+        return vec4(lighting, 1) * mix(color, vec4(vec3(1), 1), fresnel);
       }
     ]], [[
       uniform mat4 ModelMatrix;
@@ -80,16 +82,18 @@ function Editor:init(config)
     ]])
   else
     self.shader = love.graphics.newShader([[
+      uniform vec3 CameraForward;
       varying vec3 VaryingPosition;
       varying vec3 VaryingNormal;
 
       vec4 effect(vec4 color, Image tex, vec2 texture_coords, vec2 screen_coords)
       {
         vec3 normal = normalize(VaryingNormal);
-        vec3 sunLighting = max(0, dot(normalize(vec3(-2, -8, 4)), normal)) * 3 * vec3(1, 0.5, 0.25);
-        vec3 skyLighting = vec3(0.25, 0.5, 1) * (0.5 - 0.5 * normal.y);
+        vec3 sunLighting = max(0, dot(normalize(vec3(-2, -8, 4)), normal)) * 4 * vec3(1, 0.5, 0.25);
+        vec3 skyLighting = 0.5 * vec3(0.25, 0.5, 1) * (0.625 - 0.375 * normal.y);
         vec3 lighting = sunLighting + skyLighting;
-        return vec4(lighting, 1) * color;
+        float fresnel = 0.25 * pow(clamp(1 - dot(CameraForward, normal), 0, 1), 4);
+        return vec4(lighting, 1) * mix(color, vec4(vec3(1), 1), fresnel);
       }
     ]], [[
       uniform mat4 ModelMatrix;
@@ -826,6 +830,9 @@ function Editor:draw()
     0, 0, scale, 0,
     0, 0, 0, 1))
 
+  local inverseCameraTransform = self.cameraTransform:inverse()
+  local cameraForwardX, cameraForwardY, cameraForwardZ = normalize3(transformVector3(inverseCameraTransform, 0, 0, 1))
+
   self.worldToScreenTransform:reset():apply(self.viewportTransform):apply(self.cameraTransform)
   love.graphics.setScissor(200, 0, width - 400, height)
 
@@ -838,6 +845,7 @@ function Editor:draw()
     if mesh then
       love.graphics.setColor(1, 1, 1, 1)
       love.graphics.setShader(self.shader)
+      self.shader:send("CameraForward", {cameraForwardX, cameraForwardY, cameraForwardZ})
       self.shader:send("ModelMatrix", transform)
       love.graphics.setMeshCullMode("back")
       love.graphics.setDepthMode("less", true)
@@ -850,6 +858,7 @@ function Editor:draw()
     if mesh then
       love.graphics.setColor(1, 1, 1, 1)
       love.graphics.setShader(self.shader)
+      self.shader:send("CameraForward", {cameraForwardX, cameraForwardY, cameraForwardZ})
       self.shader:send("ModelMatrix", transform)
       love.graphics.setMeshCullMode("back")
       love.graphics.setDepthMode("less", true)
